@@ -581,6 +581,174 @@ textarea#sidInput:focus {
   :root:not([data-theme="light"]) .cg-course-block.color-7 { border-left-color:#A8A29E; background:#2D2822; }
 }
 
+/* ── Schedule sections (工作日 / 周末) ───── */
+.schedule-grid .section-row {
+  grid-column: 1 / -1;
+  background: var(--card);
+  padding: 6px 10px; font-size: 11px; font-weight: 700;
+  color: var(--text-secondary); letter-spacing: .3px;
+  display: flex; align-items: center; gap: 7px;
+}
+.schedule-grid .section-row::before {
+  content: ''; width: 3px; height: 12px; border-radius: 2px;
+  background: var(--primary); flex-shrink: 0;
+}
+.schedule-grid .section-row.weekend::before { background: var(--danger); }
+.schedule-grid .section-row .count { font-weight: 600; color: var(--text-muted); font-size: 10px; }
+.schedule-grid .shift-cell.void { background: var(--bg); opacity: .35; }
+.schedule-grid .time-label .shift-weeks {
+  display: block; font-size: 9px; font-weight: 700; margin-top: 2px;
+  color: var(--primary); letter-spacing: .5px;
+}
+.schedule-grid .time-label .shift-weeks.even { color: var(--warning); }
+.schedule-grid .time-label .shift-cap { font-size: 9px; color: var(--text-muted); font-weight: 600; }
+.sched-empty {
+  padding: 22px; text-align: center; font-size: 12px;
+  color: var(--text-muted); border: 1px dashed var(--border);
+  border-radius: var(--radius-sm); background: var(--card);
+  line-height: 1.8; margin-bottom: 14px;
+}
+
+/* ── Template editor modal ──────────────── */
+.template-modal { max-width: 1080px; width: 96%; max-height: 88vh; }
+.tpl-body { flex:1; overflow:auto; padding: 16px 18px; }
+.tpl-toolbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding-bottom: 12px; margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.tpl-toolbar .spacer { margin-left: auto; }
+.tpl-name-input {
+  height: 30px; padding: 0 10px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--card); color: var(--text); outline: none;
+  font-family: inherit; min-width: 170px;
+  transition: border-color var(--transition);
+}
+.tpl-name-input:focus { border-color: var(--primary); }
+.tpl-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .tpl-groups { grid-template-columns: 1fr; } }
+.tpl-group { min-width: 0; }
+.tpl-group-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.tpl-group-head .title {
+  font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 7px;
+}
+.tpl-group-head .title::before {
+  content: ''; width: 3px; height: 14px; border-radius: 2px;
+  background: var(--primary); flex-shrink: 0;
+}
+.tpl-group-head.weekend .title::before { background: var(--danger); }
+.tpl-list { display: flex; flex-direction: column; gap: 8px; }
+
+.tpl-shift {
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--cell-bg); padding: 9px 10px;
+  transition: border-color var(--transition), opacity var(--transition);
+}
+.tpl-shift:hover { border-color: var(--text-muted); }
+.tpl-shift.disabled { opacity: .5; }
+.tpl-shift.wk-odd { border-left: 3px solid var(--primary); }
+.tpl-shift.wk-even { border-left: 3px solid var(--warning); }
+.tpl-shift.wk-all  { border-left: 3px solid var(--success); }
+.tpl-shift.bad { border-color: var(--danger); background: var(--danger-light); }
+
+.tpl-row { display: flex; align-items: center; gap: 6px; }
+.tpl-row + .tpl-row { margin-top: 7px; }
+.tpl-label-input {
+  flex: 1; min-width: 0; height: 27px; padding: 0 8px;
+  font-size: 12px; font-weight: 700; font-family: inherit;
+  border: 1px solid var(--border); border-radius: 5px;
+  background: var(--card); color: var(--text); outline: none;
+}
+.tpl-label-input:focus { border-color: var(--primary); }
+.tpl-time {
+  height: 27px; padding: 0 6px; font-size: 12px; font-family: inherit;
+  border: 1px solid var(--border); border-radius: 5px;
+  background: var(--card); color: var(--text); outline: none; width: 92px;
+}
+.tpl-time:focus { border-color: var(--primary); }
+.tpl-week-select {
+  height: 27px; padding: 0 4px; font-size: 11px; font-weight: 600;
+  font-family: inherit; border: 1px solid var(--border); border-radius: 5px;
+  background: var(--card); color: var(--text); outline: none; cursor: pointer;
+}
+.tpl-field { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-muted); }
+.tpl-num {
+  height: 27px; width: 48px; padding: 0 4px; text-align: center;
+  font-size: 12px; font-weight: 700; font-family: inherit;
+  border: 1px solid var(--border); border-radius: 5px;
+  background: var(--card); color: var(--text); outline: none;
+}
+.tpl-num:focus { border-color: var(--primary); }
+.tpl-sep { color: var(--text-muted); font-size: 11px; }
+
+.tpl-icon-btn {
+  width: 26px; height: 26px; flex-shrink: 0; border-radius: 5px;
+  border: 1px solid var(--border); background: var(--card);
+  color: var(--text-secondary); font-size: 13px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition); font-family: inherit; padding: 0;
+}
+.tpl-icon-btn:hover:not(:disabled) { background: var(--bg); color: var(--text); border-color: var(--text-muted); }
+.tpl-icon-btn:disabled { opacity: .3; cursor: not-allowed; }
+.tpl-icon-btn.danger:hover:not(:disabled) {
+  background: var(--danger-light); color: var(--danger); border-color: var(--danger);
+}
+
+.tpl-periods-head {
+  display: flex; align-items: center; gap: 6px; margin-top: 7px;
+  font-size: 10px; color: var(--text-muted); font-weight: 600;
+}
+.tpl-mode-badge {
+  font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 6px;
+  letter-spacing: .3px;
+}
+.tpl-mode-badge.auto { background: var(--success-light); color: var(--status-ready-text); }
+.tpl-mode-badge.manual { background: var(--warning-light); color: var(--status-loading-text); }
+.tpl-derive-btn {
+  margin-left: auto; font-size: 10px; font-weight: 600; padding: 2px 8px;
+  border-radius: 5px; border: 1px solid var(--border); background: var(--card);
+  color: var(--text-secondary); cursor: pointer; font-family: inherit;
+  transition: all var(--transition);
+}
+.tpl-derive-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+.tpl-periods { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.chip {
+  min-width: 26px; height: 24px; padding: 0 6px; border-radius: 5px;
+  border: 1.5px solid var(--border); background: var(--card);
+  color: var(--text-muted); font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all var(--transition); font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.chip:hover { border-color: var(--text-muted); color: var(--text-secondary); }
+.chip.on { background: var(--danger); border-color: var(--danger); color: #fff; }
+.chip.on:hover { filter: brightness(.92); color: #fff; }
+.chip.none { border-style: dashed; }
+
+.tpl-add {
+  width: 100%; margin-top: 8px; padding: 8px; border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--border); background: transparent;
+  color: var(--text-secondary); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all var(--transition); font-family: inherit;
+}
+.tpl-add:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+.tpl-hint {
+  font-size: 11px; color: var(--text-muted); line-height: 1.7;
+  margin-top: 14px; padding: 10px 12px;
+  background: var(--cell-wd); border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.tpl-hint strong { color: var(--text-secondary); }
+.tpl-warn {
+  font-size: 11px; font-weight: 600; color: var(--status-error-text);
+  background: var(--danger-light); border: 1px solid var(--danger);
+  border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 12px;
+}
+
 /* ── Scrollbar ──────────────────────────── */
 ::-webkit-scrollbar { width:5px; height:5px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -659,6 +827,7 @@ textarea#sidInput:focus {
         <button data-week="even" onclick="switchWeek('even')">双周</button>
       </div>
       <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="openTemplateEditor()">值班模板</button>
         <button class="btn btn-outline btn-sm" onclick="openGuide()">使用指南</button>
         <button class="btn btn-outline btn-sm" onclick="resetSchedule()">重置排班</button>
       </div>
@@ -750,7 +919,10 @@ textarea#sidInput:focus {
         <p><strong>2. 开始排班</strong>：点击「开始排班」，系统自动获取课表并智能分配值班。</p>
         <p><strong>3. 查看/调整</strong>：右侧表格展示排班结果，可<strong>拖拽</strong>学生标签到其他班次调整。</p>
         <p><strong>4. 课表管理</strong>：点击学生姓名查看课表，可<strong>忽略</strong>特定课程后重新排班。</p>
-        <p><strong>5. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON。</p>
+        <p><strong>5. 值班模板</strong>：点击右上角「值班模板」可自定义每个班次的<strong>值班时间、值班人数、单双周</strong>，
+          自由<strong>添加/删除/排序</strong>班次，并单独设置与该时段<strong>冲突的课程节次</strong>。
+          模板会自动保存在浏览器中，也可导出为文件分享给他人。</p>
+        <p><strong>6. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON（含值班模板）。</p>
         <!-- <hr style="border-color:var(--border);margin:12px 0;"> -->
         <p style="font-size:12px;color:var(--text-muted);">
           <strong>提示</strong>：含"实训""实习""课程设计"等关键词的课程会被自动忽略。<br>
@@ -761,6 +933,27 @@ textarea#sidInput:focus {
     </div>
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="closeGuide()">我明白了！</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 值班模板编辑弹窗 ===== -->
+<div class="modal-overlay" id="templateModal">
+  <div class="modal template-modal">
+    <div class="modal-header">
+      <h3>值班时间模板</h3>
+      <button class="close-btn" onclick="closeTemplateEditor()">×</button>
+    </div>
+    <div class="tpl-body" id="tplBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="exportTemplateFile()" title="导出为独立的模板 JSON 文件">导出模板</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('tplFileInput').click()" title="从模板 JSON 文件导入">导入模板</button>
+      <button class="btn btn-outline btn-sm" onclick="resetTemplateToDefault()">恢复默认</button>
+      <input type="file" id="tplFileInput" accept=".json" style="display:none" onchange="handleTemplateFileImport(event)">
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="btn btn-outline" onclick="closeTemplateEditor()">取消</button>
+        <button class="btn btn-primary" onclick="saveTemplateEditor()">保存并应用</button>
+      </div>
     </div>
   </div>
 </div>
@@ -783,30 +976,226 @@ const CONFIG = {
     7: { start: '16:15', end: '17:00' },
     8: { start: '17:10', end: '17:55' },
     9: { start: '19:00', end: '19:45' },
-    10: { start: '19:55', end: '20:40' }
+    10: { start: '19:55', end: '20:40' },
+    11: { start: '20:50', end: '21:35' },
+    12: { start: '21:45', end: '22:30' }
   },
-  shifts: {
-    weekday: [
-      { id: 'wd0', label: '早班', time: '10:00-12:05', capacity: 2, conflictPeriods: [3, 4] },
-      { id: 'wd1', label: '午班①', time: '12:05-13:45', capacity: 3, conflictPeriods: [] },
-      { id: 'wd2', label: '午班②', time: '13:45-15:50', capacity: 2, conflictPeriods: [5, 6] },
-      { id: 'wd3', label: '下午班', time: '15:50-18:00', capacity: 2, conflictPeriods: [7, 8] },
-      { id: 'wd4', label: '晚班①', time: '18:00-19:45', capacity: 2, conflictPeriods: [9] },
-      { id: 'wd5', label: '晚班②', time: '19:45-21:35', capacity: 1, conflictPeriods: [10] }
-    ],
-    weekend: [
-      { id: 'we0', label: '早班', time: '10:00-12:00', capacity: 2, conflictPeriods: [3, 4] },
-      { id: 'we1', label: '午班①', time: '12:00-14:00', capacity: 2, conflictPeriods: [] },
-      { id: 'we2', label: '午班②', time: '14:00-16:00', capacity: 2, conflictPeriods: [5, 6] },
-      { id: 'we3', label: '下午班', time: '16:00-18:00', capacity: 1, conflictPeriods: [7, 8] }
-    ]
-  },
+  maxPeriods: 12,          // 可用于冲突设置的课程节次上限
   dayNames: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
   weekdays: [0, 1, 2, 3, 4],  // 周一到周五的索引
   weekendDays: [5, 6],          // 周六周日的索引
+  maxWeeklyShifts: 3,           // 每人每周最多值班班次数
   // 忽略的课程名称关键词（整周实训/实习类课程不计入冲突）
   ignoreCourseKeywords: ['实训', '实习','实践', '课程设计', '毕业设计']
 };
+
+// 班次分组：工作日与周末各自独立维护班次列表（时间、人数、数量都可不同）
+const DAY_GROUPS = [
+  { key: 'weekday', name: '周一至周五', days: [0, 1, 2, 3, 4], weekend: false },
+  { key: 'weekend', name: '周六至周日', days: [5, 6],          weekend: true  }
+];
+
+const TEMPLATE_STORAGE_KEY = 'shift_duty_template_v1';
+const WEEK_LABELS = { all: '每周', odd: '单周', even: '双周' };
+
+// ============================================================
+//  时间工具
+// ============================================================
+function timeToMinutes(t) {
+  const parts = String(t == null ? '' : t).split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  if (isNaN(h) || isNaN(m)) return NaN;
+  return h * 60 + m;
+}
+
+function minutesToTime(mins) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
+// 校验 HH:MM 格式（允许 8:00 与 08:00）
+function isValidTime(t) {
+  const s = String(t == null ? '' : t).trim();
+  const m = /^(\d{1,2}):(\d{2})$/.exec(s);
+  if (!m) return false;
+  const h = parseInt(m[1], 10);
+  const mi = parseInt(m[2], 10);
+  return h >= 0 && h < 24 && mi >= 0 && mi < 60;   // 分必须 < 60，避免 "8:60" 被接受
+}
+
+/**
+ * 根据值班起止时间推导与之冲突的课程节次。
+ * 判定规则：课程节次的时间区间与值班时段区间存在重叠即视为冲突。
+ * 这正是原实现手工硬编码 conflictPeriods 的规律（已验证 10 个班次中 9 个完全一致），
+ * 第 10 个（晚班② 19:45-21:35 漏配了第 11 节）属于原配置的疏漏，此处可自动纠正。
+ */
+function deriveConflictPeriods(start, end) {
+  const s = timeToMinutes(start);
+  const e = timeToMinutes(end);
+  if (isNaN(s) || isNaN(e) || e <= s) return [];
+  const out = [];
+  for (let p = 1; p <= CONFIG.maxPeriods; p++) {
+    const ct = CONFIG.courseTimes[p];
+    if (!ct) continue;
+    const cs = timeToMinutes(ct.start);
+    const ce = timeToMinutes(ct.end);
+    if (cs < e && s < ce) out.push(p);   // 半开区间比较，首尾相接不算冲突
+  }
+  return out;
+}
+
+// ============================================================
+//  值班模板（可编辑的班次定义）
+// ============================================================
+let _shiftSeq = 0;
+function newShiftId(prefix) {
+  _shiftSeq++;
+  return `${prefix}${Date.now().toString(36)}${_shiftSeq.toString(36)}`;
+}
+
+/**
+ * 清洗外部导入的班次 id。
+ * 班次键格式为 weekType_dayIdx_shiftId，下划线是分隔符，
+ * 因此 id 内不能含有下划线（否则 parseShiftKey 无法定位 shiftId，排班数据会被静默丢弃）。
+ * 被改写过的 id 会记录到 _idRemap，供导入时同步迁移已有的排班键。
+ */
+let _idRemap = {};
+function sanitizeShiftId(raw, prefix) {
+  const original = String(raw == null ? '' : raw).trim();
+  const cleaned = original.replace(/[^A-Za-z0-9\u4e00-\u9fff-]/g, '');
+  const finalId = cleaned || newShiftId(prefix);
+  if (original && original !== finalId) _idRemap[original] = finalId;
+  return finalId;
+}
+
+/** 按 id 改写规则迁移排班键（weekType_dayIdx_oldId → weekType_dayIdx_newId） */
+function remapAssignmentIds(remap) {
+  const entries = Object.entries(remap || {});
+  if (entries.length === 0) return 0;
+  let moved = 0;
+  for (const weekType of ['odd', 'even']) {
+    const bucket = state.assignments[weekType] || {};
+    for (const [oldId, newId] of entries) {
+      for (const key of Object.keys(bucket)) {
+        const info = parseShiftKey(key);
+        if (!info || info.shiftId !== oldId) continue;
+        const nextKey = generateShiftKey(info.weekType, info.dayIdx, newId);
+        if (bucket[nextKey]) {
+          // 目标已存在则合并去重
+          bucket[nextKey] = [...new Set([...bucket[nextKey], ...bucket[key]])];
+          delete bucket[key];
+        } else {
+          bucket[nextKey] = bucket[key];
+          delete bucket[key];
+        }
+        moved++;
+      }
+    }
+  }
+  return moved;
+}
+
+function makeShift(id, label, start, end, capacity, weeks, periods) {
+  return {
+    id,
+    label,
+    start,
+    end,
+    capacity,
+    weeks: weeks || 'all',                       // all=每周 | odd=单周 | even=双周
+    conflictPeriods: periods || deriveConflictPeriods(start, end),
+    autoConflict: periods === undefined,         // true=随值班时间自动推导，false=用户手工指定
+    enabled: true
+  };
+}
+
+/** 内置默认模板 —— 与历史硬编码配置保持一致 */
+function makeDefaultTemplate() {
+  return {
+    version: 1,
+    name: '默认模板',
+    groups: {
+      weekday: [
+        makeShift('wd0', '早班',   '10:00', '12:05', 2, 'all'),
+        makeShift('wd1', '午班①', '12:05', '13:45', 3, 'all'),
+        makeShift('wd2', '午班②', '13:45', '15:50', 2, 'all'),
+        makeShift('wd3', '下午班', '15:50', '18:00', 2, 'all'),
+        makeShift('wd4', '晚班①', '18:00', '19:45', 2, 'all'),
+        makeShift('wd5', '晚班②', '19:45', '21:35', 1, 'all')
+      ],
+      weekend: [
+        makeShift('we0', '早班',   '10:00', '12:00', 2, 'all'),
+        makeShift('we1', '午班①', '12:00', '14:00', 2, 'all'),
+        makeShift('we2', '午班②', '14:00', '16:00', 2, 'all'),
+        makeShift('we3', '下午班', '16:00', '18:00', 1, 'all')
+      ]
+    }
+  };
+}
+
+/**
+ * 规范化模板对象：补齐缺省字段、丢弃非法项、按开始时间排序。
+ * 同时兼容历史格式（{weekday:[{id,label,time,capacity,conflictPeriods}]}，time 为 "10:00-12:05" 字符串）。
+ */
+function normalizeTemplate(raw) {
+  const def = makeDefaultTemplate();
+  if (!raw || typeof raw !== 'object') return def;
+
+  _idRemap = {};
+  const out = { version: 1, name: (typeof raw.name === 'string' && raw.name.trim()) || '自定义模板', groups: {} };
+  const srcGroups = raw.groups && typeof raw.groups === 'object' ? raw.groups : raw;
+
+  for (const g of DAY_GROUPS) {
+    const list = Array.isArray(srcGroups[g.key]) ? srcGroups[g.key] : null;
+    if (!list) { out.groups[g.key] = def.groups[g.key].map(s => ({ ...s })); continue; }
+
+    const seen = new Set();
+    const shifts = [];
+    for (const item of list) {
+      if (!item || typeof item !== 'object') continue;
+
+      // 兼容历史 "time": "10:00-12:05" 写法
+      let start = item.start, end = item.end;
+      if ((!start || !end) && typeof item.time === 'string' && item.time.includes('-')) {
+        const seg = item.time.split('-');
+        start = (seg[0] || '').trim();
+        end = (seg[1] || '').trim();
+      }
+      if (!isValidTime(start) || !isValidTime(end)) continue;
+      if (timeToMinutes(end) <= timeToMinutes(start)) continue;
+
+      let id = sanitizeShiftId(item.id, g.weekend ? 'we' : 'wd');
+      if (seen.has(id)) id = newShiftId(g.weekend ? 'we' : 'wd');
+      seen.add(id);
+
+      const capacity = parseInt(item.capacity, 10);
+      const weeks = ['all', 'odd', 'even'].includes(item.weeks) ? item.weeks : 'all';
+      const autoConflict = item.autoConflict !== false;
+      const periods = autoConflict
+        ? deriveConflictPeriods(start, end)
+        : (Array.isArray(item.conflictPeriods) ? item.conflictPeriods.map(Number).filter(p => p >= 1 && p <= CONFIG.maxPeriods) : []);
+
+      shifts.push({
+        id,
+        label: (typeof item.label === 'string' && item.label.trim()) || '班次',
+        start, end,
+        capacity: (isNaN(capacity) || capacity < 1) ? 1 : Math.min(capacity, 99),
+        weeks,
+        conflictPeriods: [...new Set(periods)].sort((a, b) => a - b),
+        autoConflict,
+        enabled: item.enabled !== false
+      });
+    }
+    out.groups[g.key] = sortShifts(shifts);
+  }
+  return out;
+}
+
+function sortShifts(list) {
+  return [...list].sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+}
 
 // ============================================================
 //  状态
@@ -816,14 +1205,78 @@ const state = {
   currentWeek: 'odd',     // 'odd' | 'even'
   currentView: 'duty',    // 'duty' | 'free'
   assignments: {
-    odd: {},   // { shiftId: [sid, sid, ...] }
-    even: {}   // { shiftId: [sid, sid, ...] }
+    odd: {},   // { shiftKey: [sid, sid, ...] }
+    even: {}
   },
+  template: makeDefaultTemplate(),   // 当前生效的值班时间模板
+  tplDraft: null,                    // 模板编辑弹窗中的草稿
   isScheduling: false,
   studentNames: {},       // 学号 -> 姓名映射（缓存）
   ignoredCourses: {},     // { sid: Set of course_num } 被忽略的课程
   currentCourseModalSid: null  // 当前打开课表弹窗的学生学号
 };
+
+// ============================================================
+//  模板读写 + 持久化
+// ============================================================
+function getGroupKeyByDay(dayIdx) {
+  return dayIdx >= 5 ? 'weekend' : 'weekday';
+}
+
+function getGroup(dayIdx) {
+  const key = getGroupKeyByDay(dayIdx);
+  return DAY_GROUPS.find(g => g.key === key);
+}
+
+/** 取某一天可用的班次（已启用，按开始时间排序） */
+function getShiftsForDay(dayIdx, tpl) {
+  const t = tpl || state.template;
+  const key = getGroupKeyByDay(dayIdx);
+  const list = (t.groups && t.groups[key]) || [];
+  return list.filter(s => s.enabled);
+}
+
+/** 按 id 取班次定义 */
+function getShiftById(dayIdx, shiftId, tpl) {
+  const t = tpl || state.template;
+  const key = getGroupKeyByDay(dayIdx);
+  const list = (t.groups && t.groups[key]) || [];
+  return list.find(s => s.id === shiftId) || null;
+}
+
+/** 该班次在指定单双周是否生效 */
+function shiftAppliesToWeek(shift, weekType) {
+  if (!shift) return false;
+  return shift.weeks === 'all' || shift.weeks === weekType;
+}
+
+function loadTemplate() {
+  try {
+    const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+    if (saved) {
+      state.template = normalizeTemplate(JSON.parse(saved));
+      return;
+    }
+  } catch (e) { /* 忽略损坏的本地数据 */ }
+  state.template = makeDefaultTemplate();
+}
+
+function persistTemplate() {
+  try {
+    localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(state.template));
+  } catch (e) {}
+}
+
+/** 模板摘要，用于提示 */
+function describeTemplate(tpl) {
+  const t = tpl || state.template;
+  const parts = DAY_GROUPS.map(g => {
+    const list = (t.groups[g.key] || []).filter(s => s.enabled);
+    const total = list.reduce((sum, s) => sum + s.capacity, 0);
+    return `${g.name} ${list.length} 个班次 / 每日 ${total} 人次`;
+  });
+  return parts.join('；');
+}
 
 // 从 localStorage 恢复忽略课程
 function loadIgnoredCourses() {
@@ -1279,33 +1732,88 @@ function hasConflict(courses, weekday, shiftConflictPeriods, weekType) {
   return false;
 }
 
-function getAvailableShifts(courses, weekday, weekType) {
-  const isWeekend = weekday >= 6;
-  const shiftList = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-
-  return shiftList.filter(shift => {
-    return !hasConflict(courses, weekday, shift.conflictPeriods, weekType);
+function getAvailableShifts(courses, dayIdx, weekType) {
+  return getShiftsForDay(dayIdx).filter(shift => {
+    if (!shiftAppliesToWeek(shift, weekType)) return false;
+    return !hasConflict(courses, dayIdx + 1, shift.conflictPeriods, weekType);
   });
+}
+
+// ============================================================
+//  班次键（按稳定 id 生成，模板增删改班次不会错位）
+// ============================================================
+// key format: 'odd_d0_wd0' —— weekType _ dayIdx _ shiftId
+function generateShiftKey(weekType, dayIdx, shiftId) {
+  return `${weekType}_d${dayIdx}_${shiftId}`;
+}
+
+function parseShiftKey(key) {
+  if (typeof key !== 'string') return null;
+  const i1 = key.indexOf('_');
+  if (i1 < 0) return null;
+  const i2 = key.indexOf('_', i1 + 1);
+  if (i2 < 0) return null;
+
+  const weekType = key.slice(0, i1);
+  if (weekType !== 'odd' && weekType !== 'even') return null;
+
+  const dayPart = key.slice(i1 + 1, i2);
+  if (!/^d\d+$/.test(dayPart)) return null;
+  const dayIdx = parseInt(dayPart.slice(1), 10);
+  if (!(dayIdx >= 0 && dayIdx <= 6)) return null;
+
+  const shiftId = key.slice(i2 + 1);
+  if (!shiftId || shiftId.includes('_')) return null;
+
+  return { weekType, dayIdx, shiftId };
+}
+
+/** 解析班次键并取出班次定义（失效的键返回 null） */
+function resolveShift(key, tpl) {
+  const parts = parseShiftKey(key);
+  if (!parts) return null;
+  const t = tpl || state.template;
+  const shift = getShiftById(parts.dayIdx, parts.shiftId, t);
+  if (!shift) return null;
+  return { ...parts, shift };
+}
+
+/** 移除模板中已不存在的排班数据，并同步班次容量变化 */
+function pruneInvalidAssignments(tpl) {
+  const t = tpl || state.template;
+  const dropped = [];
+  for (const weekType of ['odd', 'even']) {
+    const bucket = state.assignments[weekType] || {};
+    for (const key of Object.keys(bucket)) {
+      const info = resolveShift(key, t);
+      // 班次被删除、或该班次在属于本单双周时不生效，则丢弃
+      if (!info || !shiftAppliesToWeek(info.shift, weekType)) {
+        dropped.push(key);
+        delete bucket[key];
+      }
+    }
+    // 为新模板中新增的班次建立空槽位
+    for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+      for (const shift of getShiftsForDay(dayIdx, t)) {
+        if (!shiftAppliesToWeek(shift, weekType)) continue;
+        const key = generateShiftKey(weekType, dayIdx, shift.id);
+        if (!Array.isArray(bucket[key])) bucket[key] = [];
+      }
+    }
+  }
+  return dropped;
 }
 
 // ============================================================
 //  排班算法
 // ============================================================
-function generateShiftKey(weekType, dayIdx, shiftIdx) {
-  const isWeekend = dayIdx >= 5;
-  const prefix = isWeekend ? 'we' : 'wd';
-  return `${weekType}_d${dayIdx}_${prefix}${shiftIdx}`;
-}
-
 function initAssignments() {
   state.assignments = { odd: {}, even: {} };
   for (const weekType of ['odd', 'even']) {
     for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
-      const isWeekend = dayIdx >= 5;
-      const shifts = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-      for (let si = 0; si < shifts.length; si++) {
-        const key = generateShiftKey(weekType, dayIdx, si);
-        state.assignments[weekType][key] = [];
+      for (const shift of getShiftsForDay(dayIdx)) {
+        if (!shiftAppliesToWeek(shift, weekType)) continue;
+        state.assignments[weekType][generateShiftKey(weekType, dayIdx, shift.id)] = [];
       }
     }
   }
@@ -1345,20 +1853,19 @@ async function runSchedule() {
     // 收集该周类型下所有班次，按难度排序
     const allShifts = [];
     for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
-      const isWeekend = dayIdx >= 5;
-      const shifts = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-      for (let si = 0; si < shifts.length; si++) {
+      for (const shift of getShiftsForDay(dayIdx)) {
+        if (!shiftAppliesToWeek(shift, weekType)) continue;
         allShifts.push({
-          dayIdx, si, shift: shifts[si],
-          difficulty: shifts[si].conflictPeriods.length
+          dayIdx, shift,
+          difficulty: shift.conflictPeriods.length
         });
       }
     }
     // 冲突多的班次优先安排（最难安排的先处理，避免最后无人可选）
     allShifts.sort((a, b) => b.difficulty - a.difficulty);
 
-    for (const { dayIdx, si, shift } of allShifts) {
-      const key = generateShiftKey(weekType, dayIdx, si);
+    for (const { dayIdx, shift } of allShifts) {
+      const key = generateShiftKey(weekType, dayIdx, shift.id);
       const weekday = dayIdx + 1;
 
       // 找出该时段有空的候选人
@@ -1370,13 +1877,13 @@ async function runSchedule() {
         // 检查课程冲突
         if (hasConflict(student.courses, weekday, shift.conflictPeriods, weekType)) continue;
 
-        // 每周最多3班
-        if (studentLoad[sid] >= 3) continue;
+        // 每周最多 N 班
+        if (studentLoad[sid] >= CONFIG.maxWeeklyShifts) continue;
 
         candidates.push(sid);
       }
 
-      if (candidates.length === 0) continue;
+      if (candidates.length === 0) { state.assignments[weekType][key] = []; continue; }
 
       // 排班少的同学优先，从前70%中随机选（兼顾公平与随机性）
       // 严格按负载排序，选负载最低的
@@ -1405,12 +1912,10 @@ async function runSchedule() {
       for (const key in state.assignments[weekType]) {
         const slot = state.assignments[weekType][key];
         if (slot.length === 0) continue;
-        const parts = parseShiftKey(key);
-        if (!parts) continue;
-        const { dayIdx, shiftIdx } = parts;
-        const isWeekend = dayIdx >= 5;
-        const shifts = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-        const shift = shifts[shiftIdx];
+        const info = resolveShift(key);
+        if (!info) continue;
+        const { dayIdx, shift } = info;
+        if (!shiftAppliesToWeek(shift, weekType)) continue;
         const weekday = dayIdx + 1;
 
         const toReplace = slot.find(sid => overloaded.includes(sid));
@@ -1481,6 +1986,63 @@ function shuffleArray(arr) {
 // ============================================================
 //  渲染值班表
 // ============================================================
+/**
+ * 构建排班网格的公共骨架。
+ * 工作日与周末各自独立成段：段内行数 = 该组班次数，因此两组的班次数量、时间可以完全不同。
+ * 返回 { html, hasAny }，单元格由 buildCell 回调生成。
+ */
+function buildGridSkeleton(weekType, buildCell) {
+  let html = '<div class="schedule-grid" style="grid-template-columns:88px repeat(7,1fr);">';
+  html += '<div class="time-label" style="background:var(--primary);color:white;font-weight:600;">时间段</div>';
+  for (let d = 0; d < 7; d++) {
+    html += `<div class="day-header${d >= 5 ? ' weekend-header' : ''}">${CONFIG.dayNames[d]}</div>`;
+  }
+
+  let hasAny = false;
+
+  for (const group of DAY_GROUPS) {
+    const activeShifts = (state.template.groups[group.key] || [])
+      .filter(s => s.enabled && shiftAppliesToWeek(s, weekType));
+
+    html += `<div class="section-row${group.weekend ? ' weekend' : ''}">${group.name}` +
+            `<span class="count">${activeShifts.length} 个班次 · 每日 ${activeShifts.reduce((n, s) => n + s.capacity, 0)} 人次</span></div>`;
+
+    if (activeShifts.length === 0) {
+      html += `<div class="sched-empty" style="grid-column:1/-1;">该分组在${weekType === 'odd' ? '单' : '双'}周无生效班次，请点击右上角「值班模板」添加。</div>`;
+      continue;
+    }
+
+    hasAny = true;
+    for (const shift of activeShifts) {
+      html += '<div class="time-label">';
+      html += `<strong>${escapeHtml(shift.label)}</strong><span>${shift.start}-${shift.end}</span>`;
+      if (shift.weeks !== 'all') {
+        html += `<span class="shift-weeks${shift.weeks === 'even' ? ' even' : ''}">${WEEK_LABELS[shift.weeks]}</span>`;
+      }
+      html += `<span class="shift-cap">${shift.capacity}人</span>`;
+      html += '</div>';
+
+      for (let d = 0; d < 7; d++) {
+        const inGroup = group.days.includes(d);
+        if (!inGroup) {
+          html += '<div class="shift-cell void"></div>';
+          continue;
+        }
+        html += buildCell(weekType, d, shift, group);
+      }
+    }
+  }
+
+  html += '</div>';
+  return { html, hasAny };
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
 function renderSchedule() {
   const container = document.getElementById('scheduleContainer');
   const emptyState = document.getElementById('emptyState');
@@ -1500,40 +2062,20 @@ function renderSchedule() {
   const weekType = state.currentWeek;
   const assignments = state.assignments[weekType];
 
-  let html = '<div class="schedule-grid" style="grid-template-columns:80px repeat(7,1fr);">';
-
-  html += '<div class="time-label" style="background:var(--primary);color:white;font-weight:600;">时间段</div>';
-  for (let d = 0; d < 7; d++) {
-    html += `<div class="day-header${d >= 5 ? ' weekend-header' : ''}">${CONFIG.dayNames[d]}</div>`;
-  }
-
-  const maxRows = Math.max(CONFIG.shifts.weekday.length, CONFIG.shifts.weekend.length);
-  for (let si = 0; si < maxRows; si++) {
-    const wd = CONFIG.shifts.weekday[si];
-    const we = CONFIG.shifts.weekend[si];
-    html += `<div class="time-label">`;
-    if (wd) html += `<strong>${wd.label}</strong><span>${wd.time}</span>`;
-    if (we && (wd ? wd.time !== we.time : true)) html += `<span style="color:var(--danger);font-size:10px;text-align:center;">${we.label}<br>${we.time}</span>`;
-    html += '</div>';
-
-    for (let d = 0; d < 7; d++) {
-      const isWe = d >= 5;
-      const shift = isWe ? CONFIG.shifts.weekend[si] : CONFIG.shifts.weekday[si];
-      if (!shift) { html += '<div class="shift-cell" style="background:var(--border);opacity:.3;"></div>'; continue; }
-      const key = generateShiftKey(weekType, d, si);
-      const assigned = assignments[key] || [];
-      const isOverflow = assigned.length > shift.capacity;
-      html += `<div class="shift-cell ${isWe ? 'weekend-cell' : 'weekday-cell'}${isOverflow ? ' warn' : ''}" data-key="${key}"${isOverflow ? ` title="超员：${assigned.length}/${shift.capacity}"` : ''} ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave(event)">`;
-      html += `<span class="capacity${isOverflow ? ' full' : ''}">${assigned.length}/${shift.capacity}</span>`;
-      for (const sid of assigned) {
-        const st = state.students.find(s => s.sid === sid);
-        const nm = st ? st.name : `同学${sid.slice(-4)}`;
-        html += `<span class="student-tag" draggable="true" data-sid="${sid}" data-key="${key}" ondragstart="onDragStart(event)" ondragend="onDragEnd(event)" onclick="showStudentCourse('${sid}')" onmouseenter="highlightStudent('${sid}', true)" onmouseleave="highlightStudent('${sid}', false)" title="${sid}">${nm}<span class="remove-btn" onclick="event.stopPropagation();removeFromShift('${key}','${sid}')">×</span></span>`;
-      }
-      html += '</div>';
+  const { html } = buildGridSkeleton(weekType, (wt, d, shift) => {
+    const key = generateShiftKey(wt, d, shift.id);
+    const assigned = assignments[key] || [];
+    const isOverflow = assigned.length > shift.capacity;
+    let cell = `<div class="shift-cell ${d >= 5 ? 'weekend-cell' : 'weekday-cell'}${isOverflow ? ' warn' : ''}" data-key="${key}"${isOverflow ? ` title="超员：${assigned.length}/${shift.capacity}"` : ''} ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave(event)">`;
+    cell += `<span class="capacity${isOverflow ? ' full' : ''}">${assigned.length}/${shift.capacity}</span>`;
+    for (const sid of assigned) {
+      const st = state.students.find(s => s.sid === sid);
+      const nm = escapeHtml(st ? st.name : `同学${sid.slice(-4)}`);
+      cell += `<span class="student-tag" draggable="true" data-sid="${sid}" data-key="${key}" ondragstart="onDragStart(event)" ondragend="onDragEnd(event)" onclick="showStudentCourse('${sid}')" onmouseenter="highlightStudent('${sid}', true)" onmouseleave="highlightStudent('${sid}', false)" title="${sid}">${nm}<span class="remove-btn" onclick="event.stopPropagation();removeFromShift('${key}','${sid}')">×</span></span>`;
     }
-  }
-  html += '</div>';
+    return cell + '</div>';
+  });
+
   container.innerHTML = html;
   // 后台同步更新空课表
   if (state.students.some(s => s.status === 'ready')) {
@@ -1577,49 +2119,29 @@ function renderFreeSchedule() {
 
   const weekType = state.currentWeek;
 
-  let html = '';
-  html += '<div class="schedule-grid" style="grid-template-columns:80px repeat(7,1fr);">';
-  html += '<div class="time-label" style="background:var(--primary);color:white;font-weight:600;">时间段</div>';
-  for (let d = 0; d < 7; d++) {
-    html += `<div class="day-header${d >= 5 ? ' weekend-header' : ''}">${CONFIG.dayNames[d]}</div>`;
-  }
-
-  const maxRows = Math.max(CONFIG.shifts.weekday.length, CONFIG.shifts.weekend.length);
-  for (let si = 0; si < maxRows; si++) {
-    const wdShift = CONFIG.shifts.weekday[si];
-    const weShift = CONFIG.shifts.weekend[si];
-    html += '<div class="time-label">';
-    if (wdShift) html += `<strong>${wdShift.label}</strong><span>${wdShift.time}</span>`;
-    if (weShift && (!wdShift || wdShift.time !== weShift.time)) html += `<span style="color:var(--danger);font-size:10px;text-align:center;">${weShift.label}<br>${weShift.time}</span>`;
-    html += '</div>';
-
-    for (let d = 0; d < 7; d++) {
-      const isWe = d >= 5;
-      const shift = isWe ? CONFIG.shifts.weekend[si] : CONFIG.shifts.weekday[si];
-      if (!shift) { html += '<div class="shift-cell" style="background:var(--border);opacity:.3;"></div>'; continue; }
-      const key = generateShiftKey(weekType, d, si);
-      const weekday = d + 1;
-      const freeStudents = readyStudents.filter(s => {
-        if (!s.courses) return true;
-        return !hasConflict(s.courses, weekday, shift.conflictPeriods, weekType);
-      });
-      const names = freeStudents.map(s => s.name).join('、');
-      const cls = isWe ? 'weekend-cell' : 'weekday-cell';
-      html += `<div class="shift-cell ${cls}" data-key="${key}" style="font-size:11px;padding:4px 6px;">`;
-      if (freeStudents.length > 0) {
-        html += `<span style="color:var(--success);font-weight:600;font-size:10px;margin-bottom:2px;">${freeStudents.length}人</span>`;
-        if (freeStudents.length === readyStudents.length) {
-          html += '<span style="line-height:1.3;color:var(--success);">全员空闲</span>';
-        } else {
-          html += `<span style="line-height:1.3;">${names}</span>`;
-        }
+  const { html } = buildGridSkeleton(weekType, (wt, d, shift) => {
+    const key = generateShiftKey(wt, d, shift.id);
+    const weekday = d + 1;
+    const freeStudents = readyStudents.filter(s => {
+      if (!s.courses) return true;
+      return !hasConflict(s.courses, weekday, shift.conflictPeriods, wt);
+    });
+    const names = freeStudents.map(s => escapeHtml(s.name)).join('、');
+    const cls = d >= 5 ? 'weekend-cell' : 'weekday-cell';
+    let cell = `<div class="shift-cell ${cls}" data-key="${key}" style="font-size:11px;padding:4px 6px;">`;
+    if (freeStudents.length > 0) {
+      cell += `<span style="color:var(--success);font-weight:600;font-size:10px;margin-bottom:2px;">${freeStudents.length}人</span>`;
+      if (freeStudents.length === readyStudents.length) {
+        cell += '<span style="line-height:1.3;color:var(--success);">全员空闲</span>';
       } else {
-        html += '<span style="color:var(--text-muted);">—</span>';
+        cell += `<span style="line-height:1.3;">${names}</span>`;
       }
-      html += '</div>';
+    } else {
+      cell += '<span style="color:var(--text-muted);">—</span>';
     }
-  }
-  html += '</div>';
+    return cell + '</div>';
+  });
+
   freeContainer.innerHTML = html;
 }
 
@@ -1719,13 +2241,9 @@ function markAvailableCells(sid) {
   container.querySelectorAll('.shift-cell').forEach(cell => {
     const key = cell.dataset.key;
     if (!key) return;
-    const parts = parseShiftKey(key);
-    if (!parts) return;
-    const { dayIdx, shiftIdx } = parts;
-    const isWeekend = dayIdx >= 5;
-    const shifts = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-    const shift = shifts[shiftIdx];
-    if (!shift) return;
+    const info = resolveShift(key);
+    if (!info) return;
+    const { dayIdx, shift } = info;
     const conflict = hasConflict(student.courses, dayIdx + 1, shift.conflictPeriods, weekType);
     cell.classList.add(conflict ? 'drop-conflict' : 'drop-available');
   });
@@ -1796,16 +2314,12 @@ function onDrop(e) {
   }
 
   // 解析班次信息
-  const keyParts = parseShiftKey(toKey);
-  if (!keyParts) {
+  const info = resolveShift(toKey);
+  if (!info) {
     showToast('无法解析班次', 'error');
     return;
   }
-
-  const { dayIdx, shiftIdx } = keyParts;
-  const isWeekend = dayIdx >= 5;
-  const shifts = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-  const shift = shifts[shiftIdx];
+  const { dayIdx, shift } = info;
 
   // 检查该学生是否已在目标班次
   if (toAssignment.includes(sid)) {
@@ -1823,7 +2337,7 @@ function onDrop(e) {
   const student = state.students.find(s => s.sid === sid);
   if (student && student.courses) {
     const weekday = dayIdx + 1;
-    const conflictPeriods = shift ? shift.conflictPeriods : [];
+    const conflictPeriods = shift.conflictPeriods;
 
     if (hasConflict(student.courses, weekday, conflictPeriods, weekType)) {
       const conflictDetail = getConflictCourses(student, weekday, conflictPeriods, weekType);
@@ -1856,31 +2370,17 @@ function onDrop(e) {
   }
 }
 
-function parseShiftKey(key) {
-  // key format: 'odd_d0_wd0' or 'even_d5_we1'
-  const parts = key.split('_');
-  if (parts.length !== 3) return null;
-  const dayIdx = parseInt(parts[1].slice(1));
-  const shiftId = parts[2];
-  const prefix = shiftId.startsWith('we') ? 'we' : 'wd';
-  const shiftIdx = parseInt(shiftId.replace(prefix, ''));
-  return { weekType: parts[0], dayIdx, shiftIdx, prefix };
-}
-
 function getConflictDetail(sid, shiftKey) {
   const student = state.students.find(s => s.sid === sid);
   if (!student || !student.courses) return null;
 
-  const keyParts = parseShiftKey(shiftKey);
-  if (!keyParts) return null;
+  const info = resolveShift(shiftKey);
+  if (!info) return null;
+  const { dayIdx, shift } = info;
+  if (!shift.conflictPeriods || shift.conflictPeriods.length === 0) return null;
 
   const weekType = state.currentWeek;
-  const isWeekend = keyParts.dayIdx >= 5;
-  const shifts = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-  const shift = shifts[keyParts.shiftIdx];
-  if (!shift || !shift.conflictPeriods || shift.conflictPeriods.length === 0) return null;
-
-  const weekday = keyParts.dayIdx + 1;
+  const weekday = dayIdx + 1;
   const conflictingCourses = getConflictCourses(student, weekday, shift.conflictPeriods, weekType);
   if (conflictingCourses.length === 0) return null;
 
@@ -2222,13 +2722,10 @@ function highlightConflictsForStudent(sid) {
     const assignment = state.assignments[weekType] && state.assignments[weekType][key];
     if (!assignment || !assignment.includes(sid)) return;
 
-    const parts = parseShiftKey(key);
-    if (!parts) return;
-    const { dayIdx, shiftIdx } = parts;
-    const isWeekend = dayIdx >= 5;
-    const shifts = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-    const shift = shifts[shiftIdx];
-    if (!shift || !shift.conflictPeriods || shift.conflictPeriods.length === 0) return;
+    const info = resolveShift(key);
+    if (!info) return;
+    const { dayIdx, shift } = info;
+    if (!shift.conflictPeriods || shift.conflictPeriods.length === 0) return;
 
     if (hasConflict(student.courses, dayIdx + 1, shift.conflictPeriods, weekType)) {
       cell.classList.add('conflict-warn');
@@ -2262,13 +2759,10 @@ function highlightAllConflicts() {
     const assignment = state.assignments[weekType] && state.assignments[weekType][key];
     if (!assignment || assignment.length === 0) return;
 
-    const parts = parseShiftKey(key);
-    if (!parts) return;
-    const { dayIdx, shiftIdx } = parts;
-    const isWeekend = dayIdx >= 5;
-    const shifts = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-    const shift = shifts[shiftIdx];
-    if (!shift || !shift.conflictPeriods || shift.conflictPeriods.length === 0) return;
+    const info = resolveShift(key);
+    if (!info) return;
+    const { dayIdx, shift } = info;
+    if (!shift.conflictPeriods || shift.conflictPeriods.length === 0) return;
 
     // 收集该班次中有课程冲突的学生
     const conflicting = [];
@@ -2298,58 +2792,51 @@ function getStudentName(sid) {
   return s ? s.name : sid;
 }
 
+/**
+ * 生成一张值班/空课表的工作表数据。
+ * 由于工作日与周末的班次集合已独立，表内按分组分段输出：
+ *   第1行表头 → 「周一至周五」分段行 → 各班次行 → 「周六至周日」分段行 → 各班次行
+ */
+function buildSheetRows(weekType, cellText) {
+  const days = CONFIG.dayNames;
+  const rows = [['时间段', ...days, '人数']];
+  const merges = [];
+
+  for (const group of DAY_GROUPS) {
+    const activeShifts = (state.template.groups[group.key] || [])
+      .filter(s => s.enabled && shiftAppliesToWeek(s, weekType));
+
+    const sectionRow = rows.length;
+    rows.push([`${group.name}${activeShifts.length ? '' : '（本周无班次）'}`, '', '', '', '', '', '', '']);
+    merges.push({ s: { r: sectionRow, c: 0 }, e: { r: sectionRow, c: 7 } });
+
+    for (const shift of activeShifts) {
+      const timeLabel = `${shift.label} ${shift.start}-${shift.end}` +
+                        (shift.weeks !== 'all' ? `（${WEEK_LABELS[shift.weeks]}）` : '');
+      const row = [timeLabel];
+      for (let d = 0; d < 7; d++) {
+        row.push(group.days.includes(d) ? cellText(weekType, d, shift) : '');
+      }
+      row.push(shift.capacity);
+      rows.push(row);
+    }
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 26 }, ...days.map(() => ({ wch: 20 })), { wch: 6 }];
+  if (merges.length) ws['!merges'] = merges;
+  return ws;
+}
+
 function exportDutySchedule() {
   const wb = XLSX.utils.book_new();
 
   for (const weekType of ['odd', 'even']) {
     const sheetName = weekType === 'odd' ? '单周值班表' : '双周值班表';
-    const allShifts = [];
-    // 收集所有班次（工作日+周末）
-    for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
-      const isWeekend = dayIdx >= 5;
-      const shifts = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-      for (let si = 0; si < shifts.length; si++) {
-        const key = generateShiftKey(weekType, dayIdx, si);
-        const assigned = (state.assignments[weekType][key] || []).map(getStudentName).join('、');
-        allShifts.push({
-          day: CONFIG.dayNames[dayIdx],
-          time: shifts[si].time,
-          label: shifts[si].label,
-          capacity: shifts[si].capacity,
-          assigned
-        });
-      }
-    }
-
-    // 构建二维数组：表头 + 数据
-    const days = CONFIG.dayNames;
-    // 收集所有时间段
-    const timeSlots = [];
-    const seen = new Set();
-    for (const s of allShifts) {
-      if (!seen.has(s.time)) {
-        seen.add(s.time);
-        timeSlots.push({ time: s.time, label: s.label, capacity: s.capacity });
-      }
-    }
-
-    // 表头
-    const header = ['时间段', ...days];
-    const rows = [header];
-
-    // 每个时间段一行
-    for (const slot of timeSlots) {
-      const row = [`${slot.label} ${slot.time}`];
-      for (let d = 0; d < 7; d++) {
-        const entry = allShifts.find(s => s.day === days[d] && s.time === slot.time);
-        row.push(entry ? entry.assigned : '');
-      }
-      rows.push(row);
-    }
-
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    // 设置列宽
-    ws['!cols'] = [{ wch: 22 }, ...days.map(() => ({ wch: 18 }))];
+    const ws = buildSheetRows(weekType, (wt, d, shift) => {
+      const key = generateShiftKey(wt, d, shift.id);
+      return (state.assignments[wt][key] || []).map(getStudentName).join('、');
+    });
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
   }
 
@@ -2363,45 +2850,14 @@ function exportFreeSchedule() {
 
   for (const weekType of ['odd', 'even']) {
     const sheetName = weekType === 'odd' ? '单周空课表' : '双周空课表';
-    const allShifts = [];
-    for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
-      const isWeekend = dayIdx >= 5;
-      const shifts = isWeekend ? CONFIG.shifts.weekend : CONFIG.shifts.weekday;
-      for (let si = 0; si < shifts.length; si++) {
-        const weekday = dayIdx + 1;
-        const freeStudents = readyStudents.filter(s => {
-          if (!s.courses) return true;
-          return !hasConflict(s.courses, weekday, shifts[si].conflictPeriods, weekType);
-        });
-        allShifts.push({
-          day: CONFIG.dayNames[dayIdx],
-          time: shifts[si].time,
-          label: shifts[si].label,
-          names: freeStudents.map(s => s.name).join('、')
-        });
-      }
-    }
-
-    const days = CONFIG.dayNames;
-    const timeSlots = [];
-    const seen = new Set();
-    for (const s of allShifts) {
-      if (!seen.has(s.time)) { seen.add(s.time); timeSlots.push(s); }
-    }
-
-    const header = ['时间段', ...days];
-    const rows = [header];
-    for (const slot of timeSlots) {
-      const row = [`${slot.label} ${slot.time}`];
-      for (let d = 0; d < 7; d++) {
-        const entry = allShifts.find(s => s.day === days[d] && s.time === slot.time);
-        row.push(entry ? entry.names : '');
-      }
-      rows.push(row);
-    }
-
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{ wch: 22 }, ...days.map(() => ({ wch: 22 }))];
+    const ws = buildSheetRows(weekType, (wt, d, shift) => {
+      const weekday = d + 1;
+      const freeStudents = readyStudents.filter(s => {
+        if (!s.courses) return true;
+        return !hasConflict(s.courses, weekday, shift.conflictPeriods, wt);
+      });
+      return freeStudents.map(s => s.name).join('、');
+    });
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
   }
 
@@ -2414,8 +2870,9 @@ function exportFreeSchedule() {
 // ============================================================
 function exportData() {
   const data = {
-    version: 2,
+    version: 3,
     date: new Date().toISOString(),
+    template: state.template,
     students: state.students.map(s => {
       // 导出所有被忽略的课程ID（手动 + 自动）
       const allIgnored = s.courses
@@ -2437,7 +2894,7 @@ function exportData() {
   a.download = `排班数据_${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('数据已导出', 'success');
+  showToast('数据已导出（含值班模板）', 'success');
 }
 
 function importData() {
@@ -2488,8 +2945,18 @@ function handleImportFile(event) {
           }
         }
       });
+      // 恢复值班模板（若文件内没有则沿用当前模板）
+      if (data.template) {
+        state.template = normalizeTemplate(data.template);
+        persistTemplate();
+      }
       // 恢复排班
-      state.assignments = data.assignments;
+      state.assignments = data.assignments && typeof data.assignments === 'object'
+        ? data.assignments : { odd: {}, even: {} };
+      // 若模板 id 在规范化时被改名，同步迁移排班键，避免排班被误判为失效而清除
+      remapAssignmentIds(_idRemap);
+      pruneInvalidAssignments();
+
       saveIgnoredCourses();
       renderStudentList();
       refreshView();
@@ -2507,10 +2974,422 @@ function handleImportFile(event) {
 function downloadModalContent() {}
 
 // ============================================================
+//  值班模板编辑器
+// ============================================================
+function openTemplateEditor() {
+  // 深拷贝当前模板作为草稿，取消时不影响生效模板
+  state.tplDraft = JSON.parse(JSON.stringify(state.template));
+  renderTemplateEditor();
+  document.getElementById('templateModal').classList.add('show');
+}
+
+function closeTemplateEditor() {
+  state.tplDraft = null;
+  document.getElementById('templateModal').classList.remove('show');
+}
+
+function groupMeta(key) {
+  return DAY_GROUPS.find(g => g.key === key);
+}
+
+/** 草稿中某个分组的班次列表 */
+function draftList(groupKey) {
+  if (!state.tplDraft.groups[groupKey]) state.tplDraft.groups[groupKey] = [];
+  return state.tplDraft.groups[groupKey];
+}
+
+// ── 编辑动作（均以 groupKey + 下标定位，操作后整体重绘） ──
+function tplAddShift(groupKey) {
+  const list = draftList(groupKey);
+  const g = groupMeta(groupKey);
+  // 以最后一个班次的结束时间作为新班次起点，默认时长 2 小时
+  const last = sortShifts(list).slice(-1)[0];
+  let start = last ? timeToMinutes(last.end) : timeToMinutes(g.weekend ? '10:00' : '10:00');
+  if (isNaN(start)) start = 10 * 60;
+  let end = start + 120;
+  if (end > 22 * 60 + 30) { start = 19 * 60; end = 21 * 60; }
+  list.push(makeShift(
+    newShiftId(g.weekend ? 'we' : 'wd'),
+    `班次${list.length + 1}`,
+    minutesToTime(start), minutesToTime(end),
+    last ? last.capacity : 2, 'all'
+  ));
+  renderTemplateEditor();
+}
+
+function tplRemoveShift(groupKey, idx) {
+  const list = draftList(groupKey);
+  const shift = list[idx];
+  if (!shift) return;
+  const key = generateShiftKey(state.currentWeek, 0, shift.id);
+  const hasData = ['odd', 'even'].some(wt =>
+    Object.keys(state.assignments[wt] || {}).some(k => k.endsWith('_' + shift.id) && state.assignments[wt][k].length > 0)
+  );
+  const doRemove = () => {
+    list.splice(idx, 1);
+    renderTemplateEditor();
+    showToast(hasData ? '班次已删除，其排班数据将在保存后一并清除' : '班次已删除', 'info');
+  };
+  if (hasData) {
+    showConfirm('删除班次', `「${shift.label} ${shift.start}-${shift.end}」中已有排班记录，删除后这些排班将一并清除。确定继续吗？`, doRemove);
+  } else {
+    doRemove();
+  }
+}
+
+function tplMoveShift(groupKey, idx, dir) {
+  const list = draftList(groupKey);
+  const target = idx + dir;
+  if (target < 0 || target >= list.length) return;
+  const tmp = list[idx];
+  list[idx] = list[target];
+  list[target] = tmp;
+  renderTemplateEditor();
+}
+
+function tplDuplicateShift(groupKey, idx) {
+  const list = draftList(groupKey);
+  const src = list[idx];
+  if (!src) return;
+  const g = groupMeta(groupKey);
+  const copy = JSON.parse(JSON.stringify(src));
+  copy.id = newShiftId(g.weekend ? 'we' : 'wd');
+  copy.label = src.label + '(副本)';
+  list.splice(idx + 1, 0, copy);
+  renderTemplateEditor();
+}
+
+/** 字段更新：时间变更时若该班次仍处于自动模式，则同步重算冲突节次 */
+function tplUpdate(groupKey, idx, field, value) {
+  const list = draftList(groupKey);
+  const shift = list[idx];
+  if (!shift) return;
+
+  if (field === 'capacity') {
+    const n = parseInt(value, 10);
+    shift.capacity = (isNaN(n) || n < 1) ? 1 : Math.min(n, 99);
+  } else if (field === 'label') {
+    shift.label = value;
+  } else if (field === 'weeks') {
+    shift.weeks = value;
+  } else if (field === 'start' || field === 'end') {
+    shift[field] = value;
+    if (shift.autoConflict && isValidTime(shift.start) && isValidTime(shift.end)) {
+      shift.conflictPeriods = deriveConflictPeriods(shift.start, shift.end);
+    }
+  }
+  renderTemplateEditor();
+}
+
+function tplToggleEnabled(groupKey, idx) {
+  const shift = draftList(groupKey)[idx];
+  if (!shift) return;
+  shift.enabled = !shift.enabled;
+  renderTemplateEditor();
+}
+
+/** 手工勾选/取消一个冲突节次 → 该班次转为手工模式 */
+function tplTogglePeriod(groupKey, idx, period) {
+  const shift = draftList(groupKey)[idx];
+  if (!shift) return;
+  const autoPeriods = deriveConflictPeriods(shift.start, shift.end);
+  // 首次手工操作时，以当前自动推导结果为基础
+  const current = shift.autoConflict ? [...autoPeriods] : [...shift.conflictPeriods];
+
+  const i = current.indexOf(period);
+  if (i >= 0) current.splice(i, 1); else current.push(period);
+  current.sort((a, b) => a - b);
+
+  shift.conflictPeriods = current;
+  shift.autoConflict = false;
+  renderTemplateEditor();
+}
+
+/** 恢复为"随值班时间自动推导" */
+function tplRederivePeriods(groupKey, idx) {
+  const shift = draftList(groupKey)[idx];
+  if (!shift) return;
+  shift.conflictPeriods = deriveConflictPeriods(shift.start, shift.end);
+  shift.autoConflict = true;
+  renderTemplateEditor();
+}
+
+/** 批量把某分组的全部班次恢复为自动推导 */
+function tplRederiveAll(groupKey) {
+  for (const shift of draftList(groupKey)) {
+    shift.conflictPeriods = deriveConflictPeriods(shift.start, shift.end);
+    shift.autoConflict = true;
+  }
+  renderTemplateEditor();
+  showToast('已按值班时间重新推导冲突节次', 'info');
+}
+
+function tplCollapseGaps(groupKey) {
+  // 便捷工具：把当前分组的班次按时间顺序首尾相接，早班自动提前到 8:00
+  const list = sortShifts(draftList(groupKey).filter(s => s.enabled));
+  if (list.length === 0) { showToast('该分组暂无启用班次', 'error'); return; }
+  let cursor = 8 * 60;
+  for (const shift of list) {
+    const dur = Math.max(30, timeToMinutes(shift.end) - timeToMinutes(shift.start));
+    shift.start = minutesToTime(cursor);
+    shift.end = minutesToTime(cursor + dur);
+    cursor += dur;
+    if (shift.autoConflict) shift.conflictPeriods = deriveConflictPeriods(shift.start, shift.end);
+  }
+  renderTemplateEditor();
+  showToast('已将班次首尾相接（8:00 起）', 'info');
+}
+
+/** 草稿校验，返回错误信息数组 */
+function validateDraft() {
+  const errors = [];
+  if (!state.tplDraft.name || !String(state.tplDraft.name).trim()) {
+    errors.push('模板名称不能为空');
+  }
+  for (const g of DAY_GROUPS) {
+    const list = state.tplDraft.groups[g.key] || [];
+    const enabled = list.filter(s => s.enabled);
+    if (enabled.length === 0 && list.length > 0) {
+      errors.push(`${g.name}：所有班次都被停用，该分组将没有值班时段`);
+    }
+    for (const s of list) {
+      if (!isValidTime(s.start) || !isValidTime(s.end)) {
+        errors.push(`${g.name}「${s.label}」时间格式无效（应为 HH:MM）`);
+        continue;
+      }
+      if (timeToMinutes(s.end) <= timeToMinutes(s.start)) {
+        errors.push(`${g.name}「${s.label}」结束时间必须晚于开始时间`);
+      }
+      if (timeToMinutes(s.start) < 0 || timeToMinutes(s.end) > 23 * 60 + 59) {
+        errors.push(`${g.name}「${s.label}」时间超出 00:00-23:59`);
+      }
+    }
+    // 单双周覆盖检查：某一单双周下无任何生效班次
+    for (const wt of ['odd', 'even']) {
+      const usable = enabled.filter(s => shiftAppliesToWeek(s, wt));
+      if (enabled.length > 0 && usable.length === 0) {
+        errors.push(`${g.name}：${wt === 'odd' ? '单' : '双'}周没有任何生效班次`);
+      }
+    }
+  }
+  return [...new Set(errors)];
+}
+
+function saveTemplateEditor() {
+  const errors = validateDraft();
+  if (errors.length > 0) {
+    showToast(errors[0], 'error');
+    renderTemplateEditor(errors);
+    return;
+  }
+
+  const before = state.template;
+  const next = normalizeTemplate(state.tplDraft);
+  state.template = next;
+  persistTemplate();
+
+  const dropped = pruneInvalidAssignments(next);
+
+  state.tplDraft = null;
+  document.getElementById('templateModal').classList.remove('show');
+
+  renderStudentList();
+  refreshView();
+  updateButtons();
+
+  if (dropped.length > 0) {
+    showToast(`模板已保存，同时清除了 ${dropped.length} 处失效排班，请重新排班`, 'error');
+  } else {
+    showToast(`模板「${next.name}」已应用：${describeTemplate(next)}`, 'success');
+  }
+}
+
+function resetTemplateToDefault() {
+  showConfirm('恢复默认模板', '将丢弃当前模板的全部自定义设置，恢复为系统内置的默认值班时段。已排班的数据会在保存后按新模板清理。', () => {
+    state.tplDraft = makeDefaultTemplate();
+    renderTemplateEditor();
+    showToast('已载入默认模板，点击「保存并应用」生效', 'info');
+  });
+}
+
+// ── 模板文件导入导出 ──
+function exportTemplateFile() {
+  const src = state.tplDraft || state.template;
+  const blob = new Blob([JSON.stringify(src, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `值班模板_${(src.name || 'template').replace(/[\\/:*?"<>|]/g, '_')}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('模板已导出', 'success');
+}
+
+function handleTemplateFileImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = normalizeTemplate(JSON.parse(e.target.result));
+      state.tplDraft = parsed;
+      renderTemplateEditor();
+      showToast(`已载入模板「${parsed.name}」，点击「保存并应用」生效`, 'success');
+    } catch (err) {
+      showToast('模板文件解析失败', 'error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ── 模板编辑器渲染 ──
+function renderTemplateEditor(errors) {
+  const body = document.getElementById('tplBody');
+  const draft = state.tplDraft;
+  if (!draft) return;
+
+  const errs = errors || validateDraft();
+
+  let html = '';
+  if (errs.length > 0) {
+    html += `<div class="tpl-warn">⚠ ${errs.map(escapeHtml).join('<br>⚠ ')}</div>`;
+  }
+
+  html += `<div class="tpl-toolbar">
+    <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">模板名称</span>
+    <input class="tpl-name-input" value="${escapeHtml(draft.name)}"
+           oninput="state.tplDraft.name=this.value"
+           placeholder="例如：2025春季值班模板">
+    <div class="spacer"></div>
+    <span style="font-size:11px;color:var(--text-muted);">${escapeHtml(describeTemplate(normalizeTemplate(draft)))}</span>
+  </div>`;
+
+  html += '<div class="tpl-groups">';
+  for (const g of DAY_GROUPS) {
+    const list = draft.groups[g.key] || [];
+    const enabledCount = list.filter(s => s.enabled).length;
+    const totalCap = list.filter(s => s.enabled).reduce((n, s) => n + s.capacity, 0);
+
+    html += `<div class="tpl-group">
+      <div class="tpl-group-head${g.weekend ? ' weekend' : ''}">
+        <span class="title">${g.name}</span>
+        <span style="font-size:10px;color:var(--text-muted);">${enabledCount} 班 / 每日 ${totalCap} 人次</span>
+        <button class="tpl-derive-btn" style="margin-left:auto;" onclick="tplRederiveAll('${g.key}')"
+                title="按每个班次的值班时间重新计算冲突节次">全部自动推导</button>
+      </div>
+      <div class="tpl-list">`;
+
+    if (list.length === 0) {
+      html += `<div style="padding:14px;text-align:center;font-size:11px;color:var(--text-muted);
+               border:1px dashed var(--border);border-radius:var(--radius-sm);">
+               暂无班次，点击下方按钮添加</div>`;
+    }
+
+    list.forEach((s, idx) => {
+      html += renderShiftCard(g, s, idx, list.length);
+    });
+
+    html += `</div>
+      <button class="tpl-add" onclick="tplAddShift('${g.key}')">＋ 添加班次</button>
+    </div>`;
+  }
+  html += '</div>';
+
+  html += `<div class="tpl-hint">
+    <strong>使用说明</strong><br>
+    · <strong>值班时间</strong>：设置开始与结束时间，默认按时间自动推导与之冲突的课程节次。<br>
+    · <strong>值班人数</strong>：该班次需要的人数上限，自动排班按此人数分配，拖拽可临时超员（会标红提示）。<br>
+    · <strong>单双周</strong>：选择「每周」则该班次每周都排；选择「单周」或「双周」则只在对应周次生效。<br>
+    · <strong>冲突节次</strong>：红色标记的节次表示该值班时段与之冲突。手动点击任一节次即切换为手工模式，
+      不再随值班时间自动变化；点「自动推导」可恢复。<br>
+    · <strong>修改模板后</strong>，被删除班次的原有排班会在保存时一并清除，其余班次的排班保留。
+  </div>`;
+
+  body.innerHTML = html;
+}
+
+function renderShiftCard(group, s, idx, total) {
+  const autoPeriods = deriveConflictPeriods(s.start, s.end);
+  const activePeriods = s.autoConflict ? autoPeriods : s.conflictPeriods;
+  const timeBad = !isValidTime(s.start) || !isValidTime(s.end) ||
+                  (isValidTime(s.start) && isValidTime(s.end) && timeToMinutes(s.end) <= timeToMinutes(s.start));
+
+  const wkClass = s.weeks === 'odd' ? 'wk-odd' : s.weeks === 'even' ? 'wk-even' : 'wk-all';
+
+  let html = `<div class="tpl-shift ${wkClass}${s.enabled ? '' : ' disabled'}${timeBad ? ' bad' : ''}">`;
+
+  // 第一行：启用 / 名称 / 排序 / 复制 / 删除
+  html += '<div class="tpl-row">';
+  html += `<input type="checkbox" ${s.enabled ? 'checked' : ''} title="启用/停用该班次"
+            onchange="tplToggleEnabled('${group.key}',${idx})" style="cursor:pointer;flex-shrink:0;">`;
+  html += `<input class="tpl-label-input" value="${escapeHtml(s.label)}" placeholder="班次名称"
+            onchange="tplUpdate('${group.key}',${idx},'label',this.value)" title="班次名称">`;
+  html += `<button class="tpl-icon-btn" onclick="tplMoveShift('${group.key}',${idx},-1)"
+            ${idx === 0 ? 'disabled' : ''} title="上移">↑</button>`;
+  html += `<button class="tpl-icon-btn" onclick="tplMoveShift('${group.key}',${idx},1)"
+            ${idx === total - 1 ? 'disabled' : ''} title="下移">↓</button>`;
+  html += `<button class="tpl-icon-btn" onclick="tplDuplicateShift('${group.key}',${idx})" title="复制班次">⧉</button>`;
+  html += `<button class="tpl-icon-btn danger" onclick="tplRemoveShift('${group.key}',${idx})" title="删除班次">✕</button>`;
+  html += '</div>';
+
+  // 第二行：时间 / 人数 / 单双周
+  html += '<div class="tpl-row">';
+  html += `<input type="time" class="tpl-time" value="${escapeHtml(s.start)}"
+            onchange="tplUpdate('${group.key}',${idx},'start',this.value)" title="开始时间">`;
+  html += '<span class="tpl-sep">—</span>';
+  html += `<input type="time" class="tpl-time" value="${escapeHtml(s.end)}"
+            onchange="tplUpdate('${group.key}',${idx},'end',this.value)" title="结束时间">`;
+  html += `<span class="tpl-field" style="margin-left:4px;">人数
+            <input type="number" class="tpl-num" min="1" max="99" value="${s.capacity}"
+              onchange="tplUpdate('${group.key}',${idx},'capacity',this.value)" title="该班次值班人数"></span>`;
+  html += `<select class="tpl-week-select" onchange="tplUpdate('${group.key}',${idx},'weeks',this.value)"
+            title="该班次生效的单双周">
+            <option value="all"${s.weeks === 'all' ? ' selected' : ''}>每周</option>
+            <option value="odd"${s.weeks === 'odd' ? ' selected' : ''}>仅单周</option>
+            <option value="even"${s.weeks === 'even' ? ' selected' : ''}>仅双周</option>
+          </select>`;
+  html += '</div>';
+
+  // 第三行：冲突节次
+  html += `<div class="tpl-periods-head">
+    <span>冲突课程节次</span>
+    <span class="tpl-mode-badge ${s.autoConflict ? 'auto' : 'manual'}">${s.autoConflict ? '自动推导' : '手工指定'}</span>`;
+  if (!s.autoConflict) {
+    html += `<button class="tpl-derive-btn" onclick="tplRederivePeriods('${group.key}',${idx})"
+              title="按值班时间重新计算">恢复自动</button>`;
+  } else {
+    const diff = activePeriods.length !== s.conflictPeriods.length ||
+                 activePeriods.some((p, i) => p !== s.conflictPeriods[i]);
+    html += `<span style="margin-left:auto;font-size:10px;">点击节次可手工调整</span>`;
+  }
+  html += '</div>';
+
+  html += '<div class="tpl-periods">';
+  if (activePeriods.length === 0) {
+    html += '<span style="font-size:10px;color:var(--text-muted);padding:4px 0;">该时段不与任何课程节次冲突</span>';
+  }
+  for (let p = 1; p <= CONFIG.maxPeriods; p++) {
+    const on = activePeriods.includes(p);
+    const ct = CONFIG.courseTimes[p];
+    html += `<button class="chip${on ? ' on' : ''}" onclick="tplTogglePeriod('${group.key}',${idx},${p})"
+              title="第${p}节 ${ct ? ct.start + '-' + ct.end : ''}${on ? '（已设为冲突）' : '（点击设为冲突）'}">${p}</button>`;
+  }
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+// ============================================================
 //  快捷键
 // ============================================================
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    if (document.getElementById('templateModal').classList.contains('show')) {
+      closeTemplateEditor();
+      return;
+    }
     if (document.getElementById('confirmModal').classList.contains('show')) {
       closeConfirm();
       return;
@@ -2541,9 +3420,15 @@ document.getElementById('exportModal').addEventListener('click', (e) => {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   loadIgnoredCourses();
+  loadTemplate();
   renderStudentList();
   updateButtons();
   showToast('欢迎使用学生排班系统！请在左侧导入学号', 'info');
+});
+
+// 关闭值班模板弹窗（点击外部）
+document.getElementById('templateModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeTemplateEditor();
 });
 
 // 关闭课表弹窗（点击外部）

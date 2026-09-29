@@ -471,6 +471,20 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         self.send_cors_headers()
         self.end_headers()
 
+    def end_headers(self):
+        """禁止浏览器强缓存。
+
+        本工具前端更新频繁，而 SimpleHTTPRequestHandler 默认只发 Last-Modified，
+        不发送 Cache-Control。浏览器此时会按启发式规则（文件年龄的 10%）自行决定
+        免验证缓存时长：若 index.html 已数周未改动，该窗口可达十余天，期间浏览器
+        连条件请求都不发，直接吃本地缓存 —— 表现为「更新后页面依旧，新增按钮看不到」。
+        这里显式要求每次回源校验：内容未变仍返回 304（省流量），变了立即拿到新页面。
+        """
+        self.send_header('Cache-Control', 'no-cache, must-revalidate')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
+        super().end_headers()
+
     def do_GET(self):
         try:
             parsed = urllib.parse.urlparse(self.path)

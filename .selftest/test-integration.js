@@ -839,6 +839,173 @@ Promise.resolve(run).then(() => {
   eq([spSmall.odd, spSmall.even, spSmall.total], [0, 0, 0],
      '名额紧张时仍完全均衡（12 人各 2 班，极差 0）');
 
+  // ── 41. 排班锁定：锁住「该同学 + 该班次」这个位置 ──
+  // 语义是「位置」而非「人」：锁定后重新排班（两种模式）该位置原样保留，
+  // 但该同学在其它班次、以及其它同学进入这个班次，仍由算法自由安排。
+  section('41. 排班锁定：重新排班不改变锁定位置');
+  const lockStudents = [];
+  for (let i = 0; i < 30; i++) {
+    lockStudents.push({ sid: '2025' + String(600000 + i), name: 'K' + i, status: 'ready',
+                        courses: [], rawCourses: [], nowWeek: 8 });   // 全员无课，纯看锁定效果
+  }
+  g(`state.students = ${JSON.stringify(lockStudents)}`);
+  g('state.template = makeDefaultTemplate(); state.locks = { odd:{}, even:{} };');
+  g('state.currentWeek = "odd"; state.currentView = "duty"; state.maxShiftsPerWeek = 3;');
+  g('initAssignments()');
+  return Promise.resolve(g(`(async () => { await runSchedule('normal'); return true; })()`));
+}).then(() => {
+  const KEY = 'odd_d0_wd0';
+  const before = JSON.parse(g(`JSON.stringify(state.assignments.odd['${KEY}'])`));
+  ok(before.length > 0, `排班后「${KEY}」有人，可对其加锁`, before);
+  const lockedSid = before[0];
+
+  g(`toggleLock('${KEY}','${lockedSid}')`);
+  eq(g(`isLocked('${lockedSid}','${KEY}','odd')`), true, 'toggleLock 后该位置被标记为已锁定');
+  eq(g(`lockedSidsOf('${KEY}','odd')`), [lockedSid], '槽位的锁定列表包含该学号');
+  eq(g(`isLocked('${lockedSid}','odd_d1_wd0','odd')`), false,
+     '锁定的是「该同学+该班次」而非该同学本人：同一人在其它班次不算锁定');
+
+  // 渲染层：锁按钮存在，锁定的 tag 带 locked 类且不可拖动
+  g('renderSchedule()');
+  const lockHtml = el('scheduleContainer').innerHTML;
+  ok(lockHtml.includes('lock-btn'), '学生标签渲染出锁定按钮');
+  ok(lockHtml.includes('student-tag locked'), '已锁定的标签带上 locked 样式类');
+  ok(lockHtml.includes('data-locked="1"'), '已锁定的标签标记 data-locked="1"');
+
+  // 连续跑两种排班模式：锁定位置必须始终不变
+  return Promise.resolve(g(`(async () => {
+    await runSchedule('normal');
+    await runSchedule('balanced');
+    await runSchedule('normal');
+    await runSchedule('balanced');
+    return true;
+  })()`)).then(() => lockedSid);
+}).then((lockedSid) => {
+  const KEY = 'odd_d0_wd0';
+  const after = JSON.parse(g(`JSON.stringify(state.assignments.odd['${KEY}'])`));
+  eq(after[0], lockedSid, '两种模式各跑两次后，锁定的人仍在该班次（未被换出）');
+
+  // 锁定不应冻结整张表：其它槽位照常排班
+  const filled = g(`(() => {
+    let n = 0;
+    for (const key in state.assignments.odd) if (state.assignments.odd[key].length > 0) n++;
+    return n;
+  })()`);
+  ok(filled > 10, `锁定一个位置不影响其它槽位继续排班（${filled} 个槽位有人）`);
+
+  // 锁定成员照常计入负载：不应因为「锁住」而被当成没排班、被反复加派到别处
+  ok(g(`weeklyLoadOf(state.assignments, 'odd', '${lockedSid}') >= 1`),
+     '锁定成员仍被计入该周负载统计');
+
+  // initAssignments（重建槽位）必须保留锁定位置
+  g('initAssignments()');
+  eq(g(`JSON.stringify(state.assignments.odd['${KEY}'])`), JSON.stringify([lockedSid]),
+     'initAssignments 重建槽位后，锁定位置原样恢复');
+
+  // 解锁后回到普通状态
+  g(`toggleLock('${KEY}','${lockedSid}')`);
+  eq(g(`isLocked('${lockedSid}','${KEY}','odd')`), false, '再次点击锁按钮可解锁');
+  eq(g(`lockedSidsOf('${KEY}','odd')`), [], '解锁后该槽位锁定列表为空');
+
+  // ── 均衡搜索必须跳过锁定位置（确定性用例，不依赖随机） ──
+  g(`state.students = [
+    {sid:'A',name:'A',status:'ready',courses:[],rawCourses:[]},
+    {sid:'B',name:'B',status:'ready',courses:[],rawCourses:[]},
+    {sid:'C',name:'C',status:'ready',courses:[],rawCourses:[]}
+  ]`);
+  g('state.template = makeDefaultTemplate()');
+  g(`state.assignments = { odd: { odd_d0_wd0:['A'], odd_d0_wd1:['A'], odd_d0_wd2:['B'] }, even: {} }`);
+  g(`state.locks = { odd: { odd_d0_wd0:['A'] }, even: {} }`);   // 只锁 wd0
+  g(`optimizeBalance(state.assignments, state.students, ['A','B','C'], Infinity)`);
+  eq(g(`JSON.stringify(state.assignments.odd['odd_d0_wd0'])`), '["A"]',
+     'optimizeBalance 不把锁定成员换出（锁定位置保持不变）');
+  ok(g(`state.assignments.odd['odd_d0_wd1'][0] !== 'A'`),
+     '未锁定的重复排班仍被均衡搜索调整（锁定没有冻结全表）');
+
+  // ── 手工操作防护：锁定位置不可拖走、不可点 × 移除 ──
+  g(`state.locks = { odd: { odd_d0_wd0:['A'] }, even: {} };`);
+  g(`state.assignments.odd['odd_d0_wd0'] = ['A'];`);
+  g('state.currentWeek = "odd";');
+  g(`removeFromShift('odd_d0_wd0','A')`);
+  eq(g(`JSON.stringify(state.assignments.odd['odd_d0_wd0'])`), '["A"]',
+     '锁定位置点 × 不会被移除（并给出提示）');
+
+  const prevented = g(`(() => {
+    const tag = { dataset: { sid:'A', key:'odd_d0_wd0', locked:'1' },
+                  classList: { add(){}, remove(){} } };
+    const e = { target: { closest: () => tag }, _pd: false, preventDefault(){ e._pd = true; } };
+    onDragStart(e);
+    return e._pd;
+  })()`);
+  eq(prevented, true, '锁定标签的拖拽被拦截（不会拖走锁定位置）');
+
+  // ── 锁定数据的规范化与剪枝 ──
+  eq(g('normalizeLocks(undefined)'), { odd: {}, even: {} },
+     'normalizeLocks(undefined) → 空锁定表（兼容旧文件）');
+  eq(g(`JSON.stringify(normalizeLocks({ odd:{ 'odd_d0_wd0':['A','A','B'] }, even:{ 'bad key':['C'] } }))`),
+     '{"odd":{"odd_d0_wd0":["A","B"]},"even":{}}',
+     'normalizeLocks 去重并丢弃非法键');
+  eq(g(`JSON.stringify(normalizeLocks({ odd:{ 'even_d0_wd0':['A'] } }))`), '{"odd":{},"even":{}}',
+     'normalizeLocks 丢弃单双周与键不匹配的记录');
+
+  // 班次被删除后，其锁定记录必须随之清理
+  g(`state.locks = { odd: { odd_d0_wd0:['A'], odd_d0_wd1:['B'] }, even: {} };`);
+  g(`state.assignments = { odd: { odd_d0_wd0:['A'], odd_d0_wd1:['B'] }, even: {} };`);
+  g(`state.template = normalizeTemplate((() => {
+    const t = makeDefaultTemplate();
+    t.groups.weekday = t.groups.weekday.filter(s => s.id !== 'wd0');
+    return t;
+  })())`);
+  g('pruneInvalidAssignments()');
+  eq(g(`JSON.stringify(state.locks.odd)`), '{"odd_d0_wd1":["B"]}',
+     '班次被删除后，指向该班次的锁定记录一并清除（不留脏数据）');
+
+  // ── 导入 / 导出往返必须带上锁定 ──
+  // 从 exportData 产生的 Blob 里取回 JSON，验证导出内容真的包含 locks
+  g(`globalThis.__oldCreate = URL.createObjectURL;
+     URL.createObjectURL = (b) => { globalThis.__blob = b; return 'blob:x'; };
+     exportData();`);
+  const exportedData = JSON.parse(g('String(__blob.parts[0])'));
+  ok(Object.prototype.hasOwnProperty.call(exportedData, 'locks'), '导出的 JSON 含 locks 字段');
+  eq(JSON.stringify(exportedData.locks), g('JSON.stringify(state.locks)'),
+     '导出的 locks 与当前锁定状态一致');
+  g('URL.createObjectURL = globalThis.__oldCreate;');
+
+  // 模拟导入：锁定按 normalizeLocks 恢复
+  const snapshot = g(`JSON.stringify({ locks: state.locks, assignments: state.assignments, students: state.students })`);
+  g('state.locks = { odd:{}, even:{} }; state.assignments = { odd:{}, even:{} };');
+  g(`(function(){
+    const d = ${snapshot};
+    state.students = d.students;
+    state.assignments = d.assignments;
+    state.locks = normalizeLocks(d.locks);
+    remapAssignmentIds(_idRemap);
+    pruneInvalidAssignments();
+    pruneLocks();
+  })()`);
+  eq(g(`JSON.stringify(state.locks.odd)`), '{"odd_d0_wd1":["B"]}', '导入后锁定状态完整恢复');
+
+  // 老文件没有 locks 字段 → 全部视为未锁定，不报错
+  g('state.locks = normalizeLocks(undefined)');
+  eq(g('JSON.stringify(state.locks)'), '{"odd":{},"even":{}}',
+     '导入无 locks 字段的旧文件 → 视为全部未锁定');
+
+  // ── 清理路径：移除同学 / 重置排班都要带走锁定 ──
+  g(`state.locks = { odd: { odd_d0_wd0:['A'], odd_d0_wd1:['B'] }, even: {} };
+     state.students = [
+       {sid:'A',name:'A',status:'ready',courses:[],rawCourses:[]},
+       {sid:'B',name:'B',status:'ready',courses:[],rawCourses:[]}
+     ];
+     state.assignments = { odd: { odd_d0_wd0:['A'], odd_d0_wd1:['B'] }, even: {} };`);
+  g(`dropLocksOfStudent('A')`);
+  eq(g(`JSON.stringify(state.locks.odd)`), '{"odd_d0_wd1":["B"]}',
+     '移除同学时只清除该同学的锁定，其它人的锁定保留');
+
+  // resetSchedule 内部走 showConfirm 回调；harness 的 addEventListener 是空实现，
+  // 这里把 showConfirm 临时替换成「直接执行回调」，以便真正跑到重置逻辑。
+  g(`(function(){ const old = showConfirm; showConfirm = (t, m, fn) => fn(); try { resetSchedule(); } finally { showConfirm = old; } })()`);
+  eq(g('JSON.stringify(state.locks)'), '{"odd":{},"even":{}}', '重置排班后锁定一并清空');
+
   summary();
 }).catch(e => {
   console.error('\n集成测试异常：', e);

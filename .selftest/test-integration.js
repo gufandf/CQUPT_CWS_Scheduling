@@ -1033,6 +1033,173 @@ Promise.resolve(run).then(() => {
   ok(g('typeof tplRemoveGroup') === 'function', '删除分组入口存在（会弹确认框）');
   ok(g('typeof resetTemplateToDefault') === 'function', '恢复默认模板入口存在（会弹确认框）');
 
+  // ── 43. 连续 / 分散排班偏好（「连续排班」开关，见 AGENT.md §4.10） ──
+  // 口径（用户确认）：同一天首尾相接的班次算「连班」(+2)，相邻两天都值班也算连续 (+1)。
+  // 勾选「连续排班」= 尽量提高该分数；不勾选 = 反过来尽量降低（分散）。
+  section('43. 连续 / 分散排班偏好');
+
+  g('state.template = makeDefaultTemplate()');
+  const cctx = 'makeContinuityContext("odd")';
+  eq(g(`continuityScoreOf(new Set(['0|wd0','0|wd1']), ${cctx})`), 2,
+     '周一「早班+午班①」首尾相接 → 连续分 2');
+  eq(g(`continuityScoreOf(new Set(['0|wd0','0|wd1','0|wd2']), ${cctx})`), 4,
+     '周一连上三个班（两对连班）→ 连续分 4');
+  eq(g(`continuityScoreOf(new Set(['0|wd0','0|wd3']), ${cctx})`), 0,
+     '同一天但中间断开的两个班（早班+下午班）→ 不算连续');
+  eq(g(`continuityScoreOf(new Set(['0|wd0','1|wd0']), ${cctx})`), 1,
+     '相邻两天都值班 → 连续分 1');
+  eq(g(`continuityScoreOf(new Set(['0|wd0','2|wd0']), ${cctx})`), 0,
+     '隔了一天（周一+周三）→ 不算连续');
+  eq(g(`continuityScoreOf(new Set(), ${cctx})`), 0, '没有班次 → 连续分 0');
+  eq(g(`isBackToBackShifts({start:'10:00',end:'12:05'},{start:'12:05',end:'13:45'})`), true,
+     '首尾相接（空档 0 分钟）算连班');
+  eq(g(`isBackToBackShifts({start:'10:00',end:'12:05'},{start:'12:35',end:'13:45'})`), true,
+     '空档 30 分钟以内仍算连班（同一次到岗）');
+  eq(g(`isBackToBackShifts({start:'10:00',end:'12:05'},{start:'12:36',end:'13:45'})`), false,
+     '空档超过 30 分钟不算连班');
+  eq(g(`isBackToBackShifts({start:'12:05',end:'13:45'},{start:'10:00',end:'12:05'})`), false,
+     '顺序颠倒不算连班（不能倒着接）');
+
+  // 开关的持久化
+  g('setContinuousScheduling(true)');
+  eq(g('state.continuousShifts'), true, 'setContinuousScheduling(true) 写入 state');
+  eq(localStorage.getItem('shift_continuous'), '1', '开关持久化到 localStorage');
+  g('setContinuousScheduling(false)');
+  g('loadContinuousScheduling()');
+  eq(g('state.continuousShifts'), false, 'loadContinuousScheduling 读回开关值');
+  g('localStorage.removeItem("shift_continuous"); loadContinuousScheduling();');
+  eq(g('state.continuousShifts'), false, '无存档时默认「分散」（不勾选）');
+
+  // 界面：开关控件与说明文案
+  ok(rawHtml().includes('id="continuousToggle"'), '侧栏存在「连续排班」开关控件');
+  ok(rawHtml().includes('setContinuousScheduling(this.checked)'),
+     '开关的勾选事件接到 setContinuousScheduling');
+  g('setContinuousScheduling(true); syncContinuousInput();');
+  eq(el('continuousToggle').checked, true, 'syncContinuousInput 把勾选状态同步到控件');
+  ok(String(el('continuousHint').textContent).includes('连成片'), '勾选后说明文案变为「连成片」');
+  g('setContinuousScheduling(false); syncContinuousInput();');
+  eq(el('continuousToggle').checked, false, '取消勾选后控件同步为未选中');
+  ok(String(el('continuousHint').textContent).includes('分散'), '未勾选时说明文案为「分散」');
+
+  /** 取某人某周的连续分（测试辅助，与实现同口径） */
+  const prefScore = (wt, sid) => g(`(() => {
+    const octx = makeContinuityContext('${wt}');
+    const set = new Set();
+    for (const k in state.assignments.${wt}) {
+      const info = resolveShift(k);
+      if (info && state.assignments.${wt}[k].includes('${sid}')) set.add(occupiedSlotKey(info.dayIdx, info.shift.id));
+    }
+    return continuityScoreOf(set, octx);
+  })()`);
+
+  // 勾选「连续排班」：把两个人的班次各自并到同一天首尾相接
+  g(`state.students = [
+    {sid:'A',name:'A',status:'ready',courses:[],rawCourses:[]},
+    {sid:'B',name:'B',status:'ready',courses:[],rawCourses:[]}
+  ]`);
+  g(`state.assignments = { odd: {
+        odd_d0_wd0:['A'], odd_d4_wd0:['A'],
+        odd_d0_wd1:['B'], odd_d4_wd1:['B']
+      }, even: {} }`);
+  g(`state.locks = { odd:{}, even:{} }`);
+  eq(prefScore('odd', 'A') + prefScore('odd', 'B'), 0, '初始状态：两人都是「周一 + 周五」，一点不连续');
+  g('setContinuousScheduling(true)');
+  const costBeforeCluster = g('balanceCost(state.assignments, ["A","B"])');
+  const movedCluster = g('optimizeContinuity(state.assignments, state.students, ["A","B"])');
+  ok(movedCluster > 0, `连续模式确实做了 ${movedCluster} 次「换人」`);
+  eq(g('balanceCost(state.assignments, ["A","B"])'), costBeforeCluster,
+     '交换不改变任何人的班次数 → 均衡代价分毫不动（连续偏好不会反噬均衡）');
+  eq(prefScore('odd', 'A') + prefScore('odd', 'B'), 4,
+     '连续模式：两人各自形成一对连班（连续分 0 → 4）');
+
+  // 不勾选（分散）：把原来连在一起的班次拆开
+  g(`state.assignments = { odd: {
+        odd_d0_wd0:['A'], odd_d0_wd1:['A'],
+        odd_d0_wd2:['B'], odd_d4_wd3:['B']
+      }, even: {} }`);
+  eq(prefScore('odd', 'A'), 2, '初始状态：A 周一连班（连续分 2）');
+  g('setContinuousScheduling(false)');
+  const costBeforeSpread = g('balanceCost(state.assignments, ["A","B"])');
+  g('optimizeContinuity(state.assignments, state.students, ["A","B"])');
+  eq(g('balanceCost(state.assignments, ["A","B"])'), costBeforeSpread,
+     '分散模式同样是等价交换 → 均衡代价不变');
+  eq(prefScore('odd', 'A') + prefScore('odd', 'B'), 0,
+     '分散模式把连班拆开（连续分 2 → 0）');
+
+  // 课程冲突是硬约束：能形成连班但会撞课的交换必须被拒绝
+  g(`state.students = [
+    {sid:'A',name:'A',status:'ready',rawCourses:[],courses:[${JSON.stringify(mkCourse('甲课', 1, 5, 2, [1,2,3,4,5,6,7,8]))}]},
+    {sid:'B',name:'B',status:'ready',rawCourses:[],courses:[${JSON.stringify(mkCourse('乙课', 1, 3, 2, [1,2,3,4,5,6,7,8]))}]}
+  ]`);
+  g(`state.assignments = { odd: {
+        odd_d0_wd0:['A'], odd_d4_wd0:['A'],
+        odd_d0_wd2:['B'], odd_d4_wd1:['B']
+      }, even: {} }`);
+  g(`state.locks = { odd:{}, even:{} }`);
+  g('setContinuousScheduling(true)');
+  eq(g('optimizeContinuity(state.assignments, state.students, ["A","B"])'), 0,
+     '两个能凑成连班的交换都会撞课 → 一次都不换');
+  eq(g(`(() => {
+    const bad = [];
+    for (const wt of ['odd','even']) for (const k in state.assignments[wt]) {
+      const info = resolveShift(k);
+      for (const sid of state.assignments[wt][k]) {
+        const st = state.students.find(s => s.sid === sid);
+        if (st && hasConflict(st.courses, info.dayIdx + 1, info.shift.conflictPeriods, wt)) bad.push(k + ':' + sid);
+      }
+    }
+    return bad;
+  })()`), [], '交换之后没有任何人被排进有课的班次');
+
+  // 端到端：跑真正的入口 runSchedule，确认「连续排班」开关确实接进了排班流程
+  const prefStudents = [];
+  for (let i = 0; i < 20; i++) {
+    prefStudents.push({ sid: '2025' + String(800000 + i), name: 'P' + i, status: 'ready',
+                        courses: [], rawCourses: [], nowWeek: 8 });
+  }
+  g(`state.students = ${JSON.stringify(prefStudents)}`);
+  g('state.template = makeDefaultTemplate(); state.locks = {odd:{},even:{}}; state.maxShiftsPerWeek = 3;');
+  g('setContinuousScheduling(false)');
+  g('initAssignments()');
+  return Promise.resolve(g(`(async () => { await runSchedule('balanced'); return totalContinuityScore(); })()`))
+    .then(spreadEndScore => ({ spreadEndScore }));
+}).then(({ spreadEndScore }) => {
+  g('setContinuousScheduling(true)');
+  g('initAssignments()');
+  return Promise.resolve(g(`(async () => { await runSchedule('balanced'); return totalContinuityScore(); })()`))
+    .then(clusterEndScore => ({ spreadEndScore, clusterEndScore }));
+}).then(({ spreadEndScore, clusterEndScore }) => {
+  ok(clusterEndScore > spreadEndScore,
+     `端到端：勾选「连续排班」后全表连续分明显提升（分散 ${spreadEndScore} → 连续 ${clusterEndScore}）`);
+  const spPref = g(`(() => {
+    const s = loadStats(state.assignments, state.students.map(x => x.sid));
+    return { odd: s.oddSpread, even: s.evenSpread, total: s.totalSpread };
+  })()`);
+  ok(spPref.odd <= 1 && spPref.even <= 1 && spPref.total <= 1,
+     `端到端：连续模式下仍然均衡（单周 ${spPref.odd}、双周 ${spPref.even}、合计 ${spPref.total} 极差 ≤ 1）`, spPref);
+  const prefViolations = g(`(() => {
+    const bad = { conflict: 0, overCap: 0, overLimit: 0, dup: 0 };
+    for (const wt of ['odd','even']) {
+      const load = {};
+      for (const key of Object.keys(state.assignments[wt])) {
+        const info = resolveShift(key);
+        const slot = state.assignments[wt][key];
+        if (slot.length > info.shift.capacity) bad.overCap++;
+        if (new Set(slot).size !== slot.length) bad.dup++;
+        for (const sid of slot) {
+          load[sid] = (load[sid] || 0) + 1;
+          const st = state.students.find(s => s.sid === sid);
+          if (st && hasConflict(st.courses, info.dayIdx + 1, info.shift.conflictPeriods, wt)) bad.conflict++;
+        }
+      }
+      if (Object.values(load).some(v => v > 3)) bad.overLimit++;
+    }
+    return bad;
+  })()`);
+  eq(prefViolations, { conflict: 0, overCap: 0, overLimit: 0, dup: 0 },
+     '端到端：连续模式仍守住容量 / 课程冲突 / 每人上限，且槽位内无重复的人');
+  g('setContinuousScheduling(false); localStorage.removeItem("shift_continuous");');
+
   summary();
 }).catch(e => {
   console.error('\n集成测试异常：', e);

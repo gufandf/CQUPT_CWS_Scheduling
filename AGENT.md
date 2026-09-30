@@ -108,10 +108,13 @@ API 端点：
 | `normalizeLayout()` / `normalizeTemplate()` | 分组定义规范化 / 模板规范化（补字段、丢非法项、兼容旧格式） |
 | `generateShiftKey()` / `parseShiftKey()` / `resolveShift()` | 排班键的生成与解析 |
 | `pruneInvalidAssignments()` | 模板变更后清理失效排班、补齐新槽位 |
-| `initAssignments()` / `runSchedule(mode)` | 初始化槽位 / 自动排班主入口（`'normal'`=开始排班，`'balanced'`=均衡排班），见 §4.8 |
+| `initAssignments()` / `runSchedule(mode)` | 初始化槽位 / 自动排班主入口（`'normal'`=开始排班，`'balanced'`=均衡排班），三轮：贪心 → 均衡 → 连续偏好，见 §4.8 / §4.10 |
 | `collectShiftsForWeek()` / `fillWeekGreedy()` | 收集本周班次（难度+同日交错排序）/ 贪心填充 |
 | `optimizeBalance()` / `balanceCost()` / `makeLoadTracker()` | 均衡局部搜索 / 代价函数 / 负载缓存，见 §4.8 |
 | `getMaxShiftsPerWeek()` / `maxShiftsLimit()` / `loadMaxShifts()` | 每人每周上限的读取与持久化（0=不限制） |
+| `isContinuousScheduling()` / `setContinuousScheduling()` / `loadContinuousScheduling()` | 「连续排班」开关的读写与持久化，见 §4.10 |
+| `makeContinuityContext()` / `continuityScoreOf()` / `continuityGainOf()` / `totalContinuityScore()` | 连续 / 分散判分（同一天连班 + 相邻天），见 §4.10 |
+| `optimizeContinuity()` | 保负载的「换人」局部搜索：勾选则尽量连续，不勾选则尽量分散，见 §4.10 |
 | `isLocked()` / `lockedSidsOf()` / `toggleLock()` | 排班锁定的判断与切换（锁「该同学+该班次」的位置），见 §4.9 |
 | `normalizeLocks()` / `pruneLocks()` / `dropLocksOfStudent()` / `loadLocks()` / `persistLocks()` | 锁定数据的规范化、剪枝、清理与持久化 |
 | `remapLockKeys()` | 随 `remapAssignmentIds()` 迁移锁定键（导入被清洗过的 id 时必需） |
@@ -252,9 +255,10 @@ API 端点：
 - **不要在别处重新实现上限判断**（例如再写一个 `CONFIG.maxWeeklyShifts`）；
   旧的 `CONFIG.maxWeeklyShifts` 常量已删除，改成这项配置。
 
-算法分两步（`runSchedule` 内）：
+算法分三步（`runSchedule` 内）：
 1. **贪心填充**（`fillWeekGreedy`）：按难度降序处理班次，每格挑负载最低的空闲同学。
 2. **局部搜索均衡**（`optimizeBalance`）：做「一换一」单点替换，反复降低 `balanceCost()`。
+3. **连续 / 分散偏好**（`optimizeContinuity`）：只做「两槽位互换成员」，班次数不变，见 §4.10。
 
 三个必须理解的坑：
 
@@ -280,6 +284,52 @@ API 端点：
 `optimizeBalance` 只做一换一，因此天然不会破坏三类硬约束：
 班次容量不变、换入前用 `canTakeShift()` 查课程冲突、均衡模式下换入者不得突破上限。
 这三条在测试 §34 / §39 有断言，改动算法后必须复核。
+
+### 4.10 连续 / 分散排班偏好（勾选式软偏好，绝不反噬均衡）
+
+左侧「连续排班」开关（`state.continuousShifts`，持久化在 `localStorage['shift_continuous']`）：
+**勾选 = 尽量让同一人的班次连成片，不勾选（默认）= 尽量分散**。这是用户明确确认的口径。
+
+判分口径（「连续分」，越高越连续），全部落在 `continuityScoreOf(occ, ctx)`：
+
+| 情形 | 计分 |
+| --- | --- |
+| 同一天内**首尾相接**的两个班次（连班，前一班的 `end` 到后一班的 `start` 空档 ≤ 30 分钟） | +2 / 对 |
+| **相邻两天**都值班 | +1 / 天对 |
+
+- 「连续」= 最大化全表连续分（`totalContinuityScore()`），「分散」= 最小化它。
+- 空档容差 `CONTINUITY_GAP_TOLERANCE = 30` 分钟：默认模板的班次都是无缝相接（12:05 接 12:05），
+  留一点容差是为了「12:05 结束、12:35 开始」这种同一次到岗也能算连班。
+- 只有**一周 ≥2 个班**的人才有连续分可谈：一个人一周只排 1 个班时，无论排哪天分数都是 0，
+  交换对这类人没有任何收益（这不是 bug，是口径的必然结果）。
+
+**实现分两处，都必须遵守「不改变每个人的班次数」这条底线**：
+
+1. `fillWeekGreedy` 里只在**同一批最低负载候选人内部**按连续分调序（先 `shuffle` 再稳定排序，
+   保证同分候选仍然随机）。负载是池子的第一关键字，所以调序不会破坏均衡。
+2. `optimizeContinuity` 做的是「**两个槽位互换成员**」（a↔b），不是 `optimizeBalance` 那种单点替换。
+
+> **为什么必须是交换而不是单点替换**：单点替换必然让一个人 +1、另一个人 −1，
+> 于是 `balanceCost()` 立刻变差 —— 用户要求「两种模式都要均衡」，连续只是锦上添花，
+> 不能拿均衡去换。互换则让每个人的单双周班次数**一个都不变**，`balanceCost()` 分毫不动
+> （测试 §43 用 `balanceCost` 前后相等来锁死这条）。
+> 另一条推论：**均衡与连续本质上会冲突**（把两个班并给同一个人，就必然要从别人那里拿走），
+> 所以只能「尽量」，绝不能为了连续去改人数。
+
+`optimizeContinuity` 的硬约束（改代码时别漏）：
+
+- 锁定位置（该同学 + 该班次）**进出都拦**：`isLocked(a, A.key) || isLocked(a, B.key)` 才放行；
+- 换入的两个人必须都对该班次无课程冲突（预筛成 `eligible` 集合，热循环里 O(1) 查表）；
+- 容量天然安全（互换不改变任何槽位的人数）；
+- 槽位内不得出现重复的人（`A.slot.includes(b)` 时跳过）。
+
+它按「一次挑全局最优的一对」迭代，每轮严格改进所以必然收敛；`maxRounds` 默认 12，
+100 人规模实测 < 50ms（见测试 §39 的耗时断言）。第三轮在 `runSchedule` 里紧跟在
+`optimizeBalance` 之后调用，**顺序不能颠倒**（先均衡、后偏好）。
+
+测试见 `.selftest/test-integration.js` §43（26 项）：判分口径与容差边界、开关持久化、
+连续/分散两个方向的确定性用例、`balanceCost` 不变、课程冲突与锁定拦截、以及
+`runSchedule` 端到端（连续分 0 → 117、极差仍为 0）。
 
 ### 4.9 排班锁定：锁的是「位置」（该同学 + 该班次），不是「人」
 
@@ -324,8 +374,9 @@ API 端点：
 ```
 harness.js              最小 DOM / localStorage / XLSX 桩
 test-model.js           81 项：模板模型、键解析、冲突推导、持久化
-test-integration.js    217 项：排班、剪枝、渲染、导出、导入往返、两种排班模式、均衡性、
-                                排班锁定（§41，锁「位置」而非「人」）、弹窗层叠断言（§42，见 §6.7）
+test-integration.js    249 项：排班、剪枝、渲染、导出、导入往返、两种排班模式、均衡性、
+                                排班锁定（§41，锁「位置」而非「人」）、弹窗层叠断言（§42，见 §6.7）、
+                                连续 / 分散排班偏好（§43，见 §4.10）
 test-layout.js         171 项：排班日分组（预设/自定义、模式往返、动态渲染与导出、未排班时的表格、
                                 分组只排单周/双周）
 run-all.sh              入口
@@ -539,6 +590,7 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
 | `shift_duty_template_v1` | 当前值班模板（`TEMPLATE_STORAGE_KEY`） |
 | `shift_ignored_courses` | 各学生被忽略的课程 ID |
 | `shift_max_per_week` | 每人每周最多班次（仅均衡排班生效） |
+| `shift_continuous` | 「连续排班」开关（`1`=连班偏好，`0`/无=分散偏好，见 §4.10） |
 | `shift_locks` | 已锁定的排班位置（见 §4.9） |
 | `theme` | `auto` / `light` / `dark` |
 

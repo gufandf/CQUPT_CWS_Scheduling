@@ -12,7 +12,7 @@
 
 - **形态**：单机本地工具，无构建步骤、无打包器、无前端框架
 - **技术栈**：Python 3 标准库 `http.server` 作后端 + 单个 HTML 文件作前端（原生 JS）
-- **代码量**：`app.py` 约 590 行，`templates/index.html` 约 3450 行（含内联 CSS/JS）
+- **代码量**：`app.py` 约 590 行，`templates/index.html` 约 4060 行（含内联 CSS/JS）
 - **使用语言**：面向用户的文案、代码注释、提交信息**全部用中文**，请保持一致
 
 ---
@@ -28,7 +28,7 @@ python3 app.py                 # 监听 http://localhost:8765
 # 装依赖
 pip install -r requirements.txt
 
-# 跑自测（218 项，无需浏览器，仅需 node）
+# 跑自测（435 项，无需浏览器，仅需 node）
 bash .selftest/run-all.sh
 
 # 后端语法检查
@@ -97,19 +97,31 @@ API 端点：
 
 | 函数 / 常量 | 作用 |
 | --- | --- |
-| `CONFIG` | 节次时间表、`maxPeriods=12`、`maxWeeklyShifts=3`、忽略课程关键词 |
-| `DAY_GROUPS` | 两个分组：`weekday`(周一~五) / `weekend`(周六日) |
+| `CONFIG` | 节次时间表、`maxPeriods=12`、忽略课程关键词 |
+| `LAYOUT_MODES` / `weekdayWeekendLayout()` | 两种分组模式的元信息、预设「工作日/周末」的分组定义 |
+| `getLayout()` / `getGroupForDay()` / `getGroupKeyByDay()` / `groupMeta()` | **分组访问器（唯一入口）**，见 §4.6 |
+| `getShiftsForDay()` / `getShiftById()` / `ungroupedDays()` | 按天取班次 / 按 id 取班次 / 未归组的天 |
+| `groupDaysText()` / `groupDaysBadge()` | 分组天数文案（连续天压成「周一至周五」；与分组名重复时徽标留空） |
 | `state` | 全局状态（学生、模板、单双周排班、忽略课程……） |
 | `deriveConflictPeriods()` | 由班次起止时间推导冲突节次 |
 | `makeDefaultTemplate()` | 内置默认模板（与原硬编码配置逐项一致） |
-| `normalizeTemplate()` | 模板规范化：补字段、丢非法项、按时间排序、兼容旧格式 |
+| `normalizeLayout()` / `normalizeTemplate()` | 分组定义规范化 / 模板规范化（补字段、丢非法项、兼容旧格式） |
 | `generateShiftKey()` / `parseShiftKey()` / `resolveShift()` | 排班键的生成与解析 |
 | `pruneInvalidAssignments()` | 模板变更后清理失效排班、补齐新槽位 |
-| `initAssignments()` / `runSchedule()` | 初始化槽位 / 自动排班主循环 |
+| `initAssignments()` / `runSchedule(mode)` | 初始化槽位 / 自动排班主入口（`'normal'`=开始排班，`'balanced'`=均衡排班），见 §4.8 |
+| `collectShiftsForWeek()` / `fillWeekGreedy()` | 收集本周班次（难度+同日交错排序）/ 贪心填充 |
+| `optimizeBalance()` / `balanceCost()` / `makeLoadTracker()` | 均衡局部搜索 / 代价函数 / 负载缓存，见 §4.8 |
+| `getMaxShiftsPerWeek()` / `maxShiftsLimit()` / `loadMaxShifts()` | 每人每周上限的读取与持久化（0=不限制） |
+| `weeklyLoadOf()` / `totalLoadOf()` / `loadStats()` / `countEmptySlots()` | 负载统计工具 |
+| `canTakeShift()` | 课程冲突判断的唯一入口（显式传参，便于干跑推演） |
+| `ensureAssignmentSlots()` | 按当前模板补齐空槽位（不覆盖已有排班），见 §4.7 |
+| `hasAnyAssignment()` | 是否真的有排班（有键 ≠ 有排班，见 §4.7） |
+| `scheduleNoticeText()` / `applyScheduleView()` | 未排班 / 未获取课表时的提示条文案 / 统一切换两个视图的显示 |
 | `buildGridSkeleton()` | 值班表与空课表共用的网格骨架 |
 | `renderSchedule()` / `renderFreeSchedule()` | 值班表 / 空课表渲染 |
 | `renderTemplateEditor()` / `renderShiftCard()` | 模板编辑器 UI |
-| `validateDraft()` / `saveTemplateEditor()` | 保存前校验 / 应用模板 |
+| `tplSetMode()` / `tplAddGroup()` / `tplToggleDay()` / `tplExplodeToDays()` | 分组模式与结构编辑 |
+| `validateDraft()` / `templateWarnings()` / `saveTemplateEditor()` | 保存前校验（阻断）/ 提示（不阻断）/ 应用模板 |
 | `exportDutySchedule()` / `exportFreeSchedule()` / `exportData()` | 导出 |
 | `handleImportFile()` / `handleTemplateFileImport()` | 导入 |
 
@@ -155,6 +167,117 @@ API 端点：
 补齐新增班次的空槽位，并按其 `weeks`（单/双周）过滤。
 在 `saveTemplateEditor()` 和 `handleImportFile()` 中都已接入。
 
+### 4.6 排班日分组是数据（`layout`），不是常量——严禁再写死两组
+
+模板持有 `mode` + `layout`，分组数量随用户配置变化：
+
+```jsonc
+"mode": "weekday" | "custom",
+"layout": [ { "key": "weekday", "name": "周一至周五", "days": [0,1,2,3,4] }, ... ]
+```
+
+- **`mode: 'weekday'`**（预设，也是所有旧模板/旧文件的默认解读）：天数固定为
+  `weekday=[0..4]`、`weekend=[5,6]`，保证历史上以 `wd*`/`we*` 为 id 的排班键全部对得上。
+- **`mode: 'custom'`**（一周 7 天自由组合）：`layout` 完全来自用户；组健在自定义模式下
+  新增分组用 `g1`、`g2` ……（组健会进入班次 id，**不可含下划线**）。
+
+三条不变式，改代码前务必守住：
+
+1. **同一天最多属于一个 `layout` 分组**。`normalizeLayout()` 按「先到先得」丢弃重复的天，
+   `tplToggleDay()` / `tplAddGroup()` 在加天前会调用 `detachDay()` 把该天从其它组摘掉。
+   未被任何组选中的天**当天不排班**（`getShiftsForDay()` 返回空数组），这是合法状态。
+2. **所有「按天找班次」的代码一律走 `getGroupForDay()` / `getShiftsForDay()` / `getShiftById()`**，
+   不要再出现 `dayIdx >= 5 ? 'weekend' : 'weekday'` 这类判断（保存/渲染/导出/剪枝/排班共用这套访问器）。
+3. **班次 id 只需在所属分组内唯一，跨分组可以重名**——因为排班键是
+   `{weekType}_d{dayIdx}_{shiftId}`，天索引已参与区分。`tplExplodeToDays()` 正是依赖
+   这一点：把同一批班次定义复制给多天，从而**让已有排班一条都不丢**。切勿「为了唯一」去重编号，
+   那会让 `_idRemap` 触发迁移、静默丢排班。
+
+> 校验分两层：`validateDraft()` 只放**阻断性错误**（空模板名、时间倒置/越界、整组停用、
+> 组数 >7）；「某天未分组」「某组无班次」「某组只覆盖单周/双周」属于**提示**，由
+> `templateWarnings()` 渲染成黄色提示条，不阻止保存——否则用户挪动分组的中间态会被卡死。
+
+#### 4.6.1 分组允许只排单周或只排双周
+
+**一个分组只配单周班次（或只配双周班次）是合法且受支持的配置**，绝不能当错误拦截：
+
+- 历史上 `validateDraft()` 有一条「某一单双周下无任何生效班次」的**阻断性**校验，会把
+  「工作日组只排单周」判为错误、卡住保存。用户明确要求放开，该条已删除，改为
+  `templateWarnings()` 里的非阻断提示。**不要把它加回 `validateDraft()`。**
+- 判断口径统一走 `groupWeekScope(list)`（`'all'` / `'odd'` / `'even'` / `null`）与
+  `hasShiftsForWeek(weekType, tpl)`，不要在别处重写一遍覆盖判断。
+- 表现层：分组头显示「仅单周 / 仅双周」徽标（值班表 `.grp-week-scope`、编辑器
+  `.tpl-week-scope`）；渲染遇到该组在本周无班次时，说明是「该组仅配置了另一周」而非报错。
+- 导出仍固定产出单周/双周两个工作表，某周无班次的分组保留分组行并标注「（本周无班次）」，
+  结构不丢。
+
+### 4.7 右侧表格「永远渲染」，未排班时只是空槽位
+
+**不点「开始排班」也要能看到当前模板的时段表**（这是用户明确要求的行为，别改回去）：
+
+- `renderSchedule()` / `renderFreeSchedule()` 都**不再提前 return**，一律渲染网格骨架。
+  任何「没有排班/没有课表就显示整屏空状态」的写法都会让用户看不到表格，属于回归。
+  `DOMContentLoaded`、`loadStudents()`、`clearAll()`、`resetSchedule()`、`saveTemplateEditor()`、
+  `handleImportFile()` 都会调用 `refreshView()` 补渲染。
+- 提示信息改由 `.schedule-notice`（`#scheduleNotice`）单行提示条承担，文案由
+  `scheduleNoticeText()` 统一给出；`#emptyState` 已随之删除。
+- **「有键」≠「有排班」**：`renderSchedule()` 开头会调用 `ensureAssignmentSlots()`
+  按模板补齐空槽位（拖拽依赖 `state.assignments[week]` 里存在该键，否则会报
+  「无效的目标班次」）。因此任何判断「是否已排班」的地方都必须用 `hasAnyAssignment()`
+  （真正看数组长度），绝不能用 `Object.keys(...).length > 0`——后者会因为预生成的空槽位
+  永远为真，使「导出值班表」按钮在空表时也能点。`updateButtons()`、`tplRemoveShift()`、
+  `tplRemoveGroup()` 已按此口径审查过。
+- `onDrop()` 对目标槽位改为**按需补齐**而不是直接报错，与上一条配套。
+
+### 4.8 两种排班模式 + 每人每周班次上限
+
+`runSchedule(mode)` 是唯一入口，`mode` 只有两个取值：
+
+| 模式 | 入口 | 每人每周上限 | 说明 |
+| --- | --- | --- | --- |
+| `'normal'` | 「开始排班」按钮 | **不套用**（内部传 `cap = Infinity`） | 谁空谁上，靠负载均衡摊平 |
+| `'balanced'` | 「均衡排班」按钮 | **强制遵守** `state.maxShiftsPerWeek` | 额外追求每人班次数相等 |
+
+**这是用户明确确认的语义，别把两者合并**：上限只对均衡排班生效；
+但**两种模式都必须保证每人班次数相差不大**（用户原话：「两种模式均需保证每个同学班次相差不大」）。
+
+上限参数：
+- `state.maxShiftsPerWeek`，**0 = 不限制**（`maxShiftsLimit()` 映射为 `Infinity`，便于直接比较）。
+- 口径是**每周**：单周、双周各自单独计数，不是合计。
+- 默认值 `MAX_SHIFTS_DEFAULT = 3`；负数/非法值一律回落默认值。
+- 持久化在 `localStorage['shift_max_per_week']`，由 `loadMaxShifts()` / `persistMaxShifts()` 负责。
+- **不要在别处重新实现上限判断**（例如再写一个 `CONFIG.maxWeeklyShifts`）；
+  旧的 `CONFIG.maxWeeklyShifts` 常量已删除，改成这项配置。
+
+算法分两步（`runSchedule` 内）：
+1. **贪心填充**（`fillWeekGreedy`）：按难度降序处理班次，每格挑负载最低的空闲同学。
+2. **局部搜索均衡**（`optimizeBalance`）：做「一换一」单点替换，反复降低 `balanceCost()`。
+
+三个必须理解的坑：
+
+1. **代价函数用「偏差平方和」，不能用「极差」。**
+   极差有平台期：把 10 班的人换成 9 班、把 8 班的人换成 9 班，极差仍是 2，
+   严格下降的搜索迈不出这一步，会卡在极差 2 的局部最优（实测踩过）。
+   平方和是全序的，上述替换能让它真正下降。三个维度（单周/双周/合计）必须一起算，
+   否则会出现「每周都均匀，但某人单周 0 班、双周 3 班」这种合计不均。
+
+2. **`optimizeBalance` 的增量必须是 O(1) 闭式解。**
+   120 人规模下用「推演后重算整个代价函数」要跑 30 秒（实测），改成闭式解后 27ms。
+   推导：一次替换不改变该周与合计的总和 ⇒ 平均值不变 ⇒ `ΔΣv² = 2(新−旧)`；
+   于是 `delta = 4 − 2·gain`，`gain = (h−l) + (H−L)`（h/l 为该周班次数，H/L 为合计数），
+   改进条件是 `delta < 0`。候选按 `该周负载 + 合计负载` 升序，`delta ≥ 0` 即可 `break`。
+   **代价函数与增量公式必须同步改**：`.selftest/test-integration.js` §38 用真实
+   `balanceCost()` 交叉验证 400 组随机场景，改错会立刻红。
+
+3. **同难度内必须按「组内第几个班次 → 星期几」交错排序，不能先排完周一再排周二。**
+   名额紧张时（如 12 人 × 上限 2 = 24 个名额，单周需求 74），顺序填充会把名额被
+   周一~周五吃光，**周末一个都排不到**（实测：工作日 24 人、周末 0 人）。
+   交错后名额摊到整周（工作日 20 / 周末 4）。见 `collectShiftsForWeek()` 与测试 §40。
+
+`optimizeBalance` 只做一换一，因此天然不会破坏三类硬约束：
+班次容量不变、换入前用 `canTakeShift()` 查课程冲突、均衡模式下换入者不得突破上限。
+这三条在测试 §34 / §39 有断言，改动算法后必须复核。
+
 ---
 
 ## 5. 测试
@@ -164,7 +287,9 @@ API 端点：
 ```
 harness.js              最小 DOM / localStorage / XLSX 桩
 test-model.js           81 项：模板模型、键解析、冲突推导、持久化
-test-integration.js    137 项：排班、剪枝、渲染、导出、导入往返
+test-integration.js    183 项：排班、剪枝、渲染、导出、导入往返、两种排班模式与均衡性
+test-layout.js         171 项：排班日分组（预设/自定义、模式往返、动态渲染与导出、未排班时的表格、
+                                分组只排单周/双周）
 run-all.sh              入口
 ```
 
@@ -208,9 +333,7 @@ eq(g("deriveConflictPeriods('10:00','12:05')"), [3, 4], '早班冲突节次');
 否则会产生数千行的「伪 diff」，把真实改动淹没。
 
 用 `write` / `edit` 工具整文件重写时要注意：它们可能顺带丢掉 UTF-8 BOM、或统一换行符。
-`templates/index.html` **原本带 BOM**，改动后请确认（应输出 `BOM=True` 且孤立 LF 为 0）：
-
-```bash
+`templates/index.html` **原本带 BOM**，改动后请确认（应输出 `BOM=True` 且孤立 LF 为 0）：```bash
 python3 -c "
 import pathlib
 for f in ['templates/index.html','README.md','app.py','requirements.txt']:
@@ -220,6 +343,21 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
 "
 ```
 
+> **实测经验**：本仓库的 `edit` 工具**每次改完都会把 BOM 吃掉**（不是「可能」）。
+> 因此**只要动过 `templates/index.html`，收尾前必须重新补 BOM**，否则会产生一个
+> 「删除又加回 BOM」的伪 diff。补回方式：
+>
+> ```bash
+> python3 -c "
+> import pathlib
+> p = pathlib.Path('templates/index.html'); d = p.read_bytes()
+> if not d.startswith(b'\xef\xbb\xbf'): p.write_bytes(b'\xef\xbb\xbf' + d)
+> "
+> ```
+>
+> 注意补 BOM 后要**再跑一次前端语法检查**：抽取脚本读文件时应用 `encoding='utf-8-sig'`，
+> 否则 BOM 会被当成脚本第一个字符，`node --check` 可能报奇怪的语法错误。
+
 ### 6.3 `.gitignore` 忽略了自己，且与 `.selftest` 状态矛盾
 
 `.gitignore` 第 2 行是 `.gitignore`（即它忽略自身），所以**它本身未被 git 跟踪，
@@ -228,6 +366,10 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
 同时第 8 行的 `.selftest` 是**误导性的**：`.selftest/` 下 4 个文件已被 git 跟踪，
 而**已被跟踪的文件不受 `.gitignore` 影响**。所以该行目前不起作用；
 若想让自测套件真正被忽略，需要先 `git rm --cached`。
+
+> **新增测试文件时必须 `git add -f`**：因为第 8 行仍在，新建的 `.selftest/test-*.js`
+> 会被静默忽略（`git status` 里根本不出现）。一旦 `run-all.sh` 引用了它，
+> 别人克隆下来的仓库就会因缺文件而跑不过自测。加完用 `git ls-files .selftest/` 复核。
 
 ### 6.4 前端依赖一个 CDN
 
@@ -278,14 +420,23 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
 
 ```jsonc
 {
-  "version": 1,
+  "version": 2,
   "name": "默认模板",
-  "groups": {
+  "mode": "weekday",        // weekday=预设工作日/周末 | custom=一周7天自由组合
+  "layout": [               // 分组定义（有序）；决定「哪天用哪套班次」
+    { "key": "weekday", "name": "周一至周五", "days": [0, 1, 2, 3, 4] },
+    { "key": "weekend", "name": "周六至周日", "days": [5, 6] }
+  ],
+  "groups": {               // 键必须与 layout 的 key 一一对应
     "weekday": [ /* 班次数组 */ ],
     "weekend": [ /* 班次数组 */ ]
   }
 }
 ```
+
+> **兼容性**：`version: 1`（无 `mode`/`layout`）的旧模板与旧导出文件仍可导入——
+> `normalizeTemplate()` 一律按预设「工作日/周末」解读，班次 id 原样保留，排班不错位。
+> `layout` 的天索引为 `0=周一 … 6=周日`；自定义模式的分组键可自定义（不含下划线）。
 
 单个班次：
 

@@ -11,8 +11,11 @@ const mkCourse = (name, weekday, begin, period, weeks, ignored) => ({
   isFullDay: period >= 8, ignored: !!ignored, autoIgnored: false,
 });
 
-function setupStudents() {
-  const all = Array.from({ length: 16 }, (_, i) => w => true);
+// ── 后续 then 之间共享的 helper（在 §32 起赋值） ──
+let weeklyMaxOf, spreadOf, reRun;
+const setMaxShifts = v => g(`setMaxShiftsPerWeek(${JSON.stringify(v)})`);
+
+function setupStudents() {  const all = Array.from({ length: 16 }, (_, i) => w => true);
   const courses = {
     // 早班(10:00-12:05 → 冲突节次3,4)有课 → 不能排早班
     '2025210001': [mkCourse('高数', 3, 3, 2, [1, 2, 3, 4, 5, 6, 7, 8])],
@@ -120,21 +123,34 @@ Promise.resolve(run).then(() => {
   })()`);
   ok(spread.max - spread.min <= 1, `排班公平：每人班次数极差 ${spread.max - spread.min} ≤ 1`, spread);
 
-  // 11e. 每周不超过 maxWeeklyShifts
-  const weeklyMax = g(`(() => {
-    let worst = 0;
+  // 11e. 「开始排班」（normal）**不套用**每人班次上限（用户确认的语义，见 AGENT.md §4.8）
+  const weeklyLoads = g(`(() => {
+    const out = [];
     for (const wt of ['odd','even']) {
       const load = {};
       for (const key of Object.keys(state.assignments[wt])) {
         for (const sid of state.assignments[wt][key]) load[sid] = (load[sid]||0)+1;
       }
-      worst = Math.max(worst, ...Object.values(load));
+      out.push(Math.max(0, ...Object.values(load)));
     }
-    return worst;
+    return out;
   })()`);
-  ok(weeklyMax <= g('CONFIG.maxWeeklyShifts'), `每人每周不超过 ${g('CONFIG.maxWeeklyShifts')} 班（实际最多 ${weeklyMax}）`);
+  ok(weeklyLoads.some(n => n > 0), `开始排班确实排了班（单周最多 ${weeklyLoads[0]}、双周最多 ${weeklyLoads[1]}）`);
+  g("state.maxShiftsPerWeek = 1");   // 若 normal 套用了上限，则每人每周最多只能 1 班
+  g('initAssignments()');
+  return Promise.resolve(g('(async () => { await runSchedule("normal"); return true; })()'));
+}).then(() => {
+  const capped1 = g(`(() => {
+    const load = {};
+    for (const key of Object.keys(state.assignments.odd)) {
+      for (const sid of state.assignments.odd[key]) load[sid] = (load[sid]||0)+1;
+    }
+    return Math.max(0, ...Object.values(load));
+  })()`);
+  ok(capped1 > 1, `开始排班忽略上限 1（实际仍出现每人每周 ${capped1} 班）`);
 
   section('12. 自定义模板：增减班次后重新排班');
+  g("state.maxShiftsPerWeek = 3");
   g(`state.template = normalizeTemplate({ name:'两班制', groups:{
     weekday:[
       {id:'m',label:'上午',start:'08:00',end:'12:00',capacity:4},
@@ -396,13 +412,27 @@ Promise.resolve(run).then(() => {
   errs = g('validateDraft()');
   ok(errs.some(e => e.includes('停用')), '整组停用被拦截');
 
-  // 单双周覆盖缺失
+  // 单双周只覆盖一周：现在是**合法配置**（用户明确要求允许），只提示不拦截
   g(`state.tplDraft = normalizeTemplate({ name:'周次', groups:{
     weekday:[{id:'x',label:'X',start:'10:00',end:'12:00',capacity:1,weeks:'odd'}],
     weekend:[{id:'y',label:'Y',start:'10:00',end:'12:00',capacity:1}]
   }})`);
   errs = g('validateDraft()');
-  ok(errs.some(e => e.includes('双周')), '工作日仅单周有班次 → 双周无班被拦截');
+  eq(errs, [], '工作日仅单周有班次 → 不再被拦截（合法）');
+  ok(g('templateWarnings()').some(w => w.includes('双周')), '仍给出「双周不排班」提示');
+  eq(g("groupWeekScope(state.tplDraft.groups.weekday)"), 'odd', '该分组被识别为「仅单周」');
+  eq(g("groupWeekScope(state.tplDraft.groups.weekend)"), 'all', '周末组覆盖单双周');
+  eq(g("hasShiftsForWeek('odd', state.tplDraft)"), true, '单周有生效班次');
+  eq(g("hasShiftsForWeek('even', state.tplDraft)"), true, '双周在周末组仍有生效班次');
+
+  // 整个模板只有单周班次 → 仍然合法，但提示双周空表
+  g(`state.tplDraft = normalizeTemplate({ name:'仅单周', groups:{
+    weekday:[{id:'x',label:'X',start:'10:00',end:'12:00',capacity:1,weeks:'odd'}],
+    weekend:[{id:'y',label:'Y',start:'10:00',end:'12:00',capacity:1,weeks:'odd'}]
+  }})`);
+  eq(g('validateDraft()'), [], '全模板仅单周 → 合法');
+  eq(g("hasShiftsForWeek('even', state.tplDraft)"), false, '双周确实没有任何生效班次');
+  ok(g('templateWarnings()').some(w => w.includes('双周没有任何生效班次')), '提示整周空表');
 
   // 合法模板
   g(`state.tplDraft = normalizeTemplate(makeDefaultTemplate())`);
@@ -548,6 +578,267 @@ Promise.resolve(run).then(() => {
     return bad;
   })()`);
   eq(orphans, [], 'initAssignments 后不存在孤儿键');
+  return true;
+}).then(() => {
+  // ══════════════════════════════════════════════════════════
+  //  每人每周班次上限 + 两种排班模式
+  //  注意：这些 helper 定义在模块作用域之外的 then 回调里，后续 then 也要用，
+  //  因此挂在模块级变量上（局部 const 在下一个 then 里不可见）。
+  // ══════════════════════════════════════════════════════════
+  weeklyMaxOf = wt => g(`(() => {
+    const load = {};
+    for (const key of Object.keys(state.assignments.${wt})) {
+      for (const sid of state.assignments.${wt}[key]) load[sid] = (load[sid]||0)+1;
+    }
+    return Object.values(load).length ? Math.max(...Object.values(load)) : 0;
+  })()`);
+  spreadOf = () => g(`(() => {
+    const sids = state.students.map(s => s.sid);
+    const s = loadStats(state.assignments, sids);
+    return { odd: s.oddSpread, even: s.evenSpread, total: s.totalSpread };
+  })()`);
+  reRun = mode => Promise.resolve(
+    g(`(async () => { await runSchedule(${JSON.stringify(mode)}); return true; })()`));
+
+  // ── 上限参数的读取 / 归一化 ──
+  section('32. 「每人每周最多班次」参数的语义');
+  g('state.maxShiftsPerWeek = 0');
+  eq(g('getMaxShiftsPerWeek()'), 0, '0 被如实读回');
+  eq(g('maxShiftsLimit()'), null, '0 → maxShiftsLimit 为 Infinity（JSON 序列化后为 null）');
+  ok(g('maxShiftsLimit() === Infinity'), '0 确实映射为 Infinity（不限制）');
+  g('state.maxShiftsPerWeek = 2');
+  eq(g('maxShiftsLimit()'), 2, '非 0 → 如实作为上限');
+  g('state.maxShiftsPerWeek = -5');
+  eq(g('getMaxShiftsPerWeek()'), 3, '负数回落为默认值 3');
+  g('state.maxShiftsPerWeek = "abc"');
+  eq(g('getMaxShiftsPerWeek()'), 3, '非法值回落为默认值 3');
+  setMaxShifts('7');
+  eq(g('state.maxShiftsPerWeek'), 7, 'setMaxShiftsPerWeek 写入 state');
+  eq(localStorage.getItem('shift_max_per_week'), '7', '上限持久化到 localStorage');
+  g('state.maxShiftsPerWeek = 3');
+  g('loadMaxShifts()');
+  eq(g('state.maxShiftsPerWeek'), 7, 'loadMaxShifts 从 localStorage 读回');
+  g('localStorage.removeItem("shift_max_per_week"); loadMaxShifts();');
+  eq(g('state.maxShiftsPerWeek'), 3, '无存档时回落默认值 3');
+
+  // ── 均衡排班：严格遵守上限 ──
+  section('33. 均衡排班：强制遵守每人每周上限');
+  setupStudents();
+  g('state.template = makeDefaultTemplate()');
+  g('state.maxShiftsPerWeek = 2');
+  g('initAssignments()');
+  return reRun('balanced');
+}).then(() => {
+  eq(weeklyMaxOf('odd'), 2, '均衡排班：单周每人最多 2 班');
+  eq(weeklyMaxOf('even'), 2, '均衡排班：双周每人最多 2 班');
+  ok(g('countEmptySlots(state.assignments)') > 0,
+     '上限过小时确实会有班次排不满（而非偷偷超限）');
+
+  // 上限 1 也能守住
+  g('initAssignments()');
+  g('state.maxShiftsPerWeek = 1');
+  return reRun('balanced');
+}).then(() => {
+  eq(weeklyMaxOf('odd'), 1, '上限 1：单周每人最多 1 班');
+  eq(weeklyMaxOf('even'), 1, '上限 1：双周每人最多 1 班');
+
+  // ── 上限 = 0：均衡排班不限制，但仍然均衡 ──
+  section('34. 上限 = 0：不限制，两种模式都仍尽量均衡');
+  g('initAssignments()');
+  g('state.maxShiftsPerWeek = 0');
+  return reRun('balanced');
+}).then(() => {
+  ok(weeklyMaxOf('odd') > 1, '上限 0 时不再限制每人每周 1 班');
+  eq(g('countEmptySlots(state.assignments)'), 0, '上限 0 时所有班次都排满');
+  const sp0 = spreadOf();
+  ok(sp0.odd <= 1 && sp0.even <= 1 && sp0.total <= 1,
+     `上限 0 的均衡排班仍均衡（单周极差 ${sp0.odd}、双周 ${sp0.even}、合计 ${sp0.total}）`, sp0);
+
+  // ── 均衡排班必须遵守课程冲突与容量（不能为了均衡违规） ──
+  const violations = g(`(() => {
+    const bad = { conflict: 0, overCap: 0 };
+    for (const wt of ['odd','even']) {
+      for (const key of Object.keys(state.assignments[wt])) {
+        const info = resolveShift(key);
+        if (!info) continue;
+        const slot = state.assignments[wt][key];
+        if (slot.length > info.shift.capacity) bad.overCap++;
+        for (const sid of slot) {
+          const st = state.students.find(s => s.sid === sid);
+          if (st && hasConflict(st.courses, info.dayIdx + 1, info.shift.conflictPeriods, wt)) bad.conflict++;
+        }
+      }
+    }
+    return bad;
+  })()`);
+  eq(violations, { conflict: 0, overCap: 0 }, '均衡排班没有违反课程冲突或班次容量');
+
+  // ── 开始排班也均衡（这是用户明确要求「两种模式都要均衡」） ──
+  section('35. 开始排班同样保证每人班次相差不大');
+  g('initAssignments()');
+  g('state.maxShiftsPerWeek = 3');
+  return reRun('normal');
+}).then(() => {
+  const spN = spreadOf();
+  ok(spN.odd <= 1 && spN.even <= 1 && spN.total <= 1,
+     `开始排班：单周 ${spN.odd}、双周 ${spN.even}、合计 ${spN.total} 极差均 ≤ 1`, spN);
+
+  // 与均衡排班在同一模板下对比：均衡模式的合计极差不会更差
+  const normalTotal = spN.total;
+  g('initAssignments()');
+  return reRun('balanced').then(() => ({ normalTotal }));
+}).then(({ normalTotal }) => {
+  const spB = spreadOf();
+  ok(spB.total <= Math.max(1, normalTotal),
+     `均衡排班合计极差 ${spB.total} 不劣于开始排班 ${normalTotal}`);
+
+  // ── 硬约束：上限很小时，均衡排班不超限；开始排班不套用上限 ──
+  section('36. 两种模式对上限的差异（用户确认的语义）');
+  g('initAssignments()');
+  g('state.maxShiftsPerWeek = 1');
+  return reRun('normal');
+}).then(() => {
+  ok(weeklyMaxOf('odd') > 1 || g('countEmptySlots(state.assignments)') === 0,
+     '开始排班不套用上限 1（仍会给人排第 2 班）');
+
+  section('37. balanceCost / 单元工具的边界');
+  g('state.assignments = { odd: {}, even: {} }');
+  eq(g('balanceCost(state.assignments, [])'), 0, '无学生 → 代价 0（不抛异常）');
+  eq(g('countEmptySlots(state.assignments)'), 0, '空 assignments → 0 个空槽位');
+  eq(g('squaredDeviation([])'), 0, '空数组偏差平方和 0');
+  eq(g('squaredDeviation([5,5,5])'), 0, '全相等 → 偏差平方和 0');
+  eq(g('squaredDeviation([0,2])'), 2, '[0,2] 相对均值 1 的平方和 = 1+1 = 2');
+  eq(g('weeklyLoadOf(state.assignments, "odd", "nobody")'), 0, '未排班的人单周计数 0');
+  eq(g('totalLoadOf(state.assignments, "nobody")'), 0, '未排班的人合计计数 0');
+
+  // ── 闭式增量公式必须与真实代价函数一致（性能优化不能改变语义） ──
+  section('38. 均衡搜索的 O(1) 增量公式与真实代价一致');
+  // 一次替换不改变总和 ⇒ 均值不变 ⇒ ΔΣv² = 2(新−旧) 对每个受影响的人成立
+  //   delta = 4 − 2·gain，gain = (h−l) + (H−L)
+  // 这里用真实 balanceCost() 逐组交叉验证，防止以后改代价函数却忘了改增量公式。
+  g(`state.students = [
+    {sid:'A',name:'A',status:'ready',courses:[]},
+    {sid:'B',name:'B',status:'ready',courses:[]},
+    {sid:'C',name:'C',status:'ready',courses:[]}
+  ]`);
+  let deltaMismatch = -1;
+  for (let trial = 0; trial < 400; trial++) {
+    const h = 1 + Math.floor(Math.random() * 6);
+    const l = Math.floor(Math.random() * 6);
+    const ea = Math.floor(Math.random() * 6);
+    const eb = Math.floor(Math.random() * 6);
+    const res = g(`(() => {
+      const sids = ['A','B','C'];
+      const h=${h}, l=${l}, ea=${ea}, eb=${eb};
+      const A = {
+        odd:  { x: new Array(h).fill('A').concat(new Array(l).fill('B')) },
+        even: { y: new Array(ea).fill('A').concat(new Array(eb).fill('B')) }
+      };
+      const before = balanceCost(A, sids);
+      const i = A.odd.x.indexOf('A');
+      if (i < 0) return null;
+      A.odd.x[i] = 'B';
+      return { actual: balanceCost(A, sids) - before, closed: 4 - 2 * ((h - l) + (h + ea) - (l + eb)) };
+    })()`);
+    if (res === null) continue;
+    if (Math.abs(res.actual - res.closed) > 1e-9) { deltaMismatch = { h, l, ea, eb, ...res }; break; }
+  }
+  eq(deltaMismatch, -1, '400 组随机场景下，闭式增量与实际代价变化完全一致');
+
+  // ── 规模与性能：不能被均衡搜索拖垮（曾因 O(n) 代价重算慢到 30 秒） ──
+  section('39. 规模可用性（100 人量级不退化）');
+  const many = [];
+  for (let i = 0; i < 100; i++) {
+    const sid = '2025' + String(300000 + i);
+    const courses = [];
+    for (let c = 0; c < 4; c++) {
+      const wd = (i + c) % 7 + 1;
+      const begin = ((i * 3 + c * 5) % 10) + 1;
+      courses.push(mkCourse('K' + c, wd, begin, 2, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]));
+    }
+    many.push({ sid, name: 'S' + i, status: 'ready', courses, rawCourses: [], nowWeek: 8 });
+  }
+  g(`state.students = ${JSON.stringify(many)}`);
+  g('state.template = makeDefaultTemplate()');
+  g('state.maxShiftsPerWeek = 3');
+  g('initAssignments()');
+  const t0 = Date.now();
+  return Promise.resolve(g(`(async () => {
+    await runSchedule('balanced');
+    return Date.now();
+  })()`)).then(t1 => ({ t1, ms: t1 - t0 }));
+}).then(({ ms }) => {
+  ok(ms < 5000, `100 人均衡排班耗时 ${ms}ms < 5000ms（未退化）`);
+  const sp = spreadOf();
+  ok(sp.odd <= 1 && sp.even <= 1 && sp.total <= 1,
+     `100 人规模仍均衡（单周 ${sp.odd}、双周 ${sp.even}、合计 ${sp.total}）`, sp);
+  const hard = g(`(() => {
+    const bad = { conflict: 0, overCap: 0, overLimit: 0 };
+    for (const wt of ['odd','even']) {
+      for (const key of Object.keys(state.assignments[wt])) {
+        const info = resolveShift(key);
+        if (!info) continue;
+        const slot = state.assignments[wt][key];
+        if (slot.length > info.shift.capacity) bad.overCap++;
+        for (const sid of slot) {
+          const st = state.students.find(s => s.sid === sid);
+          if (st && hasConflict(st.courses, info.dayIdx + 1, info.shift.conflictPeriods, wt)) bad.conflict++;
+        }
+      }
+    }
+    for (const wt of ['odd','even']) {
+      const load = {};
+      for (const key of Object.keys(state.assignments[wt]))
+        for (const sid of state.assignments[wt][key]) load[sid] = (load[sid]||0)+1;
+      if (Object.values(load).some(v => v > 3)) bad.overLimit++;
+    }
+    return bad;
+  })()`);
+  eq(hard, { conflict: 0, overCap: 0, overLimit: 0 }, '100 人规模下三类硬约束全部保持');
+
+  // ── 名额不足时要摊到整周，不能被工作日吃光 ──
+  section('40. 名额紧张时「摊到整周」，周末不被饿死');
+  // 曾经的问题：贪心按「先周一到周日」顺序填，上限卡紧时工作日把名额吃光，周末 0 人。
+  // 修复：同难度内按「组内第几个班次 → 星期几」交错。
+  const small = [];
+  for (let i = 0; i < 12; i++) {
+    small.push({ sid: '2025' + String(400000 + i), name: 'T' + i, status: 'ready',
+                 courses: [], rawCourses: [], nowWeek: 8 });   // 全部无课，纯粹看名额分配
+  }
+  g(`state.students = ${JSON.stringify(small)}`);
+  g('state.template = makeDefaultTemplate()');
+  g('state.maxShiftsPerWeek = 2');   // 12 人 × 2 班 = 24 个名额，远少于单周 74 个需求
+  g('initAssignments()');
+  return Promise.resolve(g(`(async () => { await runSchedule('balanced'); return true; })()`));
+}).then(() => {
+  const dist = g(`(() => {
+    const per = { weekday: 0, weekend: 0 };
+    for (const key in state.assignments.odd) {
+      const info = resolveShift(key);
+      per[info.dayIdx >= 5 ? 'weekend' : 'weekday'] += state.assignments.odd[key].length;
+    }
+    return per;
+  })()`);
+  ok(dist.weekend > 0, `周末分到了名额（实际 ${dist.weekend} 人，工作日 ${dist.weekday} 人）`, dist);
+  // 周末 2 天 / 共 7 天，工作日 5 天，按天数比例周末应占到约 2/7
+  ok(dist.weekend / (dist.weekend + dist.weekday) >= 0.15,
+     `周末占比 ${(dist.weekend / (dist.weekend + dist.weekday) * 100).toFixed(1)}% ≥ 15%（未被工作日吃光）`, dist);
+
+  // 同难度下名额摊开：每天的排班人数不应出现「前几天满、后几天 0」
+  const dry = g(`(() => {
+    const per = {};
+    for (const key in state.assignments.odd) {
+      const info = resolveShift(key);
+      per[info.dayIdx] = (per[info.dayIdx] || 0) + state.assignments.odd[key].length;
+    }
+    return Object.values(per);
+  })()`);
+  ok(dry.every(v => v > 0), `7 天每天都有排班（各天人数 ${dry.join('/')}）`, dry);
+
+  const spSmall = spreadOf();
+  eq([spSmall.odd, spSmall.even, spSmall.total], [0, 0, 0],
+     '名额紧张时仍完全均衡（12 人各 2 班，极差 0）');
+
   summary();
 }).catch(e => {
   console.error('\n集成测试异常：', e);

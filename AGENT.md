@@ -12,7 +12,7 @@
 
 - **形态**：单机本地工具，无构建步骤、无打包器、无前端框架
 - **技术栈**：Python 3 标准库 `http.server` 作后端 + 单个 HTML 文件作前端（原生 JS）
-- **代码量**：`app.py` 约 590 行，`templates/index.html` 约 4060 行（含内联 CSS/JS）
+- **代码量**：`app.py` 约 590 行，`templates/index.html` 约 4640 行（含内联 CSS/JS）
 - **使用语言**：面向用户的文案、代码注释、提交信息**全部用中文**，请保持一致
 
 ---
@@ -28,7 +28,7 @@ python3 app.py                 # 监听 http://localhost:8765
 # 装依赖
 pip install -r requirements.txt
 
-# 跑自测（435 项，无需浏览器，仅需 node）
+# 跑自测（462 项，无需浏览器，仅需 node）
 bash .selftest/run-all.sh
 
 # 后端语法检查
@@ -112,6 +112,9 @@ API 端点：
 | `collectShiftsForWeek()` / `fillWeekGreedy()` | 收集本周班次（难度+同日交错排序）/ 贪心填充 |
 | `optimizeBalance()` / `balanceCost()` / `makeLoadTracker()` | 均衡局部搜索 / 代价函数 / 负载缓存，见 §4.8 |
 | `getMaxShiftsPerWeek()` / `maxShiftsLimit()` / `loadMaxShifts()` | 每人每周上限的读取与持久化（0=不限制） |
+| `isLocked()` / `lockedSidsOf()` / `toggleLock()` | 排班锁定的判断与切换（锁「该同学+该班次」的位置），见 §4.9 |
+| `normalizeLocks()` / `pruneLocks()` / `dropLocksOfStudent()` / `loadLocks()` / `persistLocks()` | 锁定数据的规范化、剪枝、清理与持久化 |
+| `remapLockKeys()` | 随 `remapAssignmentIds()` 迁移锁定键（导入被清洗过的 id 时必需） |
 | `weeklyLoadOf()` / `totalLoadOf()` / `loadStats()` / `countEmptySlots()` | 负载统计工具 |
 | `canTakeShift()` | 课程冲突判断的唯一入口（显式传参，便于干跑推演） |
 | `ensureAssignmentSlots()` | 按当前模板补齐空槽位（不覆盖已有排班），见 §4.7 |
@@ -278,6 +281,40 @@ API 端点：
 班次容量不变、换入前用 `canTakeShift()` 查课程冲突、均衡模式下换入者不得突破上限。
 这三条在测试 §34 / §39 有断言，改动算法后必须复核。
 
+### 4.9 排班锁定：锁的是「位置」（该同学 + 该班次），不是「人」
+
+`student-tag` 上的锁按钮给用户一个「这块别动」的表达方式。**粒度是位置**（用户明确确认）：
+
+- 锁定后，「开始排班」和「均衡排班」都**不会**改变这个位置 —— 不换人、也不换班次；
+- 但**该同学在其它班次仍可被正常安排**，其它同学也照样能进这个班次。
+  因此**所有判断都必须同时看 `sid` 与 `key`**，绝不能简化成「这个人被锁了」。
+- 数据存在 `state.locks = { odd: { [shiftKey]: [sid, ...] }, even: {...} }`，
+  持久化在 `localStorage['shift_locks']`，并随 `exportData()` / `handleImportFile()` 往返（version 仍为 3，
+  旧文件无 `locks` 字段 → 视为全部未锁定）。
+
+三个必须守住的点（否则锁定会被**静默破坏**，用户不会收到任何报错）：
+
+1. **`fillWeekGreedy` 不能抹掉锁定成员。** 旧写法 `assignments[wt][key] = []` / `= selected`
+   会把该槽位整体覆盖，锁定随之丢失。现在改为：先取出 `lockedSidsOf(key, wt)`，
+   剩余名额 `capacity - kept.length` 才交给算法，最后 `[...kept, ...selected]` 合并；
+   且锁定成员**先计入负载**（否则会被当成没排班、反复加派到别处）。
+2. **`optimizeBalance` 不能把锁定成员当 heavy 换出。** 循环里对每个 candidate 先 `isLocked(...)` 跳过。
+3. **`initAssignments` 重建槽位时必须回填锁定位置**（它会把 `state.assignments` 整个换掉）。
+
+配套的**手工操作防护**（拖走 / × 移除同样会改变锁定位置，必须拦下并提示，不能静默放行）：
+`onDragStart` 对 `data-locked="1"` 的 tag 调 `preventDefault()`；`removeFromShift` 直接 return。
+
+清理时机（**别漏，否则会留下指向不存在槽位/人员的脏锁定**）：
+`pruneLocks()` 在 `pruneInvalidAssignments()` 末尾自动调用（班次被删 / 单双周不生效 / 人已不在槽位时丢弃）；
+`dropLocksOfStudent()` 在 `removeStudent()` 里调用；`clearAll()` / `resetSchedule()` 整体清空；
+`remapLockKeys()` 随 `remapAssignmentIds()` 一起迁移被清洗过的班次 id（**漏了这条，重新导入时锁定会被当失效数据丢弃**）。
+
+> 另注意 `pruneLocks()` 的判人逻辑：**学生列表为空时不做「人是否还在」的判断**，
+> 否则刚打开页面（还没导入学号）就会把存档里的锁定全部清掉。
+
+测试见 `.selftest/test-integration.js` §41（27 项，含两种模式反复重排后锁定位置不变、
+均衡搜索跳过锁定、拖拽/移除被拦截、导入导出往返、剪枝与清理）。
+
 ---
 
 ## 5. 测试
@@ -287,7 +324,8 @@ API 端点：
 ```
 harness.js              最小 DOM / localStorage / XLSX 桩
 test-model.js           81 项：模板模型、键解析、冲突推导、持久化
-test-integration.js    183 项：排班、剪枝、渲染、导出、导入往返、两种排班模式与均衡性
+test-integration.js    210 项：排班、剪枝、渲染、导出、导入往返、两种排班模式、均衡性、
+                                排班锁定（§41，锁「位置」而非「人」）
 test-layout.js         171 项：排班日分组（预设/自定义、模式往返、动态渲染与导出、未排班时的表格、
                                 分组只排单周/双周）
 run-all.sh              入口
@@ -408,13 +446,18 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
   "assignments": {
     "odd":  { "odd_d0_wd0": ["2025210001", ...] },
     "even": { "even_d0_wd0": [...] }
+  },
+  "locks": {                      // 已锁定的排班位置（version 3 起；旧文件无此字段=全部未锁定）
+    "odd":  { "odd_d0_wd0": ["2025210001"] },
+    "even": {}
   }
 }
 ```
 
-**兼容性**：`version: 2` 的旧文件（无 `template` 字段）仍可导入，沿用当前模板。
+**兼容性**：`version: 2` 的旧文件（无 `template` 字段）仍可导入，沿用当前模板；
+无 `locks` 字段的旧文件按「全部未锁定」处理（`normalizeLocks(undefined)`）。
 `handleImportFile()` 会用 `remapAssignmentIds(_idRemap)` 迁移被清洗过的班次 id，
-避免排班被误判失效而清除。
+避免排班被误判失效而清除；**`remapLockKeys()` 会同步迁移锁定键**，否则锁定会被当失效数据丢弃。
 
 ### 7.2 值班模板结构
 
@@ -460,7 +503,12 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
 | --- | --- |
 | `shift_duty_template_v1` | 当前值班模板（`TEMPLATE_STORAGE_KEY`） |
 | `shift_ignored_courses` | 各学生被忽略的课程 ID |
+| `shift_max_per_week` | 每人每周最多班次（仅均衡排班生效） |
+| `shift_locks` | 已锁定的排班位置（见 §4.9） |
 | `theme` | `auto` / `light` / `dark` |
+
+> 注意：**排班数据本身不进 localStorage**（只在内存中，靠导出 JSON 保存）。
+> 因此 `shift_locks` 存档在刷新页面后可能指向尚未恢复的排班，`pruneLocks()` 已按此做了保护（§4.9）。
 
 ---
 

@@ -28,7 +28,7 @@ python3 app.py                 # 监听 http://localhost:8765
 # 装依赖
 pip install -r requirements.txt
 
-# 跑自测（462 项，无需浏览器，仅需 node）
+# 跑自测（469 项，无需浏览器，仅需 node）
 bash .selftest/run-all.sh
 
 # 后端语法检查
@@ -324,8 +324,8 @@ API 端点：
 ```
 harness.js              最小 DOM / localStorage / XLSX 桩
 test-model.js           81 项：模板模型、键解析、冲突推导、持久化
-test-integration.js    210 项：排班、剪枝、渲染、导出、导入往返、两种排班模式、均衡性、
-                                排班锁定（§41，锁「位置」而非「人」）
+test-integration.js    217 项：排班、剪枝、渲染、导出、导入往返、两种排班模式、均衡性、
+                                排班锁定（§41，锁「位置」而非「人」）、弹窗层叠断言（§42，见 §6.7）
 test-layout.js         171 项：排班日分组（预设/自定义、模式往返、动态渲染与导出、未排班时的表格、
                                 分组只排单周/双周）
 run-all.sh              入口
@@ -426,6 +426,41 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
 `CONFIG.courseTimes` 写死了第 1–12 节的起止时间（来自 `api.md`）。
 第 11、12 节曾缺失，导致课表弹窗那两行时间显示为空，现已补齐。
 若学校作息调整，改这里即可——`deriveConflictPeriods()` 会自动跟随。
+
+### 6.7 弹窗层叠：确认框必须被单独抬高（曾导致班次删不掉）
+
+`index.html` 里 5 个 `.modal-overlay`（`exportModal`/`courseModal`/`confirmModal`/`guideModal`/`templateModal`）
+**都是 `<body>` 的直接子元素**，且共用同一条规则 `z-index: 9998`。
+此时层叠顺序**由 DOM 顺序决定**：后出现的元素盖住先出现的。
+
+`#confirmModal` 排在 `#templateModal` **之前**，于是「在值班模板里点删除班次」弹出的确认框
+被模板窗口整个盖住 —— 表现是**用户点了删除没反应、班次删不掉**，且因为遮罩之下看不见，
+很容易被误判成「前端逻辑没跑」。同理受影响的还有 **删除分组**（`tplRemoveGroup`）与
+**恢复默认模板**（`resetTemplateToDefault`），它们同样在模板窗内弹确认框。
+
+修复：给确认框单独抬高一层（**唯一的不同层级**，其余弹窗保持 9998）：
+
+```css
+#confirmModal { z-index: 9999; }
+```
+
+> **不要删掉这条规则。** 它看起来「多余」（都 9998 也差不多），但删掉就会立刻复发。
+> `.selftest/test-integration.js` §42 会对这条 CSS 做静态断言，删了会红。
+
+配套还有一处**键盘顺序**问题：Escape 处理原先先判断 `templateModal`、后判断 `confirmModal`，
+于是在确认框打开时按 Esc 会**先关掉底下的模板窗口**（用户会以为「删了班次还整窗消失」）。
+现已把 `confirmModal` 提到最前，保证 **Esc 永远先关最上层的确认框**。
+
+> **排查提示**：这类「代码正确但按钮点不到」的层叠问题，`node` 自测套件**查不出来**
+> （harness 没有 CSS 引擎，只能做 §42 那种静态字符串断言）。必须用真实浏览器验证，
+> 可靠手法是在控制台对目标按钮做命中测试：
+>
+> ```js
+> const b = document.getElementById('confirmOkBtn');
+> const r = b.getBoundingClientRect();
+> document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
+> // 返回的必须是该按钮（或确认框内元素）；返回 null 或模板窗口里的元素 = 被盖住了
+> ```
 
 ---
 

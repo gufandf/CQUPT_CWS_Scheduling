@@ -1,5 +1,5 @@
 // 集成测试：排班 / 剪枝 / 渲染 / 导出 / 导入 全链路
-const { g, ok, eq, section, summary, localStorage, el, document, writeFiles } = require('./harness.js');
+const { g, ok, eq, section, summary, localStorage, el, document, writeFiles, rawHtml } = require('./harness.js');
 
 // ── 构造学生课表数据 ──
 const mkCourse = (name, weekday, begin, period, weeks, ignored) => ({
@@ -1005,6 +1005,33 @@ Promise.resolve(run).then(() => {
   // 这里把 showConfirm 临时替换成「直接执行回调」，以便真正跑到重置逻辑。
   g(`(function(){ const old = showConfirm; showConfirm = (t, m, fn) => fn(); try { resetSchedule(); } finally { showConfirm = old; } })()`);
   eq(g('JSON.stringify(state.locks)'), '{"odd":{},"even":{}}', '重置排班后锁定一并清空');
+
+  // ── 42. 层叠陷阱：确认弹窗必须盖在普通弹窗（尤其模板编辑器）之上 ──
+  // 曾出现的问题：所有 .modal-overlay 都是 body 的直接子元素且 z-index 相同（9998），
+  // 于是由 DOM 顺序决定层叠；#confirmModal 排在 #templateModal 之前，
+  // 导致「模板内删除班次/分组」的确认框被模板窗口整个盖住，用户看不到、点不到，班次删不掉。
+  // node 里没有 CSS 引擎，这里只能做静态断言（防止有人把抬高确认框的那条规则删掉）；
+  // 真正的层叠/可点击性由浏览器端验证覆盖，见 AGENT.md §6.7。
+  section('42. 层叠修复：确认弹窗不被其它弹窗盖住');
+  const css = rawHtml();
+  ok(/#confirmModal\s*\{[^}]*z-index\s*:\s*9999/.test(css),
+     'CSS 中 #confirmModal 被单独抬到 z-index 9999（高于普通弹窗的 9998）');
+  ok(/\.modal-overlay\s*\{[^}]*z-index\s*:\s*9998/.test(css),
+     '普通弹窗仍为 9998（确认框基准层不变）');
+  ok(/\.toast\s*\{[^}]*z-index\s*:\s*10000/.test(css),
+     'Toast 仍凌驾于所有弹窗之上（10000），提示不会被遮');
+
+  // 确认框必须排在模板窗口之前 —— 正是这个顺序 + 相同 z-index 才引发事故；
+  // 一旦有人把 #confirmModal 挪到模板窗口之后，「抬高一层」就成了唯一保障，顺序不再是隐患。
+  const iConfirm = css.indexOf('id="confirmModal"');
+  const iTemplate = css.indexOf('id="templateModal"');
+  ok(iConfirm > 0 && iTemplate > 0 && iConfirm < iTemplate,
+     '锁定前提仍成立：#confirmModal 在 DOM 中先于 #templateModal（故必须靠 z-index 压住它）');
+
+  // 受影响的三条路径都是「模板窗内弹确认框」，确认它们的入口都存在
+  ok(g('typeof tplRemoveShift') === 'function', '删除班次入口存在（会弹确认框）');
+  ok(g('typeof tplRemoveGroup') === 'function', '删除分组入口存在（会弹确认框）');
+  ok(g('typeof resetTemplateToDefault') === 'function', '恢复默认模板入口存在（会弹确认框）');
 
   summary();
 }).catch(e => {

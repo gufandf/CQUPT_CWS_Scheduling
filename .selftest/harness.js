@@ -62,8 +62,12 @@ const sandbox = {
 sandbox.globalThis = sandbox;
 
 // 直接从 index.html 抽取内联 JS，保证测试对象始终是最新代码（无需手工导出）
+function readHtml() {
+  return fs.readFileSync(path.join(__dirname, '..', 'templates', 'index.html'), 'utf8');
+}
+
 function extractInlineJs() {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'templates', 'index.html'), 'utf8');
+  const html = readHtml();
   const blocks = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
   if (blocks.length === 0) throw new Error('index.html 中未找到内联 script');
   return blocks.reduce((a, b) => (a.length >= b.length ? a : b));
@@ -98,4 +102,4 @@ function summary() {
   return fail === 0;
 }
 
-module.exports = { ctx, sandbox, document, localStorage, el, g, ok, eq, section, summary, writeFiles, failures };
+module.exports = { ctx, sandbox, document, localStorage, el, g, ok, eq, section, summary, writeFiles, failures, rawHtml: readHtml };

@@ -517,6 +517,16 @@ textarea#sidInput:focus {
 }
 .modal-overlay.show { display: flex; }
 
+/*
+ * 确认弹窗必须盖在所有普通弹窗之上。
+ * 所有 .modal-overlay 都是 <body> 的直接子元素且 z-index 相同（9998），
+ * 此时由 DOM 顺序决定层叠 —— #confirmModal 排在 #templateModal 之前，
+ * 于是「在值班模板里删除班次/分组」弹出的确认框会被模板窗口整个盖住，
+ * 表现为「点了删除没反应、删不掉」。这里给确认框单独抬高一层。
+ * 详见 AGENT.md §6.7。
+ */
+#confirmModal { z-index: 9999; }
+
 .modal {
   background: var(--card); border-radius: var(--radius);
   width: 92%; max-width: 700px; max-height: 82vh;
@@ -4575,12 +4585,14 @@ function renderShiftCard(group, s, idx, total) {
 // ============================================================
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    if (document.getElementById('templateModal').classList.contains('show')) {
-      closeTemplateEditor();
-      return;
-    }
+    // 确认框永远在最上层，Esc 必须先关它 —— 否则会先关掉底下的模板窗口，
+    // 让用户误以为「删了班次又整窗消失」。
     if (document.getElementById('confirmModal').classList.contains('show')) {
       closeConfirm();
+      return;
+    }
+    if (document.getElementById('templateModal').classList.contains('show')) {
+      closeTemplateEditor();
       return;
     }
     if (document.getElementById('courseModal').classList.contains('show')) {

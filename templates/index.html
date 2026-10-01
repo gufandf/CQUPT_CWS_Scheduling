@@ -1351,6 +1351,8 @@ function weekdayWeekendLayout() {
 
 const TEMPLATE_STORAGE_KEY = 'shift_duty_template_v1';
 const WEEK_LABELS = { all: '每周', odd: '单周', even: '双周' };
+/** 单双周的固定展示顺序（人员表明细排序用） */
+const WEEK_ORDER = ['odd', 'even'];
 
 // ============================================================
 //  时间工具
@@ -4094,6 +4096,101 @@ function buildSheetRows(weekType, cellText) {
   return ws;
 }
 
+/**
+ * 生成「人员表」工作表：把值班表（按班次看人）翻转成按人看班次，
+ * 方便每位值班人员快速查看「自己在何时、一共有几个班」。
+ *
+ * 表结构（单一工作表内两段）：
+ *   1) 概览：姓名 | 学号 | 单周班次 | 双周班次 | 合计
+ *   2) 明细：姓名 | 学号 | 周别 | 星期 | 班次名称 | 时间段 | 分组
+ *
+ * 统计口径：只统计模板中真实存在的班次（陈旧键不计），
+ * 「每周」的班次在单周、双周各计一次（它每周都要值），明细里标注为「每周」。
+ * 概览的班次数直接数明细行，保证两段永远对得上。
+ * 未排班的人员保留一行（显示 0），避免查不到自己。
+ */
+function buildPersonSheet() {
+  const days = CONFIG.dayNames;
+
+  // 名单里的人都先在概览中出现（含 0 班）
+  const persons = {};
+  state.students.forEach(s => { persons[s.sid] = { sid: s.sid, name: getStudentName(s.sid), detail: [] }; });
+
+  // 把排班翻成「人 → 班次列表」；班次定义按单双周各建一次索引，避免重复读模板
+  const shiftIndex = { odd: {}, even: {} };
+  for (const wt of ['odd', 'even']) {
+    for (let d = 0; d < 7; d++) {
+      for (const shift of getShiftsForDay(d).filter(s => shiftAppliesToWeek(s, wt))) {
+        shiftIndex[wt][generateShiftKey(wt, d, shift.id)] = {
+          shift, dayIdx: d, group: getGroupForDay(d)
+        };
+      }
+    }
+  }
+
+  for (const wt of ['odd', 'even']) {
+    for (const key in (state.assignments[wt] || {})) {
+      const info = shiftIndex[wt][key];
+      if (!info) continue;                      // 模板里已不存在/本周不生效的槽位，跳过
+      const slot = state.assignments[wt][key];
+      if (!Array.isArray(slot)) continue;
+      for (const sid of slot) {
+        if (!sid) continue;
+        if (!persons[sid]) persons[sid] = { sid, name: getStudentName(sid), detail: [] };
+        persons[sid].detail.push({ weekType: wt, info });
+      }
+    }
+  }
+
+  const people = Object.keys(persons).map(sid => {
+    const p = persons[sid];
+    p.odd = p.detail.filter(e => e.weekType === 'odd').length;
+    p.even = p.detail.filter(e => e.weekType === 'even').length;
+    p.total = p.odd + p.even;
+    p.detail.sort((a, b) =>
+      WEEK_ORDER.indexOf(a.weekType) - WEEK_ORDER.indexOf(b.weekType) ||
+      a.info.dayIdx - b.info.dayIdx || timeToMinutes(a.info.shift.start) - timeToMinutes(b.info.shift.start));
+    return p;
+  });
+  // 班多的排前面，同班次按学号稳定排序（方便一眼看出谁班多）
+  people.sort((a, b) => b.total - a.total || String(a.sid).localeCompare(String(b.sid)));
+
+  // ── 概览段 ──
+  const rows = [
+    ['人员表（每人何时有几个班）', '', '', '', ''],
+    ['姓名', '学号', '单周班次', '双周班次', '合计'],
+  ];
+  const merges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }];
+  if (people.length === 0) {
+    const r = rows.length;
+    rows.push(['（暂无排班数据）', '', '', '', '']);
+    merges.push({ s: { r, c: 0 }, e: { r, c: 4 } });
+  }
+  people.forEach(p => rows.push([p.name, p.sid, p.odd, p.even, p.total]));
+
+  // ── 明细段 ──
+  rows.push([]);
+  const detailStart = rows.length;
+  rows.push(['排班明细（每人何时有几个班）', '', '', '', '', '', '']);
+  merges.push({ s: { r: detailStart, c: 0 }, e: { r: detailStart, c: 6 } });
+  rows.push(['姓名', '学号', '周别', '星期', '班次名称', '时间段', '分组']);
+  people.forEach(p => {
+    p.detail.forEach(entry => {
+      const info = entry.info;
+      const s = info.shift;
+      rows.push([
+        p.name, p.sid, WEEK_LABELS[s.weeks] || '每周', days[info.dayIdx], s.label,
+        `${s.start}-${s.end}`, (info.group && info.group.name) || '',
+      ]);
+    });
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 7 }, { wch: 7 }, { wch: 16 }, { wch: 14 }, { wch: 14 }];
+  ws['!merges'] = merges;
+  return ws;
+}
+
 function exportDutySchedule() {
   const wb = XLSX.utils.book_new();
 
@@ -4105,6 +4202,9 @@ function exportDutySchedule() {
     });
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
   }
+
+  // 人员表：仅加在值班表导出里（空课表不涉及班次归属，保持原样）
+  XLSX.utils.book_append_sheet(wb, buildPersonSheet(), '人员表');
 
   XLSX.writeFile(wb, `值班表_${new Date().toISOString().slice(0, 10)}.xlsx`);
   showToast('值班表已导出为 Excel', 'success');

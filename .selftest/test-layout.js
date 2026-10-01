@@ -522,7 +522,7 @@ g("state.currentWeek='odd'; refreshView();");
 writeFiles.length = 0;
 g('exportDutySchedule()');
 const wbWk = writeFiles[0].wb;
-eq(wbWk.SheetNames, ['单周值班表', '双周值班表'], '仍然导出单双周两个工作表');
+eq(wbWk.SheetNames, ['单周值班表', '双周值班表', '人员表'], '仍然导出单双周两个值班表 + 人员表');
 const oddRows = wbWk.Sheets['单周值班表'].rows.map(r => r.join('|'));
 const evenRows = wbWk.Sheets['双周值班表'].rows.map(r => r.join('|'));
 ok(oddRows.some(r => r.includes('工作日班 10:00-12:00')), '单周表含工作日班');

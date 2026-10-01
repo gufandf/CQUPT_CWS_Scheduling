@@ -294,7 +294,7 @@ Promise.resolve(run).then(() => {
   g('exportDutySchedule()');
   eq(writeFiles.length, 1, '导出值班表调用了一次 XLSX.writeFile');
   const wb = writeFiles[0].wb;
-  eq(wb.SheetNames, ['单周值班表', '双周值班表'], '含单周/双周两个工作表');
+  eq(wb.SheetNames, ['单周值班表', '双周值班表', '人员表'], '含单周/双周值班表 + 人员表三个工作表');
   const rows = wb.Sheets['单周值班表'].rows;
   const flat = rows.map(r => r.join('|'));
   ok(flat.some(r => r.includes('周一至周五')), '值班表含工作日分段行');
@@ -1199,6 +1199,132 @@ Promise.resolve(run).then(() => {
   eq(prefViolations, { conflict: 0, overCap: 0, overLimit: 0, dup: 0 },
      '端到端：连续模式仍守住容量 / 课程冲突 / 每人上限，且槽位内无重复的人');
   g('setContinuousScheduling(false); localStorage.removeItem("shift_continuous");');
+
+  // ── 44. 人员表（导出值班表时附带，见 AGENT.md §4.11） ──
+  // 口径：每人总班次 = 单周班次数 + 双周班次数；weeks:'all' 的班次每周都值，
+  //       单周、双周各计一次，明细里标注为「每周」。
+  section('44. 人员表：单人何时有几班（导出值班表的第三个工作表）');
+
+  g(`state.template = normalizeTemplate({ name:'人员表用例', mode:'custom', layout:[
+    {key:'g1',name:'周一',days:[0]}
+  ], groups:{
+    g1:[{id:'all',label:'通用班',start:'10:00',end:'12:00',capacity:9},
+        {id:'odd',label:'单周班',start:'14:00',end:'16:00',capacity:9,weeks:'odd'},
+        {id:'even',label:'双周班',start:'16:00',end:'18:00',capacity:9,weeks:'even'}]
+  }})`.replace(/\n/g, ''));
+  g('initAssignments()');
+  // 槽位按「该周是否生效」生成，所以单周没有仅双周班的键，反之亦然
+  eq(g("Object.keys(state.assignments.odd).sort()"), ['odd_d0_all', 'odd_d0_odd'],
+     '单周槽位 = 每周班 + 仅单周班');
+  eq(g("Object.keys(state.assignments.even).sort()"), ['even_d0_all', 'even_d0_even'],
+     '双周槽位 = 每周班 + 仅双周班');
+  // 甲：单周名单里 2 条（每周班+单周班）、双周名单里 2 条（每周班+双周班）→ 合计 4
+  // 乙：只在单周名单里排了「每周班」→ 单周 1 + 双周 0 = 合计 1（与侧栏 weeklyLoadOf/totalLoadOf 同口径）
+  // 丙：名单内的同学，没有任何排班 → 合计 0
+  g(`state.students = [
+    {sid:'2025210001',name:'甲同学',status:'ready',courses:[],rawCourses:[],nowWeek:8},
+    {sid:'2025210002',name:'乙同学',status:'ready',courses:[],rawCourses:[],nowWeek:8},
+    {sid:'2025210003',name:'丙同学',status:'ready',courses:[],rawCourses:[],nowWeek:8},
+    {sid:'2025210004',name:'丁同学',status:'ready',courses:[],rawCourses:[],nowWeek:8}
+  ]`);
+  g(`state.assignments.odd.odd_d0_all = ['2025210001','2025210002'];
+     state.assignments.odd.odd_d0_odd = ['2025210001'];
+     state.assignments.even.even_d0_all = ['2025210001'];
+     state.assignments.even.even_d0_even = ['2025210001'];
+     state.assignments.odd.odd_d0_bogus = ['2025210004'];`);   // 模板中不存在的陈旧键
+
+  // 有效排班的计数与项目既有的负载口径一致（不另造算法）
+  eq(g("weeklyLoadOf(state.assignments,'odd','2025210001')"), 2, '甲的单周班次数与 weeklyLoadOf 一致');
+  eq(g("totalLoadOf(state.assignments,'2025210001')"), 4, '甲的合计与 totalLoadOf 一致，为 4');
+  eq(g("weeklyLoadOf(state.assignments,'odd','2025210004')"), 1,
+     '陈旧键会让侧栏口径把丁算成 1（历史遗留键确实还在 assignments 里）');
+
+  writeFiles.length = 0;
+  g('exportDutySchedule()');
+  eq(writeFiles.length, 1, '导出值班表仍只调用一次 XLSX.writeFile');
+  const wbPerson = writeFiles[0].wb;
+  eq(wbPerson.SheetNames, ['单周值班表', '双周值班表', '人员表'], '三个工作表：单周 / 双周 / 人员表');
+  ok(wbPerson.Sheets['人员表'] && Array.isArray(wbPerson.Sheets['人员表'].rows), '人员表工作表已生成');
+  const pRows = wbPerson.Sheets['人员表'].rows;
+  const pFlat = pRows.map(r => r.join('|'));
+  const sumIdx = pFlat.findIndex(r => r.startsWith('姓名|学号|单周班次|双周班次|合计'));
+  ok(sumIdx > 0, '人员表含概览表头');
+  const detailHeaderIdx = pFlat.findIndex(r => r.startsWith('姓名|学号|周别|星期|班次名称|时间段|分组'));
+  ok(detailHeaderIdx > sumIdx, '人员表含明细表头（在概览之后）');
+  // 明细数据行 = 明细表头之后、姓名列非空且不是另一个表头的行
+  const detail = pRows.slice(detailHeaderIdx + 1)
+    .filter(r => r[0] && r[0] !== '姓名' && !r[0].startsWith('排班明细'));
+  // 概览的人员行：概览表头之后 → 明细标题之前（明细标题 = 明细表头下标 - 2：标题行 + 空行）
+  const detailTitleIdx = detailHeaderIdx - 2;
+  const sumRows = pRows.slice(sumIdx + 1, detailTitleIdx).filter(r => r[0] && !r[0].startsWith('说明'));
+  eq(sumRows.length, 4, '概览恰好列出四名人员行', sumRows);
+
+  // 沙箱里没有 Array#find，用显式循环取值
+  const personRow = name => {
+    for (const r of sumRows) if (r[0] === name) return r;
+    return null;
+  };
+  const of = name => {
+    const r = personRow(name);
+    return r ? { odd: r[2], even: r[3], total: r[4] } : null;
+  };
+  eq(of('甲同学'), { odd: 2, even: 2, total: 4 }, '甲：单周 2 + 双周 2 = 合计 4');
+  eq(of('乙同学'), { odd: 1, even: 0, total: 1 }, '乙：只在单周被排了班 → 合计 1（与侧栏口径一致）');
+  eq(of('丙同学'), { odd: 0, even: 0, total: 0 }, '未排班的人员也在概览里，合计 0');
+  eq(of('丁同学'), { odd: 0, even: 0, total: 0 },
+     '只挂在陈旧键上的人按 0 班计（模板里已没有那个班次）');
+  ok(!detail.some(r => r[1] === '2025210004'), '陈旧键不会在明细里冒出一行排班');
+  eq(of('戊同学'), null, '未在名单里、也没有排班的人不会凭空出现');
+  eq(personRow('丙同学').slice(0, 2), ['丙同学', '2025210003'], '概览写出姓名与学号');
+  eq(personRow('甲同学').slice(2), [2, 2, 4], '概览三列依次为 单周 / 双周 / 合计');
+  eq(sumRows.map(r => r[0]), ['甲同学', '乙同学', '丙同学', '丁同学'], '概览按合计班次降序、同班次按学号排序');
+
+  // 明细顺序：先按该人所在的周（单周 → 双周）分组，组内按星期、再按班次开始时间
+  const dWeek = detail.map(r => r[2]);
+  eq(dWeek.length, 5, '明细总行数 = 各人实际班次数之和（2 + 2 + 1 + 0 + 0 = 5）');
+  eq(dWeek, ['每周', '单周', '每周', '双周', '每周'], '明细按「所在周 → 星期 → 班次时间」排序');
+  const days0 = detail.map(r => r[3]);
+  eq(days0, ['周一', '周一', '周一', '周一', '周一'], '明细写出星期');
+  ok(detail.every(r => typeof r[5] === 'string' && /^\d{2}:\d{2}-\d{2}:\d{2}$/.test(r[5])),
+     '明细写出 HH:MM-HH:MM 时间段', detail.map(r => r[5]));
+  eq(detail[0], ['甲同学', '2025210001', '每周', '周一', '通用班', '10:00-12:00', '周一'],
+     '明细一行：姓名 / 学号 / 周别 / 星期 / 班次 / 时间段 / 分组');
+  eq(detail[1], ['甲同学', '2025210001', '单周', '周一', '单周班', '14:00-16:00', '周一'], '仅单周班标注「单周」');
+  eq(detail[3], ['甲同学', '2025210001', '双周', '周一', '双周班', '16:00-18:00', '周一'], '双周班明细正确');
+  eq(detail[4], ['乙同学', '2025210002', '每周', '周一', '通用班', '10:00-12:00', '周一'], '乙在明细里只有 1 行');
+  eq(detail.length, sumRows.reduce((s, r) => s + r[4], 0), '概览合计 = 明细行数（两段口径一致）');
+
+  // 人数：单周表里通用班 2 人 + 单周班 1 人；双周表里通用班 1 人 + 双周班 1 人
+  eq(g(`state.assignments.odd['odd_d0_all'].length + state.assignments.odd['odd_d0_odd'].length +
+        state.assignments.even['even_d0_all'].length + state.assignments.even['even_d0_even'].length`), 5,
+     '实际槽位内的人数合计为 5');
+
+  // 清掉排班但保留名单：概览里所有人都还在，且合计归零
+  g('state.assignments = { odd: {}, even: {} };');
+  writeFiles.length = 0;
+  g('exportDutySchedule()');
+  const clearedRows = writeFiles[0].wb.Sheets['人员表'].rows;
+  const clearIdx = clearedRows.map(r => r.join('|')).findIndex(r => r.startsWith('姓名|学号|单周班次'));
+  const cleared = clearedRows.slice(clearIdx + 1).filter(r => r[0] && !r[0].startsWith('排班明细') && r[0] !== '姓名');
+  ok(cleared.length === 4 && cleared[0][0] === '甲同学' && cleared[0][4] === 0,
+     '排班清空后人员仍在概览里且合计为 0', cleared);
+  ok(clearedRows.map(r => r.join('|')).some(r => r.includes('甲同学')), '名单里的人不会因为没班次而消失');
+
+  // 完全没有数据时也要有人员表（只有提示行），不影响单双周表
+  g('state.students = [];');
+  writeFiles.length = 0;
+  g('exportDutySchedule()');
+  const emptyPerson = writeFiles[0].wb.Sheets['人员表'];
+  ok(!!emptyPerson, '空排班时人员表仍然存在');
+  eq(writeFiles[0].wb.SheetNames, ['单周值班表', '双周值班表', '人员表'], '空排班时仍是三个工作表');
+  ok(emptyPerson.rows.map(r => r.join('|')).some(r => r.includes('暂无排班数据')), '空排班时人员表给出提示行');
+  ok(writeFiles[0].wb.Sheets['单周值班表'].rows.length > 0, '单周值班表结构不受空人员表影响');
+
+  // 空课表不带人员表（用户明确只加在值班表）
+  g("state.students = [{sid:'2025210002',name:'同学0002',status:'ready',courses:[],rawCourses:[],nowWeek:8}]");
+  writeFiles.length = 0;
+  g('exportFreeSchedule()');
+  eq(writeFiles[0].wb.SheetNames, ['单周空课表', '双周空课表'], '空课表仍只有单双周两个工作表（不加人员表）');
 
   summary();
 }).catch(e => {

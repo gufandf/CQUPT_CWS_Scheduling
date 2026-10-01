@@ -14,23 +14,34 @@
   --primary: #2563EB;
   --primary-light: #EFF6FF;
   --primary-dark: #1D4ED8;
+  --primary-grad: linear-gradient(135deg, #3B82F6 0%, #2563EB 55%, #1D4ED8 100%);
   --success: #059669;
   --success-light: #ECFDF5;
+  --success-grad: linear-gradient(135deg, #10B981 0%, #059669 100%);
   --warning: #D97706;
   --warning-light: #FFFBEB;
+  --warning-grad: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
   --danger: #DC2626;
   --danger-light: #FEF2F2;
+  --danger-grad: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
   --bg: #F1F5F9;
+  /* 页面底色：两团柔光渐晕，避免整屏死板纯色 */
+  --bg-grad:
+    radial-gradient(1100px 620px at -5% -10%, #E4EDFC 0%, rgba(228,237,252,0) 62%),
+    radial-gradient(900px 520px at 105% 105%, #E7F0F3 0%, rgba(231,240,243,0) 58%);
   --card: #FFFFFF;
   --border: #E2E8F0;
   --text: #0F172A;
   --text-secondary: #64748B;
   --text-muted: #94A3B8;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
-  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-lg: 0 10px 40px rgba(0,0,0,.1);
+  --shadow-sm: 0 1px 2px rgba(15,23,42,.06);
+  --shadow: 0 2px 6px rgba(15,23,42,.07), 0 1px 2px rgba(15,23,42,.05);
+  --shadow-md: 0 6px 18px rgba(15,23,42,.10), 0 2px 6px rgba(15,23,42,.06);
+  --shadow-lg: 0 18px 50px rgba(15,23,42,.20), 0 6px 18px rgba(15,23,42,.10);
   --radius: 10px;
   --radius-sm: 6px;
+  --radius-lg: 16px;
+  --ring: 0 0 0 3px rgba(37,99,235,.18);
   --transition: 0.15s ease;
   --cell-bg: #FFFFFF;
   --cell-wd: #F8FAFC;
@@ -46,21 +57,30 @@
     --primary: #3B82F6;
     --primary-light: #1E3A5F;
     --primary-dark: #60A5FA;
+    --primary-grad: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
     --success: #10B981;
     --success-light: #064E3B;
+    --success-grad: linear-gradient(135deg, #10B981 0%, #047857 100%);
     --warning: #F59E0B;
     --warning-light: #78350F;
+    --warning-grad: linear-gradient(135deg, #F59E0B 0%, #B45309 100%);
     --danger: #EF4444;
     --danger-light: #7F1D1D;
+    --danger-grad: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
     --bg: #0F172A;
+    --bg-grad:
+      radial-gradient(1100px 620px at -5% -10%, rgba(59,130,246,.10) 0%, rgba(59,130,246,0) 62%),
+      radial-gradient(900px 520px at 105% 105%, rgba(16,185,129,.08) 0%, rgba(16,185,129,0) 58%);
     --card: #1E293B;
     --border: #334155;
     --text: #F1F5F9;
     --text-secondary: #94A3B8;
     --text-muted: #64748B;
     --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
-    --shadow: 0 1px 3px rgba(0,0,0,.4);
-    --shadow-lg: 0 10px 40px rgba(0,0,0,.5);
+    --shadow: 0 2px 6px rgba(0,0,0,.35);
+    --shadow-md: 0 6px 18px rgba(0,0,0,.45);
+    --shadow-lg: 0 18px 50px rgba(0,0,0,.6);
+    --ring: 0 0 0 3px rgba(96,165,250,.25);
     --cell-bg: #1E293B;
     --cell-wd: #1A2332;
     --cell-we: #2D1F1A;
@@ -73,13 +93,23 @@
 /* 手动覆盖暗色 */
 [data-theme="dark"] {
   --primary: #3B82F6; --primary-light: #1E3A5F; --primary-dark: #60A5FA;
+  --primary-grad: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
   --success: #10B981; --success-light: #064E3B;
+  --success-grad: linear-gradient(135deg, #10B981 0%, #047857 100%);
   --warning: #F59E0B; --warning-light: #78350F;
+  --warning-grad: linear-gradient(135deg, #F59E0B 0%, #B45309 100%);
   --danger: #EF4444; --danger-light: #7F1D1D;
-  --bg: #0F172A; --card: #1E293B; --border: #334155;
+  --danger-grad: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
+  --bg: #0F172A;
+  --bg-grad:
+    radial-gradient(1100px 620px at -5% -10%, rgba(59,130,246,.10) 0%, rgba(59,130,246,0) 62%),
+    radial-gradient(900px 520px at 105% 105%, rgba(16,185,129,.08) 0%, rgba(16,185,129,0) 58%);
+  --card: #1E293B; --border: #334155;
   --text: #F1F5F9; --text-secondary: #94A3B8; --text-muted: #64748B;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.3); --shadow: 0 1px 3px rgba(0,0,0,.4);
-  --shadow-lg: 0 10px 40px rgba(0,0,0,.5);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.3); --shadow: 0 2px 6px rgba(0,0,0,.35);
+  --shadow-md: 0 6px 18px rgba(0,0,0,.45);
+  --shadow-lg: 0 18px 50px rgba(0,0,0,.6);
+  --ring: 0 0 0 3px rgba(96,165,250,.25);
   --cell-bg: #1E293B; --cell-wd: #1A2332; --cell-we: #2D1F1A;
   --modal-overlay: rgba(0,0,0,.6);
   --status-loading-text: #FCD34D; --status-ready-text: #6EE7B7; --status-error-text: #FCA5A5;
@@ -87,13 +117,24 @@
 /* 手动覆盖亮色 */
 [data-theme="light"] {
   --primary: #2563EB; --primary-light: #EFF6FF; --primary-dark: #1D4ED8;
+  --primary-grad: linear-gradient(135deg, #3B82F6 0%, #2563EB 55%, #1D4ED8 100%);
   --success: #059669; --success-light: #ECFDF5;
+  --success-grad: linear-gradient(135deg, #10B981 0%, #059669 100%);
   --warning: #D97706; --warning-light: #FFFBEB;
+  --warning-grad: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
   --danger: #DC2626; --danger-light: #FEF2F2;
-  --bg: #F1F5F9; --card: #FFFFFF; --border: #E2E8F0;
+  --danger-grad: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  --bg: #F1F5F9;
+  --bg-grad:
+    radial-gradient(1100px 620px at -5% -10%, #E4EDFC 0%, rgba(228,237,252,0) 62%),
+    radial-gradient(900px 520px at 105% 105%, #E7F0F3 0%, rgba(231,240,243,0) 58%);
+  --card: #FFFFFF; --border: #E2E8F0;
   --text: #0F172A; --text-secondary: #64748B; --text-muted: #94A3B8;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.05); --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-lg: 0 10px 40px rgba(0,0,0,.1);
+  --shadow-sm: 0 1px 2px rgba(15,23,42,.06);
+  --shadow: 0 2px 6px rgba(15,23,42,.07), 0 1px 2px rgba(15,23,42,.05);
+  --shadow-md: 0 6px 18px rgba(15,23,42,.10), 0 2px 6px rgba(15,23,42,.06);
+  --shadow-lg: 0 18px 50px rgba(15,23,42,.20), 0 6px 18px rgba(15,23,42,.10);
+  --ring: 0 0 0 3px rgba(37,99,235,.18);
   --cell-bg: #FFFFFF; --cell-wd: #F8FAFC; --cell-we: #FFF7ED;
   --modal-overlay: rgba(15,23,42,.5);
   --status-loading-text: #92400E; --status-ready-text: #065F46; --status-error-text: #991B1B;
@@ -104,10 +145,13 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   background: var(--bg);
+  background-image: var(--bg-grad);
+  background-attachment: fixed;
   color: var(--text);
   height: 100vh; overflow: hidden;
   font-size: 14px; line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color .2s ease, color .2s ease;
 }
 
 /* ── Layout ─────────────────────────────── */
@@ -119,15 +163,23 @@ body {
   background: var(--card);
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   z-index: 10;
 }
 .panel-header {
   padding: 16px 20px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: var(--primary-grad);
   color: #fff; font-size: 16px; font-weight: 700;
   letter-spacing: .5px;
   display: flex; align-items: center; gap: 8px;
+  position: relative; overflow: hidden;
+}
+/* 顶栏右上角的一团柔光，避免大面积纯色渐变显得平 */
+.panel-header::after {
+  content: ''; position: absolute; right: -40px; top: -60px;
+  width: 160px; height: 160px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 70%);
+  pointer-events: none;
 }
 .theme-btn {
   margin-left: auto; min-width: 52px; height: 30px; border-radius: 15px;
@@ -136,9 +188,12 @@ body {
   align-items: center; justify-content: center; line-height: 1; padding: 0 12px;
   transition: all .2s ease; flex-shrink: 0; white-space: nowrap;
   font-family: inherit; letter-spacing: .5px;
+  backdrop-filter: blur(4px);
+  position: relative; z-index: 1;
 }
 .theme-btn:hover {
   background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.55);
+  transform: translateY(-1px);
 }
 .theme-btn:active { transform: scale(.96); }
 .panel-body { flex:1; overflow:hidden; padding:12px; display:flex; flex-direction:column; gap:10px; }
@@ -146,6 +201,11 @@ body {
 .section-title {
   font-size: 11px; font-weight: 700; color: var(--text-muted);
   text-transform: uppercase; letter-spacing: 1px;
+  display: flex; align-items: center; gap: 7px;
+}
+.section-title::before {
+  content: ''; width: 3px; height: 11px; border-radius: 2px;
+  background: var(--primary-grad); flex-shrink: 0;
 }
 
 textarea#sidInput {
@@ -153,14 +213,16 @@ textarea#sidInput {
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   padding: 8px 10px; font-size: 12px; font-family: 'SF Mono','Consolas',monospace;
   resize: vertical; outline: none; line-height: 1.5;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
   background: var(--card); color: var(--text);
+  box-shadow: inset 0 1px 2px rgba(15,23,42,.04);
 }
 textarea#sidInput:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+  box-shadow: var(--ring), inset 0 1px 2px rgba(15,23,42,.04);
   background: var(--card); color: var(--text);
 }
+textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 
 .btn-group { display:flex; gap:8px; }
 .btn {
@@ -170,28 +232,34 @@ textarea#sidInput:focus {
   display: inline-flex; align-items: center; gap: 6px;
   white-space: nowrap;
   outline: none;
+  position: relative;
+  letter-spacing: .2px;
 }
 .btn:active { transform: scale(.97); }
 .btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
-.btn:focus-visible { box-shadow: 0 0 0 3px rgba(37,99,235,.25); }
+.btn:focus-visible { box-shadow: var(--ring); }
 
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+.btn-primary { background: var(--primary-grad); color: #fff; box-shadow: 0 1px 2px rgba(37,99,235,.30); }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37,99,235,.32); }
 
-.btn-success { background: var(--success); color: #fff; }
-.btn-success:hover:not(:disabled) { background: #047857; }
+.btn-success { background: var(--success-grad); color: #fff; box-shadow: 0 1px 2px rgba(5,150,105,.30); }
+.btn-success:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(5,150,105,.32); }
 
-.btn-warning { background: var(--warning); color: #fff; }
-.btn-warning:hover:not(:disabled) { background: #B45309; }
+.btn-warning { background: var(--warning-grad); color: #fff; box-shadow: 0 1px 2px rgba(217,119,6,.30); }
+.btn-warning:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(217,119,6,.32); }
 
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover:not(:disabled) { background: #B91C1C; }
+.btn-danger { background: var(--danger-grad); color: #fff; box-shadow: 0 1px 2px rgba(220,38,38,.30); }
+.btn-danger:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(220,38,38,.32); }
 
 .btn-outline {
-  background: transparent; color: var(--text-secondary);
+  background: var(--card); color: var(--text-secondary);
   border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
-.btn-outline:hover:not(:disabled) { background: var(--bg); border-color: var(--border); }
+.btn-outline:hover:not(:disabled) {
+  background: var(--bg); border-color: var(--primary); color: var(--primary);
+  transform: translateY(-1px);
+}
 
 .btn-sm { padding: 5px 10px; font-size: 12px; }
 
@@ -200,17 +268,22 @@ textarea#sidInput:focus {
   flex: 1; overflow-y: auto; min-height: 60px;
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   background: var(--card);
+  box-shadow: inset 0 1px 2px rgba(15,23,42,.03);
 }
 .student-item {
   display: flex; align-items: center;
   padding: 5px 10px; border-bottom: 1px solid var(--border);
   font-size: 12px; cursor: grab; user-select: none;
-  transition: background var(--transition);
+  transition: background var(--transition), padding-left var(--transition);
   position: relative;
 }
 .student-item:active { cursor: grabbing; }
 .student-item:last-child { border-bottom: none; }
-.student-item:hover { background: var(--primary-light); }
+.student-item:hover { background: var(--primary-light); padding-left: 13px; }
+.student-item:hover::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--primary); border-radius: 0 2px 2px 0;
+}
 .student-item .sid { font-family: 'SF Mono',monospace; }
 .student-item .name { font-weight: 600; margin-left: 8px; }
 .student-item .meta { margin-left: auto; display:flex; align-items:center; gap:8px; }
@@ -224,27 +297,32 @@ textarea#sidInput:focus {
 .status {
   font-size: 11px; font-weight: 600; padding: 2px 8px;
   border-radius: 10px; white-space: nowrap;
+  border: 1px solid transparent;
 }
 .status-pending { background: var(--bg); color: var(--text-secondary); }
-.status-loading { background: var(--warning-light); color: var(--status-loading-text); }
-.status-ready { background: var(--success-light); color: var(--status-ready-text); }
-.status-error { background: var(--danger-light); color: var(--status-error-text); }
+.status-loading { background: var(--warning-light); color: var(--status-loading-text); border-color: var(--warning); }
+.status-ready { background: var(--success-light); color: var(--status-ready-text); border-color: var(--success); }
+.status-error { background: var(--danger-light); color: var(--status-error-text); border-color: var(--danger); }
 
 .shift-badge {
   font-size: 10px; font-weight: 700; padding: 1px 7px;
-  border-radius: 8px; background: var(--primary); color: #fff;
+  border-radius: 8px; background: var(--primary-grad); color: #fff;
 }
 .student-count {
   font-size: 11px; color: var(--text-muted); text-align: right;
 }
 
-/* ── 每人每周班次上限（仅均衡排班生效） ── */
-.limit-row {
+/* ── 排班设置卡片（每人每周上限 / 连续排班开关） ── */
+.limit-row, .opt-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; margin-top: 10px;
+  padding: 9px 11px;
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
+.limit-row { margin-top: 10px; }
+.limit-row:hover, .opt-row:hover { border-color: var(--text-muted); }
 .limit-row label {
   font-size: 12px; font-weight: 600; color: var(--text-secondary);
   flex-shrink: 0;
@@ -254,13 +332,41 @@ textarea#sidInput:focus {
   font-size: 13px; font-weight: 700; font-family: inherit;
   text-align: center; color: var(--text); background: var(--bg);
   border: 1.5px solid var(--border); border-radius: 5px; outline: none;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
-.limit-row input:focus { border-color: var(--primary); }
+.limit-row input:focus { border-color: var(--primary); box-shadow: var(--ring); }
 .limit-hint {
   font-size: 10px; color: var(--text-muted); line-height: 1.35;
   margin-left: auto; text-align: right;
 }
+
+/* 连续排班开关：真正的 checkbox 藏在后面，外观由 .opt-switch 承担 */
+.opt-row { cursor: pointer; user-select: none; }
+.opt-row input[type="checkbox"] {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+.opt-switch {
+  position: relative; flex-shrink: 0;
+  width: 38px; height: 22px; border-radius: 11px;
+  background: var(--border);
+  transition: background var(--transition), box-shadow var(--transition);
+  box-shadow: inset 0 1px 3px rgba(15,23,42,.14);
+}
+.opt-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(15,23,42,.3);
+  transition: transform .18s cubic-bezier(.4,0,.2,1);
+}
+.opt-row input[type="checkbox"]:checked + .opt-switch {
+  background: var(--primary-grad);
+  box-shadow: 0 1px 4px rgba(37,99,235,.35);
+}
+.opt-row input[type="checkbox"]:checked + .opt-switch::after { transform: translateX(16px); }
+.opt-row input[type="checkbox"]:focus-visible + .opt-switch { box-shadow: var(--ring); }
+.opt-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.opt-text strong { font-size: 12px; font-weight: 700; color: var(--text); }
+.opt-text small { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
 
 .progress-bar {
   display: none; height: 4px; background: var(--border);
@@ -280,26 +386,29 @@ textarea#sidInput:focus {
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 8px;
   box-shadow: var(--shadow-sm);
+  z-index: 5;
 }
 
 /* ── View toggle (primary nav) ── */
 .view-toggle {
-  display: flex; gap: 0;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  border: 1.5px solid var(--border);
+  display: flex; gap: 4px;
+  padding: 4px; border-radius: 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 2px rgba(15,23,42,.05);
 }
 .view-toggle button {
-  padding: 8px 20px; border: none; background: var(--card);
+  padding: 6px 20px; border: none; background: transparent;
+  border-radius: 8px;
   font-size: 14px; font-weight: 700; cursor: pointer;
   transition: all var(--transition); color: var(--text-secondary);
-  border-right: 1px solid var(--border);
+  font-family: inherit;
 }
-.view-toggle button:last-child { border-right: none; }
 .view-toggle button.active {
-  background: var(--primary); color: #fff;
+  background: var(--card); color: var(--primary);
+  box-shadow: var(--shadow-sm);
 }
-.view-toggle button:hover:not(.active) { background: var(--bg); }
+.view-toggle button:hover:not(.active) { color: var(--text); }
 
 .header-sep {
   width: 1px; height: 24px; background: var(--border);
@@ -312,15 +421,17 @@ textarea#sidInput:focus {
 }
 .week-toggle button {
   padding: 5px 14px; border: 1.5px solid var(--border);
-  border-radius: 6px; background: var(--card);
+  border-radius: 8px; background: var(--card);
   font-size: 12px; font-weight: 600; cursor: pointer;
   transition: all var(--transition); color: var(--text-secondary);
+  font-family: inherit;
 }
 .week-toggle button.active {
   background: var(--primary-light); color: var(--primary);
   border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary) inset;
 }
-.week-toggle button:hover:not(.active) { background: var(--bg); }
+.week-toggle button:hover:not(.active) { background: var(--bg); border-color: var(--text-muted); }
 
 .header-actions { display:flex; gap:8px; margin-left:auto; }
 
@@ -334,15 +445,17 @@ textarea#sidInput:focus {
 .schedule-grid {
   display: grid; gap: 1px;
   background: var(--border); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); overflow: hidden;
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 .schedule-grid .day-header {
-  background: var(--primary); color: #fff;
-  padding: 7px 4px; text-align: center;
+  background: var(--primary-grad); color: #fff;
+  padding: 8px 4px; text-align: center;
   font-weight: 700; font-size: 12px;
+  letter-spacing: .4px;
   display: flex; align-items: center; justify-content: center;
 }
-.schedule-grid .day-header.weekend-header { background: var(--danger); }
+.schedule-grid .day-header.weekend-header { background: var(--danger-grad); }
 
 .schedule-grid .time-label {
   background: #F8FAFC; padding: 4px 6px;
@@ -358,19 +471,20 @@ textarea#sidInput:focus {
 
 .schedule-grid .shift-cell {
   background: var(--cell-bg); min-height: 56px; padding: 3px 4px;
-  transition: background var(--transition);
+  transition: background var(--transition), box-shadow var(--transition);
   display: flex; flex-direction: column; gap: 2px;
   justify-content: flex-start;
 }
+.schedule-grid .shift-cell:hover { box-shadow: inset 0 0 0 2px rgba(37,99,235,.22); }
 .schedule-grid .shift-cell.weekday-cell { background: var(--cell-wd); }
 .schedule-grid .shift-cell.weekend-cell { background: var(--cell-we); }
 /* 动态分组配色：grp-0、grp-1 …… 按分组在 layout 中的序号取色（超出 6 组时循环） */
-.schedule-grid .day-header.grp-0 { background: var(--primary); }
-.schedule-grid .day-header.grp-1 { background: var(--danger); }
-.schedule-grid .day-header.grp-2 { background: #7C3AED; }
-.schedule-grid .day-header.grp-3 { background: #0891B2; }
-.schedule-grid .day-header.grp-4 { background: #D97706; }
-.schedule-grid .day-header.grp-5 { background: #059669; }
+.schedule-grid .day-header.grp-0 { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+.schedule-grid .day-header.grp-1 { background: linear-gradient(135deg, #F87171, #DC2626); }
+.schedule-grid .day-header.grp-2 { background: linear-gradient(135deg, #A78BFA, #7C3AED); }
+.schedule-grid .day-header.grp-3 { background: linear-gradient(135deg, #22D3EE, #0891B2); }
+.schedule-grid .day-header.grp-4 { background: linear-gradient(135deg, #FBBF24, #D97706); }
+.schedule-grid .day-header.grp-5 { background: linear-gradient(135deg, #34D399, #059669); }
 .schedule-grid .day-header.ungrouped { background: var(--text-muted); opacity: .6; }
 .schedule-grid .shift-cell.grp-0 { background: var(--cell-wd); }
 .schedule-grid .shift-cell.grp-1 { background: var(--cell-we); }
@@ -449,18 +563,20 @@ textarea#sidInput:focus {
 
 /* ── Student Tag ────────────────────────── */
 .student-tag {
-  display: flex; align-items: center; padding: 3px 7px;
-  border-radius: 4px; font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; padding: 4px 8px;
+  border-radius: 999px; font-size: 12px; font-weight: 600;
   cursor: grab; user-select: none;
   transition: all var(--transition); white-space: nowrap;
-  background: var(--primary); color: #fff;
-  box-shadow: 0 1px 2px rgba(37,99,235,.25);
+  background: var(--primary-grad); color: #fff;
+  box-shadow: 0 1px 3px rgba(37,99,235,.35);
 }
+.student-tag:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(37,99,235,.38); }
 .student-tag:active { cursor: grabbing; }
 .student-tag.dragging { opacity: .4; }
 .student-tag .remove-btn {
-  margin-left: auto; cursor: pointer; font-size: 14px;
+  margin-left: auto; cursor: pointer; font-size: 13px;
   opacity: .6; transition: opacity var(--transition);
+  padding-left: 3px; line-height: 1;
 }
 .student-tag .remove-btn:hover { opacity: 1; }
 /* 锁定按钮：锁住「该同学 + 该班次」这个位置，重新排班不会改变它 */
@@ -468,13 +584,15 @@ textarea#sidInput:focus {
   cursor: pointer; font-size: 10px; line-height: 1;
   margin-right: 4px; opacity: .7;
   transition: opacity var(--transition);
+  display: inline-flex; align-items: center;
 }
 .student-tag .lock-btn:hover { opacity: 1; }
 .student-tag.locked {
-  background: var(--warning);
-  box-shadow: 0 1px 2px rgba(217,119,6,.35);
+  background: var(--warning-grad);
+  box-shadow: 0 1px 3px rgba(217,119,6,.45);
   cursor: default;
 }
+.student-tag.locked:hover { transform: none; box-shadow: 0 1px 3px rgba(217,119,6,.45); }
 .student-tag.locked .lock-btn { opacity: 1; }
 
 /* ── Student highlight on hover ────────── */
@@ -497,25 +615,29 @@ textarea#sidInput:focus {
 /* ── Toast ──────────────────────────────── */
 .toast {
   position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-  padding: 10px 22px; border-radius: 8px; color: #fff;
+  padding: 11px 24px; border-radius: 999px; color: #fff;
   font-size: 13px; font-weight: 600; z-index: 10000;
   opacity: 0; transition: opacity .3s, transform .3s;
   pointer-events: none;
+  max-width: 80vw; text-align: center;
   box-shadow: var(--shadow-lg);
+  letter-spacing: .3px;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
-.toast.success { background: var(--success); }
-.toast.error { background: var(--danger); }
-.toast.info { background: var(--primary); }
+.toast.success { background: var(--success-grad); }
+.toast.error { background: var(--danger-grad); }
+.toast.info { background: var(--primary-grad); }
 
 /* ── Modal ──────────────────────────────── */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
   background: var(--modal-overlay); z-index: 9998;
   align-items: center; justify-content: center;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(3px);
+  animation: overlayIn .18s ease;
 }
 .modal-overlay.show { display: flex; }
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
 
 /*
  * 确认弹窗必须盖在所有普通弹窗之上。
@@ -528,10 +650,11 @@ textarea#sidInput:focus {
 #confirmModal { z-index: 9999; }
 
 .modal {
-  background: var(--card); border-radius: var(--radius);
+  background: var(--card); border-radius: var(--radius-lg);
   width: 92%; max-width: 700px; max-height: 82vh;
   display: flex; flex-direction: column;
   box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
   animation: modalIn .2s ease;
 }
 @keyframes modalIn {
@@ -542,6 +665,8 @@ textarea#sidInput:focus {
 .modal-header {
   padding: 16px 20px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(180deg, var(--cell-wd) 0%, var(--card) 100%);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 .modal-header h3 { font-size: 16px; font-weight: 700; }
 .modal-header .close-btn {
@@ -550,7 +675,7 @@ textarea#sidInput:focus {
   display: flex; align-items: center; justify-content: center;
   color: var(--text-muted); transition: all var(--transition);
 }
-.modal-header .close-btn:hover { background: var(--bg); color: var(--text); }
+.modal-header .close-btn:hover { background: var(--danger-light); color: var(--danger); transform: rotate(90deg); }
 
 .modal-body { flex: 1; overflow: auto; padding: 20px; }
 .modal-footer {
@@ -572,16 +697,17 @@ textarea#sidInput:focus {
 .course-grid {
   display: grid; grid-template-columns: 64px repeat(7, 1fr);
   gap: 1px; background: var(--border);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); border-radius: var(--radius);
   overflow: hidden; min-width: 720px;
+  box-shadow: var(--shadow-sm);
 }
 .course-grid .cg-header {
-  background: var(--primary); color: #fff;
+  background: var(--primary-grad); color: #fff;
   padding: 8px 4px; text-align: center;
   font-weight: 700; font-size: 12px;
   display: flex; align-items: center; justify-content: center;
 }
-.course-grid .cg-header.weekend { background: var(--danger); }
+.course-grid .cg-header.weekend { background: var(--danger-grad); }
 
 .course-grid .cg-period {
   background: var(--cell-wd); padding: 4px;
@@ -659,8 +785,8 @@ textarea#sidInput:focus {
 /* ── Schedule sections (工作日 / 周末) ───── */
 .schedule-grid .section-row {
   grid-column: 1 / -1;
-  background: var(--card);
-  padding: 6px 10px; font-size: 11px; font-weight: 700;
+  background: linear-gradient(180deg, var(--card) 0%, var(--cell-wd) 100%);
+  padding: 7px 10px; font-size: 11px; font-weight: 700;
   color: var(--text-secondary); letter-spacing: .3px;
   display: flex; align-items: center; gap: 7px;
 }
@@ -691,10 +817,21 @@ textarea#sidInput:focus {
 }
 /* 未排班 / 未获取课表时的提示条：只占一条，表格骨架照常显示在下方 */
 .schedule-notice {
-  padding: 9px 12px; margin-bottom: 12px;
+  position: relative;
+  padding: 10px 14px 10px 34px; margin-bottom: 14px;
   font-size: 12px; line-height: 1.6; color: var(--text-secondary);
   background: var(--primary-light); border: 1px solid var(--border);
-  border-left: 3px solid var(--primary); border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+.schedule-notice::before {
+  content: 'i';
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; border-radius: 50%;
+  background: var(--primary-grad); color: #fff;
+  font-size: 10px; font-weight: 800; font-style: italic;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
 }
 
 /* ── Template editor modal ──────────────── */
@@ -801,11 +938,12 @@ textarea#sidInput:focus {
 .tpl-list { display: flex; flex-direction: column; gap: 8px; }
 
 .tpl-shift {
-  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); border-radius: var(--radius);
   background: var(--cell-bg); padding: 9px 10px;
-  transition: border-color var(--transition), opacity var(--transition);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition), opacity var(--transition), box-shadow var(--transition), transform var(--transition);
 }
-.tpl-shift:hover { border-color: var(--text-muted); }
+.tpl-shift:hover { border-color: var(--text-muted); box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .tpl-shift.disabled { opacity: .5; }
 .tpl-shift.wk-odd { border-left: 3px solid var(--primary); }
 .tpl-shift.wk-even { border-left: 3px solid var(--warning); }
@@ -914,10 +1052,15 @@ textarea#sidInput:focus {
 }
 
 /* ── Scrollbar ──────────────────────────── */
-::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar { width:8px; height:8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; background-clip: padding-box; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #475569; background-clip: padding-box; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) ::-webkit-scrollbar-thumb { background: #475569; background-clip: padding-box; }
+}
+* { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 
 /* ── Responsive ─────────────────────────── */
 @media (max-width: 860px) {
@@ -956,6 +1099,16 @@ textarea#sidInput:focus {
                onchange="setMaxShiftsPerWeek(this.value)" oninput="setMaxShiftsPerWeek(this.value)">
         <span class="limit-hint">0 = 不限制<br>仅「均衡排班」生效</span>
       </div>
+
+      <label class="opt-row" for="continuousToggle"
+             title="勾选：尽量把同一人的班次连在一起（同一天连班、相邻几天都来）；不勾选：尽量分散到不同时段与日期">
+        <input type="checkbox" id="continuousToggle" onchange="setContinuousScheduling(this.checked)">
+        <span class="opt-switch" aria-hidden="true"></span>
+        <span class="opt-text">
+          <strong>连续排班</strong>
+          <small id="continuousHint">未勾选：尽量把同一人的班次分散开</small>
+        </span>
+      </label>
 
       <div class="btn-group" style="flex-direction:column;gap:6px;margin-top:auto;">
         <button class="btn btn-success" id="btnSchedule" onclick="runSchedule('normal')" disabled style="width:100%;justify-content:center;padding:12px;">
@@ -1095,17 +1248,22 @@ textarea#sidInput:focus {
           并额外做一换一交换优化，尽量让每人单双周合计也彼此相等。课表冲突与班次人数上限两种模式都会遵守。</p>
         <p><strong>3. 查看/调整</strong>：右侧表格<strong>始终显示当前值班模板的时段</strong>（未排班时人数显示为 0/N），
           可<strong>拖拽</strong>学生标签到其他班次调整，也可以直接把左侧的同学拖进格子手动排班。</p>
-        <p><strong>4. 排班锁定</strong>：点学生标签上的<strong>锁图标</strong>可锁住
+        <p><strong>4. 连续排班</strong>：左侧的「连续排班」开关决定同一人的班次怎么摆放。
+          <strong>勾选</strong>＝尽量把班次连成片（同一天<b>首尾相接</b>的班次尽量给同一个人，相邻几天也尽量连着排）；
+          <strong>不勾选</strong>（默认）＝反过来尽量分散，避免连班、也避免连着几天都排同一个人。
+          这项只是「尽量」的偏好：算法只做<b>不改变任何人班次数</b>的等价交换，因此在满足它的同时
+          不会破坏上面两种模式的均衡性（开关状态会记在浏览器里）。</p>
+        <p><strong>5. 排班锁定</strong>：点学生标签上的<strong>锁图标</strong>可锁住
           <strong>「该同学 + 该班次」这个位置</strong>——锁定后无论「开始排班」还是「均衡排班」都不会改变它。
           锁定的标签显示为琥珀色、不能拖动也不能移除（先解锁再操作）；
           该同学在<strong>其它</strong>班次仍可被正常安排。锁定会随「导出/导入数据」一起保存。</p>
-        <p><strong>5. 课表管理</strong>：点击学生姓名查看课表，可<strong>忽略</strong>特定课程后重新排班。</p>
-        <p><strong>6. 值班模板</strong>：点击右上角「值班模板」可自定义每个班次的<strong>值班时间、值班人数、单双周</strong>，
+        <p><strong>6. 课表管理</strong>：点击学生姓名查看课表，可<strong>忽略</strong>特定课程后重新排班。</p>
+        <p><strong>7. 值班模板</strong>：点击右上角「值班模板」可自定义每个班次的<strong>值班时间、值班人数、单双周</strong>，
           自由<strong>添加/删除/排序</strong>班次，并单独设置与该时段<strong>冲突的课程节次</strong>。<br>
           <strong>排班日分组</strong>支持两种模式：「工作日 / 周末」为预设两组；「一周 7 天自由组合」可自定义分组数量、
           名称与每组包含的星期（例如周一周二一组、周三到周日一组），每组各自一套班次。
           模板会自动保存在浏览器中，也可导出为文件分享给他人。</p>
-        <p><strong>7. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON（含值班模板与锁定）。</p>
+        <p><strong>8. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON（含值班模板与锁定）。</p>
         <!-- <hr style="border-color:var(--border);margin:12px 0;"> -->
         <p style="font-size:12px;color:var(--text-muted);">
           <strong>提示</strong>：含"实训""实习""课程设计"等关键词的课程会被自动忽略。<br>
@@ -1506,6 +1664,7 @@ const state = {
   studentNames: {},       // 学号 -> 姓名映射（缓存）
   ignoredCourses: {},     // { sid: Set of course_num } 被忽略的课程
   maxShiftsPerWeek: 3,    // 每人每周最多班次（0=不限制）；仅「均衡排班」生效
+  continuousShifts: false, // 连续排班偏好：true=尽量连班，false=尽量分散（见 §4.10）
   // 锁定的排班：{ odd: { [shiftKey]: [sid, ...] }, even: {...} }
   // 锁住的是「该同学 + 该班次」这个位置，重新排班（开始排班 / 均衡排班）不会改变它
   locks: { odd: {}, even: {} },
@@ -2383,6 +2542,157 @@ function syncMaxShiftsInput() {
   if (el) el.value = String(getMaxShiftsPerWeek());
 }
 
+// ============================================================
+//  连续 / 分散排班偏好
+// ============================================================
+/**
+ * 「连续排班」开关（用户确认的口径，见 AGENT.md §4.10）：
+ *   · 勾选   → 尽量让同一人的班次连成片（同一天连班 + 相邻几天都来）；
+ *   · 不勾选 → 反过来尽量分散（避免同一天连班、避免连着几天都排他）。
+ *
+ * 判分口径（"连续分"，越高越连续）：
+ *   · 同一天内**首尾相接**的两个班次（连班） → +2 分 / 对；
+ *   · **相邻两天**都值班                        → +1 分 / 天对。
+ * 于是「连续」= 最大化该分数，「分散」= 最小化该分数。
+ *
+ * 注意这与均衡是**两件事**：均衡看的是每人班次数，连续看的是班次在时间轴上的分布。
+ * 两者可能冲突（把两个班并给同一个人，就必然要从别人那里拿走），所以连续只是
+ * 「尽量」的软偏好，且实现上只做**不改变任何人的班次数**的交换（见 optimizeContinuity）。
+ */
+const CONTINUITY_STORAGE_KEY = 'shift_continuous';
+const CONTINUITY_B2B_SCORE = 2;        // 同一天内首尾相接（连班）
+const CONTINUITY_DAY_SCORE = 1;        // 相邻两天都值班
+const CONTINUITY_GAP_TOLERANCE = 30;   // 首尾相接允许的空档（分钟）——默认模板的班次都是无缝相接
+
+/** 当前是否要求「连续排班」（false = 尽量分散） */
+function isContinuousScheduling() {
+  return state.continuousShifts === true;
+}
+
+function persistContinuousScheduling() {
+  try {
+    localStorage.setItem(CONTINUITY_STORAGE_KEY, state.continuousShifts ? '1' : '0');
+  } catch (e) {}
+}
+
+function loadContinuousScheduling() {
+  try {
+    const saved = localStorage.getItem(CONTINUITY_STORAGE_KEY);
+    if (saved !== null) { state.continuousShifts = (saved === '1' || saved === 'true'); return; }
+  } catch (e) {}
+  state.continuousShifts = false;
+}
+
+function setContinuousScheduling(on) {
+  state.continuousShifts = on === true || on === 'true' || on === '1';
+  persistContinuousScheduling();
+  syncContinuousInput();
+}
+
+/** 把开关状态同步到界面（初始化、导入数据、手动切换时调用） */
+function syncContinuousInput() {
+  const on = isContinuousScheduling();
+  const el = document.getElementById('continuousToggle');
+  if (el) el.checked = on;
+  const hint = document.getElementById('continuousHint');
+  if (hint) hint.textContent = on ? '已勾选：尽量把同一人的班次连成片' : '未勾选：尽量把同一人的班次分散开';
+}
+
+/**
+ * 两个班次是否「首尾相接」：同一天内，前一班的结束到后一班的开始几乎没有空档。
+ * 只按时间判断（供同一批天内的相邻班次调用），跨天由 continuityScoreOf 单独处理。
+ */
+function isBackToBackShifts(prev, next) {
+  if (!prev || !next) return false;
+  const gap = timeToMinutes(next.start) - timeToMinutes(prev.end);
+  return gap >= 0 && gap <= CONTINUITY_GAP_TOLERANCE;
+}
+
+/**
+ * 某个单双周的「天 → 班次」快照，供连续性判分在热循环里复用（避免反复读模板）。
+ * ordinal 用于快速找到同一天的「下一个班次」。
+ */
+function makeContinuityContext(weekType) {
+  const days = [];
+  const ordinal = {};
+  for (let d = 0; d < 7; d++) {
+    const list = getShiftsForDay(d).filter(s => shiftAppliesToWeek(s, weekType));
+    days.push(list);
+    list.forEach((s, i) => { ordinal[`${d}|${s.id}`] = i; });
+  }
+  return { weekType, days, ordinal };
+}
+
+/** 槽位在占用集合里的键：`${dayIdx}|${shiftId}` */
+function occupiedSlotKey(dayIdx, shiftId) {
+  return `${dayIdx}|${shiftId}`;
+}
+
+/**
+ * 某人某周的「连续分」：同一天连班 ×2 + 相邻两天 ×1。
+ * occ 为该同学本周占用的槽位集合（键见 occupiedSlotKey）。
+ */
+function continuityScoreOf(occ, ctx) {
+  if (!occ || occ.size === 0) return 0;
+  const workedDays = new Set();
+  for (const slot of occ) {
+    const sep = slot.indexOf('|');
+    if (sep < 0) continue;
+    workedDays.add(parseInt(slot.slice(0, sep), 10));
+  }
+  let score = 0;
+  for (let d = 0; d < 6; d++) {
+    if (workedDays.has(d) && workedDays.has(d + 1)) score += CONTINUITY_DAY_SCORE;
+  }
+  for (const slot of occ) {
+    const sep = slot.indexOf('|');
+    if (sep < 0) continue;
+    const d = parseInt(slot.slice(0, sep), 10);
+    const id = slot.slice(sep + 1);
+    const o = ctx.ordinal[`${d}|${id}`];
+    if (o === undefined) continue;
+    const next = ctx.days[d][o + 1];
+    // 只往「下一个班次」看，保证每一对只计一次
+    if (next && occ.has(occupiedSlotKey(d, next.id)) && isBackToBackShifts(ctx.days[d][o], next)) {
+      score += CONTINUITY_B2B_SCORE;
+    }
+  }
+  return score;
+}
+
+/** 把某个槽位加进某人的占用集合后，连续分的变化（贪心排序用；正数=更连续） */
+function continuityGainOf(occ, ctx, dayIdx, shift) {
+  if (!occ) return 0;
+  const before = continuityScoreOf(occ, ctx);
+  const next = new Set(occ);
+  next.add(occupiedSlotKey(dayIdx, shift.id));
+  return continuityScoreOf(next, ctx) - before;
+}
+
+/**
+ * 全表的连续分合计（越大越「连续」，越小越「分散」）。
+ * 用于结果提示与测试断言；也方便手动比对两种偏好下的排班效果。
+ */
+function totalContinuityScore(assignments, sids) {
+  const a = assignments || state.assignments;
+  const list = sids || state.students.map(s => s.sid);
+  let total = 0;
+  for (const wt of ['odd', 'even']) {
+    const ctx = makeContinuityContext(wt);
+    const occ = {};
+    for (const sid of list) occ[sid] = new Set();
+    for (const key in (a[wt] || {})) {
+      const info = resolveShift(key);
+      if (!info || !shiftAppliesToWeek(info.shift, wt)) continue;
+      for (const sid of a[wt][key]) {
+        if (occ[sid]) occ[sid].add(occupiedSlotKey(info.dayIdx, info.shift.id));
+      }
+    }
+    for (const sid of list) total += continuityScoreOf(occ[sid], ctx);
+  }
+  return total;
+}
+
 /** 某人某周的班次数（按周独立计数，与上限口径一致） */
 function weeklyLoadOf(assignments, weekType, sid) {
   let n = 0;
@@ -2443,6 +2753,12 @@ function fillWeekGreedy(assignments, students, sids, weekType, cap) {
   const load = {};
   for (const sid of sids) load[sid] = 0;
 
+  // 连续 / 分散偏好所需的上下文：该周的「天 → 班次」快照 + 每人已占用的槽位集合
+  const ctx = makeContinuityContext(weekType);
+  const wantContinuous = isContinuousScheduling();
+  const occ = {};
+  for (const sid of sids) occ[sid] = new Set();
+
   // 先把「已锁定」的既有人数计入负载，否则锁定的人会被当成没排班、反复被加派。
   // 只统计当前模板里真实存在的班次，避免残留的失效锁定键虚增负载。
   for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
@@ -2450,7 +2766,10 @@ function fillWeekGreedy(assignments, students, sids, weekType, cap) {
       if (!shiftAppliesToWeek(shift, weekType)) continue;
       const key = generateShiftKey(weekType, dayIdx, shift.id);
       for (const sid of lockedSidsOf(key, weekType)) {
-        if (load[sid] !== undefined) load[sid]++;
+        if (load[sid] !== undefined) {
+          load[sid]++;
+          occ[sid].add(occupiedSlotKey(dayIdx, shift.id));
+        }
       }
     }
   }
@@ -2481,10 +2800,24 @@ function fillWeekGreedy(assignments, students, sids, weekType, cap) {
     const pool = candidates.slice(0, Math.max(1, Math.min(candidates.length, remaining * 3)));
     shuffleArray(pool);
 
+    // 连续 / 分散偏好：在同一批「最低负载」候选人内部，优先挑最能形成（或最不会形成）
+    // 连班的同学。负载仍是第一关键字（池子按负载截取），所以均衡性不受影响，
+    // 这里只决定「同样是低负载的几个人里，谁先上」。
+    if (pool.length > 1) {
+      const gain = new Map();
+      for (const sid of pool) gain.set(sid, continuityGainOf(occ[sid], ctx, dayIdx, shift));
+      // 先 shuffle 再按偏好稳定排序 → 偏好相同的候选人保持随机，避免固定偏爱某些学号
+      pool.sort((a, b) => {
+        const ga = gain.get(a), gb = gain.get(b);
+        return wantContinuous ? gb - ga : ga - gb;
+      });
+    }
+
     const selected = [...kept];
     for (let i = 0; i < Math.min(remaining, pool.length); i++) {
       selected.push(pool[i]);
       load[pool[i]]++;
+      occ[pool[i]].add(occupiedSlotKey(dayIdx, shift.id));
     }
     assignments[weekType][key] = selected;
   }
@@ -2624,6 +2957,108 @@ function optimizeBalance(assignments, students, sids, cap, maxRounds) {
   return tracker.cost();
 }
 
+/**
+ * 连续 / 分散偏好的局部搜索：**交换两个槽位里的成员**（a 去 B 槽、b 去 A 槽）。
+ *
+ * 为什么用「交换」而不是像 optimizeBalance 那样单点替换：
+ * 单点替换必然改变两个人的当周班次数，会反噬已经调好的均衡（AGENT.md §4.10）。
+ * 交换则让每个人的班次数**一个都不变**，因此 balanceCost 分毫不动 ——
+ * 「连续 / 分散」只是叠加在均衡之上的软偏好，不能拿均衡去换。
+ *
+ * 硬约束照旧全部遵守：
+ *   · 锁定位置（该同学 + 该班次）不参与交换（进出都拦下）；
+ *   · 换入的两个人必须都对该班次没有课程冲突；
+ *   · 班次容量天然不受影响（交换不改变任何槽位的人数）。
+ *
+ * 返回实际执行的交换次数（供提示与测试使用）。
+ */
+function optimizeContinuity(assignments, students, sids, maxRounds) {
+  const wantContinuous = isContinuousScheduling();
+  const rounds = maxRounds === undefined ? 12 : maxRounds;
+  const studentBySid = {};
+  for (const s of students) studentBySid[s.sid] = s;
+  let moved = 0;
+
+  for (const wt of ['odd', 'even']) {
+    const ctx = makeContinuityContext(wt);
+
+    // ── 预处理：把非空槽位连同「可换入的人」一次算好，热循环里只做 O(1) 查表 ──
+    const slots = [];
+    for (const key of Object.keys(assignments[wt] || {})) {
+      const info = resolveShift(key);
+      if (!info || !shiftAppliesToWeek(info.shift, wt)) continue;
+      const slot = assignments[wt][key];
+      if (!Array.isArray(slot) || slot.length === 0) continue;
+      slots.push({
+        key, slot,
+        cell: occupiedSlotKey(info.dayIdx, info.shift.id),
+        eligible: new Set(sids.filter(sid =>
+          canTakeShift(studentBySid[sid], wt, info.dayIdx, info.shift)))
+      });
+    }
+    if (slots.length < 2) continue;   // 少于两个槽位无从交换
+
+    // 每人当前占用的槽位集合 + 连续分缓存（交换只影响被交换的两个人，可增量维护）
+    const occ = {};
+    for (const sid of sids) occ[sid] = new Set();
+    const score = {};
+    for (const s of slots) for (const sid of s.slot) if (occ[sid]) occ[sid].add(s.cell);
+    for (const sid of sids) score[sid] = continuityScoreOf(occ[sid], ctx);
+
+    for (let round = 0; round < rounds; round++) {
+      let best = null;   // { A, B, a, b, scoreA, scoreB, mag }
+
+      for (let i = 0; i < slots.length; i++) {
+        const A = slots[i];
+        for (let j = i + 1; j < slots.length; j++) {
+          const B = slots[j];
+
+          for (const a of A.slot) {
+            // 锁定的位置原地不动：本人不能离开 A，也不能被塞进锁定的 B
+            if (isLocked(a, A.key, wt) || isLocked(a, B.key, wt)) continue;
+            if (B.slot.includes(a)) continue;      // a 已在 B 里，换过去会重复
+            if (!B.eligible.has(a)) continue;      // a 换到 B 有课
+
+            for (const b of B.slot) {
+              if (a === b) continue;
+              if (isLocked(b, B.key, wt) || isLocked(b, A.key, wt)) continue;
+              if (A.slot.includes(b)) continue;
+              if (!A.eligible.has(b)) continue;    // b 换到 A 有课
+
+              // 推演这一换：只动 a、b 两个人的占用集合
+              occ[a].delete(A.cell); occ[a].add(B.cell);
+              occ[b].delete(B.cell); occ[b].add(A.cell);
+              const scoreA = continuityScoreOf(occ[a], ctx);
+              const scoreB = continuityScoreOf(occ[b], ctx);
+              occ[a].add(A.cell); occ[a].delete(B.cell);
+              occ[b].add(B.cell); occ[b].delete(A.cell);
+
+              const delta = (scoreA - score[a]) + (scoreB - score[b]);
+              // 连续 → 分数越高越好；分散 → 分数越低越好
+              if (wantContinuous ? delta <= 0 : delta >= 0) continue;
+
+              const mag = Math.abs(delta);
+              if (!best || mag > best.mag) best = { A, B, a, b, scoreA, scoreB, mag };
+            }
+          }
+        }
+      }
+
+      if (!best) break;
+      const { A, B, a, b } = best;
+      A.slot[A.slot.indexOf(a)] = b;
+      B.slot[B.slot.indexOf(b)] = a;
+      occ[a].delete(A.cell); occ[a].add(B.cell);
+      occ[b].delete(B.cell); occ[b].add(A.cell);
+      score[a] = best.scoreA;
+      score[b] = best.scoreB;
+      moved++;
+    }
+  }
+
+  return moved;
+}
+
 /** 当前的负载统计（单周 / 双周 / 合计），用于结果提示与测试断言 */
 function loadStats(assignments, sids) {
   const per = {};
@@ -2695,6 +3130,11 @@ async function runSchedule(mode) {
   // 两种模式都跑；均衡模式额外受每人每周上限约束。
   optimizeBalance(state.assignments, state.students, sids, cap);
 
+  // ── 第三轮：连续 / 分散偏好 ──
+  // 只做「两个槽位换人」的交换，每个人的班次数一个都不变 → 上一轮的均衡结果原样保住。
+  // 勾选「连续排班」时把同一人的班次往一起凑，不勾选时反过来尽量拆散。
+  const movedByPreference = optimizeContinuity(state.assignments, state.students, sids);
+
   const stats = loadStats(state.assignments, sids);
   const emptySlots = countEmptySlots(state.assignments);
 
@@ -2705,15 +3145,16 @@ async function runSchedule(mode) {
 
   // 结果提示：先说明无法均衡，再说明有班次空了，最后才是成功
   const range = `单周${stats.oddMin}-${stats.oddMax}班，双周${stats.evenMin}-${stats.evenMax}班`;
+  const prefTxt = isContinuousScheduling() ? '连续' : '分散';
   if (stats.oddSpread > 1 || stats.evenSpread > 1) {
     showToast(`排班完成，但无法完全均衡（${range}）`, 'error');
   } else if (emptySlots > 0) {
     showToast(`排班完成（${range}），但有 ${emptySlots} 个班次没有可排的同学，请检查模板人数或课表`, 'error');
   } else if (balanced && capLabel > 0) {
-    showToast(`均衡排班完成（${range}），已遵守每人每周最多 ${capLabel} 班`, 'success');
+    showToast(`均衡排班完成（${range}），已遵守每人每周最多 ${capLabel} 班，已尽量${prefTxt}排班`, 'success');
   } else {
     const capTxt = stats.oddMax <= 0 && stats.evenMax <= 0 ? '' : `，${range}`;
-    showToast(`排班完成${capTxt}`, 'success');
+    showToast(`排班完成${capTxt}，已尽量${prefTxt}排班`, 'success');
   }
 }
 
@@ -4623,8 +5064,10 @@ document.addEventListener('DOMContentLoaded', () => {
   loadIgnoredCourses();
   loadTemplate();
   loadMaxShifts();          // 每人每周班次上限（仅均衡排班生效）
+  loadContinuousScheduling(); // 连续排班偏好（勾选=连班，不勾选=分散）
   loadLocks();              // 已锁定的排班位置
   syncMaxShiftsInput();
+  syncContinuousInput();
   renderStudentList();
   updateButtons();
   refreshView();   // 首次进入即显示当前值班模板的时段表格（此时还没有排班）

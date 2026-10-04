@@ -2993,31 +2993,52 @@ function occupiedSlotKey(dayIdx, shiftId) {
 /**
  * 某人某周的「连续分」：同一天连班 ×2 + 相邻两天 ×1。
  * occ 为该同学本周占用的槽位集合（键见 occupiedSlotKey）。
+ *
+ * 性能：同一个 ctx 会被 optimizeContinuity 调用上万次（每次候选配对都要打分），
+ * 而「某个槽位属于哪天、它的下一个班次是否首尾相接」**只取决于模板**、与谁占用无关。
+ * 因此把这段解析按槽位字符串缓存进 ctx（`ctx._meta`），
+ * 把原来每次调用都要做的 indexOf/slice/parseInt/字符串拼接/parseTime 降到「每个槽位一次」。
+ * 缓存只存派生数据，不改变任何判断口径，打分结果逐位不变。
  */
 function continuityScoreOf(occ, ctx) {
   if (!occ || occ.size === 0) return 0;
+  const meta = ctx._meta || (ctx._meta = {});
   const workedDays = new Set();
+  const b2bNexts = [];
   for (const slot of occ) {
-    const sep = slot.indexOf('|');
-    if (sep < 0) continue;
-    workedDays.add(parseInt(slot.slice(0, sep), 10));
+    let m = meta[slot];
+    if (m === undefined) {
+      // 解析一次并缓存：d = 所在天；nextKey = 同一天下一个班次的槽位键（仅当首尾相接）
+      const sep = slot.indexOf('|');
+      if (sep < 0) {
+        m = null;
+      } else {
+        const d = parseInt(slot.slice(0, sep), 10);
+        const id = slot.slice(sep + 1);
+        const o = ctx.ordinal[`${d}|${id}`];
+        let nextKey = null;
+        if (o !== undefined) {
+          const next = ctx.days[d][o + 1];
+          // 只往「下一个班次」看，保证每一对只计一次
+          if (next && isBackToBackShifts(ctx.days[d][o], next)) {
+            nextKey = occupiedSlotKey(d, next.id);
+          }
+        }
+        m = { d, nextKey };
+      }
+      meta[slot] = m;
+    }
+    if (!m) continue;
+    workedDays.add(m.d);
+    if (m.nextKey) b2bNexts.push(m.nextKey);
   }
+
   let score = 0;
   for (let d = 0; d < 6; d++) {
     if (workedDays.has(d) && workedDays.has(d + 1)) score += CONTINUITY_DAY_SCORE;
   }
-  for (const slot of occ) {
-    const sep = slot.indexOf('|');
-    if (sep < 0) continue;
-    const d = parseInt(slot.slice(0, sep), 10);
-    const id = slot.slice(sep + 1);
-    const o = ctx.ordinal[`${d}|${id}`];
-    if (o === undefined) continue;
-    const next = ctx.days[d][o + 1];
-    // 只往「下一个班次」看，保证每一对只计一次
-    if (next && occ.has(occupiedSlotKey(d, next.id)) && isBackToBackShifts(ctx.days[d][o], next)) {
-      score += CONTINUITY_B2B_SCORE;
-    }
+  for (const nextKey of b2bNexts) {
+    if (occ.has(nextKey)) score += CONTINUITY_B2B_SCORE;
   }
   return score;
 }
@@ -3375,32 +3396,53 @@ function optimizeContinuity(assignments, students, sids, maxRounds) {
         for (let j = i + 1; j < slots.length; j++) {
           const B = slots[j];
 
+          // ── 先按人各打一次分，再配对比较 ──
+          // scoreA 只取决于 a 与「A.cell → B.cell」，与 b 是谁完全无关（scoreB 同理）。
+          // 原实现把两次打分放在 (a,b) 双层循环内部，等于对每个 b 都把同一个 a 的
+          // 连续分重算一遍，反之亦然 —— 这正是 optimizeContinuity 的热点
+          //（CPU profile：continuityScoreOf 独占 57%）。
+          // 提到外层后调用次数从「配对数 × 2」降到「|A.slot| + |B.slot|」。
+          // 候选的生成顺序（A.slot 序、B.slot 序）与比较方式（严格 > 才替换）都保持不变，
+          // 因此并列时的取舍也逐位一致。
+          const candA = [];
           for (const a of A.slot) {
             // 锁定的位置原地不动：本人不能离开 A，也不能被塞进锁定的 B
             if (isLocked(a, A.key, wt) || isLocked(a, B.key, wt)) continue;
             if (B.slot.includes(a)) continue;      // a 已在 B 里，换过去会重复
             if (!B.eligible.has(a)) continue;      // a 换到 B 有课
+            occ[a].delete(A.cell); occ[a].add(B.cell);
+            const s = continuityScoreOf(occ[a], ctx);
+            occ[a].add(A.cell); occ[a].delete(B.cell);
+            candA.push({ sid: a, score: s });
+          }
+          if (candA.length === 0) continue;
 
-            for (const b of B.slot) {
+          const candB = [];
+          for (const b of B.slot) {
+            if (isLocked(b, B.key, wt) || isLocked(b, A.key, wt)) continue;
+            if (A.slot.includes(b)) continue;
+            if (!A.eligible.has(b)) continue;      // b 换到 A 有课
+            occ[b].delete(B.cell); occ[b].add(A.cell);
+            const s = continuityScoreOf(occ[b], ctx);
+            occ[b].add(B.cell); occ[b].delete(A.cell);
+            candB.push({ sid: b, score: s });
+          }
+          if (candB.length === 0) continue;
+
+          for (const ca of candA) {
+            const a = ca.sid;
+            for (const cb of candB) {
+              const b = cb.sid;
               if (a === b) continue;
-              if (isLocked(b, B.key, wt) || isLocked(b, A.key, wt)) continue;
-              if (A.slot.includes(b)) continue;
-              if (!A.eligible.has(b)) continue;    // b 换到 A 有课
 
-              // 推演这一换：只动 a、b 两个人的占用集合
-              occ[a].delete(A.cell); occ[a].add(B.cell);
-              occ[b].delete(B.cell); occ[b].add(A.cell);
-              const scoreA = continuityScoreOf(occ[a], ctx);
-              const scoreB = continuityScoreOf(occ[b], ctx);
-              occ[a].add(A.cell); occ[a].delete(B.cell);
-              occ[b].add(B.cell); occ[b].delete(A.cell);
-
-              const delta = (scoreA - score[a]) + (scoreB - score[b]);
+              const delta = (ca.score - score[a]) + (cb.score - score[b]);
               // 连续 → 分数越高越好；分散 → 分数越低越好
               if (wantContinuous ? delta <= 0 : delta >= 0) continue;
 
               const mag = Math.abs(delta);
-              if (!best || mag > best.mag) best = { A, B, a, b, scoreA, scoreB, mag };
+              if (!best || mag > best.mag) {
+                best = { A, B, a, b, scoreA: ca.score, scoreB: cb.score, mag };
+              }
             }
           }
         }

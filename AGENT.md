@@ -12,7 +12,7 @@
 
 - **形态**：单机本地工具，无构建步骤、无打包器、无前端框架
 - **技术栈**：Python 3 标准库 `http.server` 作后端 + 单个 HTML 文件作前端（原生 JS）
-- **代码量**：`app.py` 约 590 行，`templates/index.html` 约 4640 行（含内联 CSS/JS）
+- **代码量**：`app.py` 约 590 行，`templates/index.html` 约 5600 行（含内联 CSS/JS）
 - **使用语言**：面向用户的文案、代码注释、提交信息**全部用中文**，请保持一致
 
 ---
@@ -28,7 +28,7 @@ python3 app.py                 # 监听 http://localhost:8765
 # 装依赖
 pip install -r requirements.txt
 
-# 跑自测（469 项，无需浏览器，仅需 node）
+# 跑自测（项数见 run-all.sh 末行输出，无需浏览器，仅需 node）
 bash .selftest/run-all.sh
 
 # 后端语法检查
@@ -92,7 +92,7 @@ API 端点：
 
 ### 3.2 前端结构（`templates/index.html`）
 
-单文件，按此顺序：`<style>` → 页面骨架 → 各弹窗 → `<script>`。
+单文件，按此顺序：`<style>` → 顶部菜单栏 → 页面骨架 → 各弹窗 → `<script>`。
 关键锚点（行号会随改动漂移，用函数名检索更稳）：
 
 | 函数 / 常量 | 作用 |
@@ -108,10 +108,11 @@ API 端点：
 | `normalizeLayout()` / `normalizeTemplate()` | 分组定义规范化 / 模板规范化（补字段、丢非法项、兼容旧格式） |
 | `generateShiftKey()` / `parseShiftKey()` / `resolveShift()` | 排班键的生成与解析 |
 | `pruneInvalidAssignments()` | 模板变更后清理失效排班、补齐新槽位 |
-| `initAssignments()` / `runSchedule(mode)` | 初始化槽位 / 自动排班主入口（`'normal'`=开始排班，`'balanced'`=均衡排班），三轮：贪心 → 均衡 → 连续偏好，见 §4.8 / §4.10 |
+| `initAssignments()` / `runSchedule()` | 初始化槽位 / 自动排班**唯一入口（无参数）**，三轮：贪心 → 均衡 → 连续偏好；上限只看 `state.maxShiftsEnabled` 开关，见 §4.8 / §4.10 |
 | `collectShiftsForWeek()` / `fillWeekGreedy()` | 收集本周班次（难度+同日交错排序）/ 贪心填充 |
 | `optimizeBalance()` / `balanceCost()` / `makeLoadTracker()` | 均衡局部搜索 / 代价函数 / 负载缓存，见 §4.8 |
-| `getMaxShiftsPerWeek()` / `maxShiftsLimit()` / `loadMaxShifts()` | 每人每周上限的读取与持久化（0=不限制） |
+| `getMaxShiftsPerWeek()` / `maxShiftsLimit()` / `loadMaxShifts()` / `setMaxShiftsPerWeek()` / `setMaxShiftsEnabled()` / `syncMaxShiftsInput()` | 每人每周上限的读取、开关、持久化与界面同步。**开关 `state.maxShiftsEnabled` 决定上限是否生效**（未勾选 = `Infinity`），数值 `0`/负数/非法回落默认值，见 §4.8 |
+| `openSidImport()` / `closeSidImport()` | 学号录入弹窗 `#sidImportModal` 的开关（入口是「文件」菜单 → 导入学号…）；`loadStudents()` 只读弹窗里的 `#sidInput` |
 | `isContinuousScheduling()` / `setContinuousScheduling()` / `loadContinuousScheduling()` | 「连续排班」开关的读写与持久化，见 §4.10 |
 | `makeContinuityContext()` / `continuityScoreOf()` / `continuityGainOf()` / `totalContinuityScore()` | 连续 / 分散判分（同一天连班 + 相邻天），见 §4.10 |
 | `optimizeContinuity()` | 保负载的「换人」局部搜索：勾选则尽量连续，不勾选则尽量分散，见 §4.10 |
@@ -122,7 +123,7 @@ API 端点：
 | `canTakeShift()` | 课程冲突判断的唯一入口（显式传参，便于干跑推演） |
 | `ensureAssignmentSlots()` | 按当前模板补齐空槽位（不覆盖已有排班），见 §4.7 |
 | `hasAnyAssignment()` | 是否真的有排班（有键 ≠ 有排班，见 §4.7） |
-| `scheduleNoticeText()` / `applyScheduleView()` | 未排班 / 未获取课表时的提示条文案 / 统一切换两个视图的显示 |
+| `scheduleNoticeText()` / `applyScheduleView()` | 未排班 / 未获取课表时的提示条文案（**已指向顶部「文件」菜单**，改菜单别忘同步）/ 统一切换两个视图的显示 |
 | `buildGridSkeleton()` | 值班表与空课表共用的网格骨架 |
 | `renderSchedule()` / `renderFreeSchedule()` | 值班表 / 空课表渲染 |
 | `renderTemplateEditor()` / `renderShiftCard()` | 模板编辑器 UI |
@@ -131,6 +132,14 @@ API 端点：
 | `exportDutySchedule()` / `exportFreeSchedule()` / `exportData()` | 导出 |
 | `buildPersonSheet()` | 「人员表」工作表（按人聚合班次，随值班表导出），见 §4.11 |
 | `handleImportFile()` / `handleTemplateFileImport()` | 导入 |
+| `MENU_IDS` / `openMenuId` / `setMenuOpen()` / `toggleMenu()` / `menuRun()` | 顶部菜单栏的一级菜单清单、展开状态与开合逻辑，见 §4.12 |
+| `refreshThemeMenuUi()` | 把当前主题同步到「个性化」菜单的对勾（**故意不叫 `syncThemeMenu()`**，理由见 §4.12） |
+| `openAbout()` / `closeAbout()` / `APP_VERSION` / `APP_BUILD_DATE` | 「关于 → 软件信息」弹窗，见 §4.12 |
+
+页面骨架的三处结构变化（别按旧记忆找按钮）：**左侧面板已无 `.panel-header`**、
+**表头已无 `.header-actions`**（原来的「值班模板 / 重置排班」两个按钮随整块删除）、
+**菜单栏右侧的主题快捷按钮 `#themeToggle` 与 `.theme-btn` 样式也已删除**。
+前两者的功能入口现在都在顶部「文件」菜单，切换主题则只剩「个性化」菜单，见 §4.12。
 
 ---
 
@@ -236,29 +245,38 @@ API 端点：
   `tplRemoveGroup()` 已按此口径审查过。
 - `onDrop()` 对目标槽位改为**按需补齐**而不是直接报错，与上一条配套。
 
-### 4.8 两种排班模式 + 每人每周班次上限
+### 4.8 单一排班入口 `runSchedule()` + 「限制每人每周班次」开关
 
-`runSchedule(mode)` 是唯一入口，`mode` 只有两个取值：
+**用户已要求删掉单独的「均衡排班」按钮，现在只有一个「开始排班」。** `runSchedule()` **没有模式参数**，
+`'normal'` / `'balanced'` 这类历史调用点**传了也会被忽略**——传与不传行为完全一致，
+上限是否生效**只看开关**，别再加回按参数分支的写法。
 
-| 模式 | 入口 | 每人每周上限 | 说明 |
-| --- | --- | --- | --- |
-| `'normal'` | 「开始排班」按钮 | **不套用**（内部传 `cap = Infinity`） | 谁空谁上，靠负载均衡摊平 |
-| `'balanced'` | 「均衡排班」按钮 | **强制遵守** `state.maxShiftsPerWeek` | 额外追求每人班次数相等 |
+上限由两个状态共同表达：
 
-**这是用户明确确认的语义，别把两者合并**：上限只对均衡排班生效；
-但**两种模式都必须保证每人班次数相差不大**（用户原话：「两种模式均需保证每个同学班次相差不大」）。
+| 状态 | 持久化 | 含义 |
+| --- | --- | --- |
+| `state.maxShiftsEnabled` | `localStorage['shift_max_enabled']`（`'1'` / `'0'`） | 左侧「限制每人每周班次」开关；**默认 `false`（不勾选）** |
+| `state.maxShiftsPerWeek` | `localStorage['shift_max_per_week']` | 上限数值，默认 `MAX_SHIFTS_DEFAULT = 3` |
 
-上限参数：
-- `state.maxShiftsPerWeek`，**0 = 不限制**（`maxShiftsLimit()` 映射为 `Infinity`，便于直接比较）。
+- `maxShiftsLimit()` 是**唯一**的上限口径：开关未勾选 → `Infinity`；勾选 → `getMaxShiftsPerWeek()`
+  （该值若为 `0` 同样映射成 `Infinity`）。直接比较时不必再判 `null`。
+- **开关默认关**是为了兼容旧行为：老用户升级后不会因为凭空多出一个开关而被静默限制班次。
+- 数值框 `#maxShiftsInput` 在未勾选时被 `syncMaxShiftsInput()` 置灰（`disabled`），
+  且 `setMaxShiftsPerWeek()` 把 `0` / 负数 / 非法值一律**回落为 `MAX_SHIFTS_DEFAULT`**，
+  避免用户删空数字框后留下一个 `0` 让上限莫名失效。勾选状态、数值、说明文案三者的同步
+  统一由 `syncMaxShiftsInput()` 负责（`setMaxShiftsEnabled()` / `setMaxShiftsPerWeek()` 都调用它）。
 - 口径是**每周**：单周、双周各自单独计数，不是合计。
-- 默认值 `MAX_SHIFTS_DEFAULT = 3`；负数/非法值一律回落默认值。
-- 持久化在 `localStorage['shift_max_per_week']`，由 `loadMaxShifts()` / `persistMaxShifts()` 负责。
 - **不要在别处重新实现上限判断**（例如再写一个 `CONFIG.maxWeeklyShifts`）；
   旧的 `CONFIG.maxWeeklyShifts` 常量已删除，改成这项配置。
+
+**这是用户明确确认的不变式，别弄丢**：**无论开关是否勾选，都必须保证每人班次数相差不大**
+（用户原话：「两种模式均需保证每个同学班次相差不大」，去掉按钮后这条仍然成立）——
+不勾选只是「不套用上限」，**不是**「放弃均衡」。
 
 算法分三步（`runSchedule` 内）：
 1. **贪心填充**（`fillWeekGreedy`）：按难度降序处理班次，每格挑负载最低的空闲同学。
 2. **局部搜索均衡**（`optimizeBalance`）：做「一换一」单点替换，反复降低 `balanceCost()`。
+   勾选开关时替换额外受每人每周上限约束，未勾选时上限为 `Infinity`（约束自然失效）。
 3. **连续 / 分散偏好**（`optimizeContinuity`）：只做「两槽位互换成员」，班次数不变，见 §4.10。
 
 三个必须理解的坑：
@@ -283,8 +301,9 @@ API 端点：
    交错后名额摊到整周（工作日 20 / 周末 4）。见 `collectShiftsForWeek()` 与测试 §40。
 
 `optimizeBalance` 只做一换一，因此天然不会破坏三类硬约束：
-班次容量不变、换入前用 `canTakeShift()` 查课程冲突、均衡模式下换入者不得突破上限。
-这三条在测试 §34 / §39 有断言，改动算法后必须复核。
+班次容量不变、换入前用 `canTakeShift()` 查课程冲突、勾选上限时换入者不得突破上限。
+上限相关的测试见 `.selftest/test-integration.js` 里 §32~§40 一组（参数语义、上限生效、
+上限为 0 / 未勾选时的不限制、均衡性与规模可用性）；算法改动后必须复核。
 
 ### 4.10 连续 / 分散排班偏好（勾选式软偏好，绝不反噬均衡）
 
@@ -311,7 +330,8 @@ API 端点：
 2. `optimizeContinuity` 做的是「**两个槽位互换成员**」（a↔b），不是 `optimizeBalance` 那种单点替换。
 
 > **为什么必须是交换而不是单点替换**：单点替换必然让一个人 +1、另一个人 −1，
-> 于是 `balanceCost()` 立刻变差 —— 用户要求「两种模式都要均衡」，连续只是锦上添花，
+> 于是 `balanceCost()` 立刻变差 —— 用户要求「**无论开关如何都要均衡**」（原来的说法是
+> 「两种模式都要均衡」，按钮删掉后这条不变），连续只是锦上添花，
 > 不能拿均衡去换。互换则让每个人的单双周班次数**一个都不变**，`balanceCost()` 分毫不动
 > （测试 §43 用 `balanceCost` 前后相等来锁死这条）。
 > 另一条推论：**均衡与连续本质上会冲突**（把两个班并给同一个人，就必然要从别人那里拿走），
@@ -328,7 +348,7 @@ API 端点：
 100 人规模实测 < 50ms（见测试 §39 的耗时断言）。第三轮在 `runSchedule` 里紧跟在
 `optimizeBalance` 之后调用，**顺序不能颠倒**（先均衡、后偏好）。
 
-测试见 `.selftest/test-integration.js` §43（26 项）：判分口径与容差边界、开关持久化、
+测试见 `.selftest/test-integration.js` §43：判分口径与容差边界、开关持久化、
 连续/分散两个方向的确定性用例、`balanceCost` 不变、课程冲突与锁定拦截、以及
 `runSchedule` 端到端（连续分 0 → 117、极差仍为 0）。
 
@@ -336,7 +356,7 @@ API 端点：
 
 `student-tag` 上的锁按钮给用户一个「这块别动」的表达方式。**粒度是位置**（用户明确确认）：
 
-- 锁定后，「开始排班」和「均衡排班」都**不会**改变这个位置 —— 不换人、也不换班次；
+- 锁定后，**任何一次重新排班**（`runSchedule()`）都**不会**改变这个位置 —— 不换人、也不换班次；
 - 但**该同学在其它班次仍可被正常安排**，其它同学也照样能进这个班次。
   因此**所有判断都必须同时看 `sid` 与 `key`**，绝不能简化成「这个人被锁了」。
 - 数据存在 `state.locks = { odd: { [shiftKey]: [sid, ...] }, even: {...} }`，
@@ -363,7 +383,7 @@ API 端点：
 > 另注意 `pruneLocks()` 的判人逻辑：**学生列表为空时不做「人是否还在」的判断**，
 > 否则刚打开页面（还没导入学号）就会把存档里的锁定全部清掉。
 
-测试见 `.selftest/test-integration.js` §41（27 项，含两种模式反复重排后锁定位置不变、
+测试见 `.selftest/test-integration.js` §41（含反复重排后锁定位置不变、
 均衡搜索跳过锁定、拖拽/移除被拦截、导入导出往返、剪枝与清理）。
 
 ### 4.11 导出值班表附带「人员表」工作表（只在值班表里，空课表不加）
@@ -398,23 +418,92 @@ API 端点：
 5. 合并单元格（`!merges`）只用在两段的标题行与空表提示行上，**不要**影响 `buildSheetRows()`
    产出的单双周表结构（那两张表的结构是既有约定，见 §4.6.1）。
 
-测试见 `.selftest/test-integration.js` §44（30 项）：三工作表顺序、概览计数与 `weeklyLoadOf` /
+测试见 `.selftest/test-integration.js` §44：三工作表顺序、概览计数与 `weeklyLoadOf` /
 `totalLoadOf` 对照、陈旧键按 0 班计、明细排序与字段完整性、清空排班后名单仍在、
 无数据时的提示行、以及空课表不加人员表。
+
+### 4.12 顶部菜单栏：导入 / 导出 / 主题 / 指南的**唯一可见入口**
+
+`<body>` 的第一个子元素是 `.top-menubar`，三个一级菜单 `#menuFile` / `#menuPersonal` / `#menuAbout`，
+二级菜单项放在各自的 `.menu-panel` 里。**用户要求把原来散落在左侧面板与表头的按钮全部收进这里**
+（原位置按钮已删除，不要「顺手」加回去）：
+
+| 一级菜单 | 二级菜单项（顺序即 DOM 顺序） |
+| --- | --- |
+| **文件** | 导入学号…（`menuRun(openSidImport)`）、导入数据…、导入模板…、导出值班表、导出空课表、导出数据、导出值班模板、**编辑值班模板…**（`menuRun(openTemplateEditor)`）、**重置排班…**（`menuRun(resetSchedule)`）、清空学号与排班… |
+| **个性化** | 深夜模式 / 日间模式 / 跟随系统（当前项打勾） |
+| **关于** | 使用指南 / 软件信息 |
+
+**「导入学号…」接的是 `openSidImport`（打开弹窗），不是 `loadStudents`**：学号录入框已从左侧面板
+搬进 `#sidImportModal`，`loadStudents()` 只负责读该弹窗里的 `#sidInput` 并抓课表，
+真正触发它的是弹窗底部的「导入」按钮。**别再把它接回 `loadStudents`**，那样会读一个已经不在
+左侧面板的 textarea。
+
+左侧面板只保留：学号列表、进度条、「限制每人每周班次」开关、连续排班开关、
+开始排班 / 刷新课表两个按钮（以及一组 `display:none` 的兼容控件）。
+**左侧已无 `.panel-header`**（排班标题由菜单栏的 `.menu-brand` 承担），
+**表头 `.header-actions` 整块已删除**（原来在表头右侧的「值班模板 / 重置排班」按钮随之消失）——
+表头现在只剩视图切换与单双周切换，右上角和左下角都**没有**「重置排班」。
+**导入 / 导出 / 编辑模板 / 重置排班**类入口一律只在「文件」菜单里，原位置按钮均已移除。
+
+五条必须守住的点：
+
+1. **`menuRun(fn)` 必须先收起菜单再执行动作。** 顺序颠倒会让下拉面板浮在即将打开的弹窗之上
+   （`.menu-panel` 的 z-index 高于 `.modal-overlay`），表现是「点了菜单项，弹窗被菜单挡住」。
+2. **`.top-menubar` 的 `z-index` 必须高于 `.left-panel`(10) 与 `.right-header`(5)。**
+   下拉面板向下展开会压在这两块区域上，同层或更低就会被盖住、点不到 —— 与 §6.7 是同一类层叠陷阱，
+   而且**同属 node 自测查不出来的问题**（`.selftest/test-integration.js` §45 只能做静态断言，
+   真正的可点击性必须用 §6.7 的 `document.elementFromPoint` 手法在浏览器里验证）。
+3. **菜单项与面板按钮的启用状态必须同步。** `updateButtons()` 里既设 `btnExportDuty` / `btnExportFree`，
+   也设 `menuExportDuty` / `menuExportFree` 的 `disabled`。新增禁用逻辑时两处都要跟，否则会出现
+   「菜单项灰着、隐藏兼容按钮却可点」的不一致。
+4. **切换主题只有「个性化」菜单一个入口**（深夜模式 / 日间模式 / 跟随系统，三选一、当前项打勾）。
+   历史上菜单栏右侧曾有一个循环切换的 `#themeToggle` 快捷按钮，**已按用户要求删除**，
+   连带 `.theme-btn` 样式与 `toggleTheme()` / `updateThemeIcon()` 一起删掉了 ——
+   不要再把它们加回来。菜单对勾由 `refreshThemeMenuUi()` 统一维护，**由 `applyTheme()` 直接调用**；
+   因此改了主题就一定要走 `applyTheme()`，否则对勾不会更新（跟随系统时系统深浅色变化也走它）。
+5. **值班模板弹窗 `#templateModal` 故意不监听「点击外部关闭」**（用户要求防误触，见 §6.7）。
+   模板里的每次改动都只写在草稿 `state.tplDraft` 上（深拷贝自 `state.template`），
+   `closeTemplateEditor()` 会把草稿丢掉；
+   如果点一下遮罩就关窗，用户刚改的整套模板会**无声作废**。
+   关闭入口**只有三个**：右上角 ×、底部「取消」、Esc。
+   `index.html` 文件末尾因此**刻意没有** `document.getElementById('templateModal').addEventListener('click', ...)`
+   这类代码（其它弹窗如 `#sidImportModal`、`#courseModal`、`#guideModal`、`#confirmModal`、`#aboutModal`、`#exportModal` 都有）。
+   **不要为了「统一」把 click-outside 加回来**，也不要再在注释里写「关闭弹窗点击外部」把它带出来。
+
+> **隐藏兼容控件**：`#btnExportDuty`、`#btnExportFree`、`#btnMenuImportStudents`、
+> `#btnMenuExportData`、`#btnMenuImportData`、`#btnMenuExportTemplate` 是 `display:none` 的按钮，
+> 只为保留既有 id、让老脚本与测试（如 `.selftest/test-layout.js` §L23 读 `btnExportDuty.disabled`）
+> 仍能触发同一动作。**别删**，也别把它们显示出来。
+> 另外 `#importFileInput` / `#tplFileInput` 这两个隐藏 `<input type=file>` 仍然必须留在 DOM 里，
+> 菜单项正是通过 `.click()` 触发它们的。
+
+> **别再把它改名成 `syncThemeMenu()`**：这个仓库已有的「连续排班」同步函数叫
+> `syncContinuousInput()`，两个名字只差一个词，极易在批量替换或阅读时混淆，
+> 因此菜单版本刻意叫 `refreshThemeMenuUi()`。
+
+「关于 → 软件信息」(`#aboutModal`) 的内容全部在 HTML 里写死，只有版本号 / 构建时间 / 本地地址
+三个字段由 `openAbout()` 动态填充（`APP_VERSION`、`APP_BUILD_DATE`、`window.location.origin`）。
+**发版时记得同时改 `APP_VERSION` 与 `APP_BUILD_DATE`。**
+
+测试见 `.selftest/test-integration.js` §45：三个一级菜单与各项接线、导出项的禁用同步、
+主题三态与对勾位置、`menuRun` 先收菜单再执行、`←`/`→`/`Esc` 键盘导航、菜单栏与左侧面板的
+z-index 大小关系、`#aboutModal` 不破坏 §6.7 的 DOM 顺序前提、以及提示条指向「文件」菜单。
 
 ---
 
 ## 5. 测试
 
-`.selftest/` 是一个**不依赖浏览器**的 Node 自测套件：
+`.selftest/` 是一个**不依赖浏览器**的 Node 自测套件（各文件项数以 `bash .selftest/run-all.sh` 末行输出为准，这里不写死具体数字）：
 
 ```
 harness.js              最小 DOM / localStorage / XLSX 桩
-test-model.js           81 项：模板模型、键解析、冲突推导、持久化
-test-integration.js    286 项：排班、剪枝、渲染、导出、导入往返、两种排班模式、均衡性、
+test-model.js           模板模型、键解析、冲突推导、持久化
+test-integration.js     排班、剪枝、渲染、导出、导入往返、每人每周上限与均衡性、
                                 排班锁定（§41，锁「位置」而非「人」）、弹窗层叠断言（§42，见 §6.7）、
-                                连续 / 分散排班偏好（§43，见 §4.10）、人员表（§44，见 §4.11）
-test-layout.js         171 项：排班日分组（预设/自定义、模式往返、动态渲染与导出、未排班时的表格、
+                                连续 / 分散排班偏好（§43，见 §4.10）、人员表（§44，见 §4.11）、
+                                顶部菜单栏（§45，见 §4.12）
+test-layout.js          排班日分组（预设/自定义、模式往返、动态渲染与导出、未排班时的表格、
                                 分组只排单周/双周）
 run-all.sh              入口
 ```
@@ -453,13 +542,15 @@ eq(g("deriveConflictPeriods('10:00','12:05')"), [3, 4], '早班冲突节次');
 
 ### 6.2 换行符跨文件不一致
 
-工作区里 `templates/index.html`、`README.md` 是 **LF**，而 `app.py`、
+工作区里 `templates/index.html`、`README.md`、`AGENT.md` 是 **LF 且无 BOM**，而 `app.py`、
 `requirements.txt` 是 **CRLF**（历史原因）。仓库根有 `.gitattributes`（`* text=auto`）
 做规范化，因此**改动时保持各文件原有风格即可，不要整文件转换**，
 否则会产生数千行的「伪 diff」，把真实改动淹没。
 
 用 `write` / `edit` 工具整文件重写时要注意：它们可能顺带丢掉 UTF-8 BOM、或统一换行符。
-`templates/index.html` **原本带 BOM**，改动后请确认（应输出 `BOM=True` 且孤立 LF 为 0）：```bash
+`templates/index.html` **原本带 BOM**（应输出 `BOM=True`），`README.md` / `AGENT.md` **本来就没有 BOM**
+（应输出 `BOM=False`、`CRLF=0`），改动后请确认：
+```bash
 python3 -c "
 import pathlib
 for f in ['templates/index.html','README.md','app.py','requirements.txt']:
@@ -517,14 +608,25 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
 
 ### 6.7 弹窗层叠：确认框必须被单独抬高（曾导致班次删不掉）
 
-`index.html` 里 5 个 `.modal-overlay`（`exportModal`/`courseModal`/`confirmModal`/`guideModal`/`templateModal`）
-**都是 `<body>` 的直接子元素**，且共用同一条规则 `z-index: 9998`。
+`index.html` 里 **7 个** `.modal-overlay`
+（DOM 顺序：`exportModal` → `courseModal` → `confirmModal` → **`sidImportModal`** → `guideModal`
+→ `aboutModal` → `templateModal`）
+**都是 `<body>` 的直接子元素**，其中除 `#confirmModal` 外的 6 个共用同一条规则 `z-index: 9998`
+（`#confirmModal` 被单独抬到 9999，见下）。
 此时层叠顺序**由 DOM 顺序决定**：后出现的元素盖住先出现的。
 
-`#confirmModal` 排在 `#templateModal` **之前**，于是「在值班模板里点删除班次」弹出的确认框
-被模板窗口整个盖住 —— 表现是**用户点了删除没反应、班次删不掉**，且因为遮罩之下看不见，
-很容易被误判成「前端逻辑没跑」。同理受影响的还有 **删除分组**（`tplRemoveGroup`）与
-**恢复默认模板**（`resetTemplateToDefault`），它们同样在模板窗内弹确认框。
+> 新增的 `#sidImportModal`（「文件」菜单 → 导入学号…，见 §4.12）排在 `#confirmModal` 之后、
+> `#guideModal` 之前；它不弹确认框，因此放在哪一段都不会踩下面那条前提，
+> 但**保持它在 `#confirmModal` 之后、`#templateModal` 之前**即可（现状如此，别随意搬动）。
+> 新增的 `#aboutModal`（「关于 → 软件信息」，见 §4.12）同样**必须排在 `#confirmModal` 之后**，
+> 这样它既不会插进确认框与模板窗之间，也不影响下面这条「确认框 DOM 在前」的前提。
+> §45 有一条静态断言锁住 `#aboutModal` 的相对顺序。
+
+**前提仍然成立（已核对当前 DOM 顺序：`confirmModal` 排在 `templateModal` 之前）**：于是
+「在值班模板里点删除班次」弹出的确认框会被模板窗口整个盖住 —— 表现是**用户点了删除没反应、
+班次删不掉**，且因为遮罩之下看不见，很容易被误判成「前端逻辑没跑」。
+同理受影响的还有 **删除分组**（`tplRemoveGroup`）与 **恢复默认模板**（`resetTemplateToDefault`），
+它们同样在模板窗内弹确认框。**改动弹窗顺序时务必保持这一点**，否则 §42 的静态断言会红。
 
 修复：给确认框单独抬高一层（**唯一的不同层级**，其余弹窗保持 9998）：
 
@@ -626,7 +728,8 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
 | --- | --- |
 | `shift_duty_template_v1` | 当前值班模板（`TEMPLATE_STORAGE_KEY`） |
 | `shift_ignored_courses` | 各学生被忽略的课程 ID |
-| `shift_max_per_week` | 每人每周最多班次（仅均衡排班生效） |
+| `shift_max_per_week` | 每人每周最多班次的**数值**（1~99；`0`/负数/非法值一律回落默认值 3） |
+| `shift_max_enabled` | 「限制每人每周班次」**开关**（`'1'`=勾选、套用上面的数值；`'0'`/无=不限制；**默认 `'0'`**，见 §4.8） |
 | `shift_continuous` | 「连续排班」开关（`1`=连班偏好，`0`/无=分散偏好，见 §4.10） |
 | `shift_locks` | 已锁定的排班位置（见 §4.9） |
 | `theme` | `auto` / `light` / `dark` |

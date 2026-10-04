@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>学生打印社排班系统</title>
+<title>重邮学生排班系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* ============================================================
@@ -1340,7 +1340,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
      键盘可用：Esc 关闭；打开后 ←→ 切换一级菜单（见 closeAllMenus / onMenuBarKeydown）。 -->
 <div class="top-menubar" id="topMenubar" onkeydown="onMenuBarKeydown(event)">
 
-  <div class="menu-brand">学生打印社排班系统</div>
+  <div class="menu-brand">重邮学生排班系统</div>
 
   <!-- ── 文件 ── -->
   <div class="menu" id="menuFile">
@@ -1648,7 +1648,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
           <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-grad);color:#fff;
                       display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;">排</div>
           <div>
-            <div style="font-size:16px;font-weight:700;color:var(--text);">学生打印社排班系统</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text);">重邮学生排班系统</div>
             <div style="font-size:12px;color:var(--text-muted);">值班表 / 空课表自动排班工具</div>
           </div>
         </div>
@@ -5870,7 +5870,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderStudentList();
   updateButtons();
   refreshView();   // 首次进入即显示当前值班模板的时段表格（此时还没有排班）
-  showToast('欢迎使用学生排班系统！请在顶部「文件」菜单导入学号', 'info');
+  showToast('欢迎使用重邮学生排班系统！请在顶部「文件」菜单导入学号', 'info');
 });
 
 // 值班模板弹窗**故意不监听「点击外部关闭」**（用户要求防误触）：

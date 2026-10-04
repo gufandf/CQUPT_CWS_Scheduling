@@ -863,7 +863,10 @@ Promise.resolve(run).then(() => {
     return Date.now();
   })()`)).then(t1 => ({ t1, ms: t1 - t0 }));
 }).then(({ ms }) => {
-  ok(ms < 5000, `100 人均衡排班耗时 ${ms}ms < 5000ms（未退化）`);
+  // 阈值从 5000ms 收紧到 1500ms：优化后 100 人一趟实测约 90~160ms，这里留了约 10 倍余量，
+  // 既不会在慢机器上误报，又能挡住「把 optimizeContinuity / continuityScoreOf 的复杂度
+  // 改回去」这类退化（改回去会涨到 1s 以上）。若在极慢的机器上误报，请调阈值而不是删断言。
+  ok(ms < 1500, `100 人均衡排班耗时 ${ms}ms < 1500ms（未退化）`);
   const sp = spreadOf();
   ok(sp.odd <= 1 && sp.even <= 1 && sp.total <= 1,
      `100 人规模仍均衡（单周 ${sp.odd}、双周 ${sp.even}、合计 ${sp.total}）`, sp);
@@ -1182,6 +1185,81 @@ Promise.resolve(run).then(() => {
   g('setContinuousScheduling(false); syncContinuousInput();');
   eq(el('continuousToggle').checked, false, '取消勾选后控件同步为未选中');
   ok(String(el('continuousHint').textContent).includes('分散'), '未勾选时说明文案为「分散」');
+
+  // ── 43b. 连续分打分的「缓存优化」不得改变结果 ──
+  // continuityScoreOf 为了性能把「槽位属于哪天 / 下一个班次是否首尾相接」按槽位字符串
+  // 缓存进了 ctx._meta（同一 ctx 会被调用上万次）。缓存一旦写错（例如跨 ctx 复用、
+  // 或把 nextKey 记成与占用无关的结论），打分就会静默偏移，进而让排班偏好跑偏。
+  // 这里用一份「朴素参考实现」（等价于优化前的逐次解析写法）做交叉验证。
+  section('43b. 连续分缓存优化与朴素实现结果一致');
+  g(`
+    function __naiveContinuityScoreOf(occ, ctx) {
+      if (!occ || occ.size === 0) return 0;
+      const workedDays = new Set();
+      for (const slot of occ) {
+        const sep = slot.indexOf('|');
+        if (sep < 0) continue;
+        workedDays.add(parseInt(slot.slice(0, sep), 10));
+      }
+      let score = 0;
+      for (let d = 0; d < 6; d++) {
+        if (workedDays.has(d) && workedDays.has(d + 1)) score += CONTINUITY_DAY_SCORE;
+      }
+      for (const slot of occ) {
+        const sep = slot.indexOf('|');
+        if (sep < 0) continue;
+        const d = parseInt(slot.slice(0, sep), 10);
+        const id = slot.slice(sep + 1);
+        const o = ctx.ordinal[d + '|' + id];
+        if (o === undefined) continue;
+        const next = ctx.days[d][o + 1];
+        if (next && occ.has(occupiedSlotKey(d, next.id)) && isBackToBackShifts(ctx.days[d][o], next)) {
+          score += CONTINUITY_B2B_SCORE;
+        }
+      }
+      return score;
+    }
+  `);
+
+  // 用固定种子生成一批随机占用集合（覆盖 0~7 天、含无效键），逐个与朴素实现比对
+  const mismatches = g(`(() => {
+    let seed = 20261004;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const allKeys = [];
+    for (const wt of ['odd', 'even']) {
+      const c = makeContinuityContext(wt);
+      for (let d = 0; d < 7; d++) for (const s of c.days[d]) allKeys.push(d + '|' + s.id);
+    }
+    allKeys.push('9|nosuch');        // 无效天
+    allKeys.push('0|nosuch');        // 有效天 + 不存在的班次
+    allKeys.push('badkey');          // 无分隔符
+    const bad = [];
+    for (const wt of ['odd', 'even']) {
+      // 关键：**复用一个 ctx** 连续打分，才能真正检验缓存；再穿插新建 ctx 的情况
+      const reused = makeContinuityContext(wt);
+      for (let t = 0; t < 300; t++) {
+        const set = new Set();
+        const n = Math.floor(rnd() * 9);
+        for (let k = 0; k < n; k++) set.add(allKeys[Math.floor(rnd() * allKeys.length)]);
+        const got = continuityScoreOf(set, reused);
+        const want = __naiveContinuityScoreOf(set, makeContinuityContext(wt));
+        if (got !== want) bad.push({ wt, t, got, want, set: [...set] });
+      }
+      // 同一集合在两种 ctx 下（全新 vs 已缓存）必须同分
+      const probe = new Set(['0|wd0', '0|wd1', '1|wd0']);
+      const fresh = continuityScoreOf(probe, makeContinuityContext(wt));
+      const cached = continuityScoreOf(probe, reused);
+      if (fresh !== cached) bad.push({ wt, fresh, cached, note: 'fresh vs cached' });
+    }
+    return bad;
+  })()`);
+  // 只报告前若干条差异，避免真出问题时刷屏（完整清单对定位没帮助，模式是一样的）
+  ok(mismatches.length === 0,
+     `600 组随机占用集合 + 无效键：缓存实现与朴素实现逐组同分`
+     + (mismatches.length ? `（${mismatches.length} 组不符）` : ''),
+     mismatches.length ? { 不符组数: mismatches.length, 前三条: mismatches.slice(0, 3) } : undefined);
+  ok(g('typeof continuityScoreOf(new Set(), makeContinuityContext("odd"))') === 'number',
+     '空集合仍返回 0（缓存分支不破坏早退）');
 
   /** 取某人某周的连续分（测试辅助，与实现同口径） */
   const prefScore = (wt, sid) => g(`(() => {

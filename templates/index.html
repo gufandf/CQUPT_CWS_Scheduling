@@ -14,24 +14,40 @@
   --primary: #2563EB;
   --primary-light: #EFF6FF;
   --primary-dark: #1D4ED8;
+  --primary-grad: linear-gradient(135deg, #3B82F6 0%, #2563EB 55%, #1D4ED8 100%);
   --success: #059669;
   --success-light: #ECFDF5;
+  --success-grad: linear-gradient(135deg, #10B981 0%, #059669 100%);
   --warning: #D97706;
   --warning-light: #FFFBEB;
+  --warning-grad: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
   --danger: #DC2626;
   --danger-light: #FEF2F2;
+  --danger-grad: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
   --bg: #F1F5F9;
+  /* 页面底色：两团柔光渐晕，避免整屏死板纯色 */
+  --bg-grad:
+    radial-gradient(1100px 620px at -5% -10%, #E4EDFC 0%, rgba(228,237,252,0) 62%),
+    radial-gradient(900px 520px at 105% 105%, #E7F0F3 0%, rgba(231,240,243,0) 58%);
   --card: #FFFFFF;
   --border: #E2E8F0;
   --text: #0F172A;
   --text-secondary: #64748B;
   --text-muted: #94A3B8;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
-  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-lg: 0 10px 40px rgba(0,0,0,.1);
+  --shadow-sm: 0 1px 2px rgba(15,23,42,.06);
+  --shadow: 0 2px 6px rgba(15,23,42,.07), 0 1px 2px rgba(15,23,42,.05);
+  --shadow-md: 0 6px 18px rgba(15,23,42,.10), 0 2px 6px rgba(15,23,42,.06);
+  --shadow-lg: 0 18px 50px rgba(15,23,42,.20), 0 6px 18px rgba(15,23,42,.10);
   --radius: 10px;
   --radius-sm: 6px;
+  --radius-lg: 16px;
+  --ring: 0 0 0 3px rgba(37,99,235,.18);
   --transition: 0.15s ease;
+  --transition-fast: 0.1s ease;
+  --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
   --cell-bg: #FFFFFF;
   --cell-wd: #F8FAFC;
   --cell-we: #FFF7ED;
@@ -46,21 +62,30 @@
     --primary: #3B82F6;
     --primary-light: #1E3A5F;
     --primary-dark: #60A5FA;
+    --primary-grad: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
     --success: #10B981;
     --success-light: #064E3B;
+    --success-grad: linear-gradient(135deg, #10B981 0%, #047857 100%);
     --warning: #F59E0B;
     --warning-light: #78350F;
+    --warning-grad: linear-gradient(135deg, #F59E0B 0%, #B45309 100%);
     --danger: #EF4444;
     --danger-light: #7F1D1D;
+    --danger-grad: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
     --bg: #0F172A;
+    --bg-grad:
+      radial-gradient(1100px 620px at -5% -10%, rgba(59,130,246,.10) 0%, rgba(59,130,246,0) 62%),
+      radial-gradient(900px 520px at 105% 105%, rgba(16,185,129,.08) 0%, rgba(16,185,129,0) 58%);
     --card: #1E293B;
     --border: #334155;
     --text: #F1F5F9;
     --text-secondary: #94A3B8;
     --text-muted: #64748B;
     --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
-    --shadow: 0 1px 3px rgba(0,0,0,.4);
-    --shadow-lg: 0 10px 40px rgba(0,0,0,.5);
+    --shadow: 0 2px 6px rgba(0,0,0,.35);
+    --shadow-md: 0 6px 18px rgba(0,0,0,.45);
+    --shadow-lg: 0 18px 50px rgba(0,0,0,.6);
+    --ring: 0 0 0 3px rgba(96,165,250,.25);
     --cell-bg: #1E293B;
     --cell-wd: #1A2332;
     --cell-we: #2D1F1A;
@@ -73,13 +98,23 @@
 /* 手动覆盖暗色 */
 [data-theme="dark"] {
   --primary: #3B82F6; --primary-light: #1E3A5F; --primary-dark: #60A5FA;
+  --primary-grad: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
   --success: #10B981; --success-light: #064E3B;
+  --success-grad: linear-gradient(135deg, #10B981 0%, #047857 100%);
   --warning: #F59E0B; --warning-light: #78350F;
+  --warning-grad: linear-gradient(135deg, #F59E0B 0%, #B45309 100%);
   --danger: #EF4444; --danger-light: #7F1D1D;
-  --bg: #0F172A; --card: #1E293B; --border: #334155;
+  --danger-grad: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
+  --bg: #0F172A;
+  --bg-grad:
+    radial-gradient(1100px 620px at -5% -10%, rgba(59,130,246,.10) 0%, rgba(59,130,246,0) 62%),
+    radial-gradient(900px 520px at 105% 105%, rgba(16,185,129,.08) 0%, rgba(16,185,129,0) 58%);
+  --card: #1E293B; --border: #334155;
   --text: #F1F5F9; --text-secondary: #94A3B8; --text-muted: #64748B;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.3); --shadow: 0 1px 3px rgba(0,0,0,.4);
-  --shadow-lg: 0 10px 40px rgba(0,0,0,.5);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.3); --shadow: 0 2px 6px rgba(0,0,0,.35);
+  --shadow-md: 0 6px 18px rgba(0,0,0,.45);
+  --shadow-lg: 0 18px 50px rgba(0,0,0,.6);
+  --ring: 0 0 0 3px rgba(96,165,250,.25);
   --cell-bg: #1E293B; --cell-wd: #1A2332; --cell-we: #2D1F1A;
   --modal-overlay: rgba(0,0,0,.6);
   --status-loading-text: #FCD34D; --status-ready-text: #6EE7B7; --status-error-text: #FCA5A5;
@@ -87,13 +122,24 @@
 /* 手动覆盖亮色 */
 [data-theme="light"] {
   --primary: #2563EB; --primary-light: #EFF6FF; --primary-dark: #1D4ED8;
+  --primary-grad: linear-gradient(135deg, #3B82F6 0%, #2563EB 55%, #1D4ED8 100%);
   --success: #059669; --success-light: #ECFDF5;
+  --success-grad: linear-gradient(135deg, #10B981 0%, #059669 100%);
   --warning: #D97706; --warning-light: #FFFBEB;
+  --warning-grad: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
   --danger: #DC2626; --danger-light: #FEF2F2;
-  --bg: #F1F5F9; --card: #FFFFFF; --border: #E2E8F0;
+  --danger-grad: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  --bg: #F1F5F9;
+  --bg-grad:
+    radial-gradient(1100px 620px at -5% -10%, #E4EDFC 0%, rgba(228,237,252,0) 62%),
+    radial-gradient(900px 520px at 105% 105%, #E7F0F3 0%, rgba(231,240,243,0) 58%);
+  --card: #FFFFFF; --border: #E2E8F0;
   --text: #0F172A; --text-secondary: #64748B; --text-muted: #94A3B8;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.05); --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-lg: 0 10px 40px rgba(0,0,0,.1);
+  --shadow-sm: 0 1px 2px rgba(15,23,42,.06);
+  --shadow: 0 2px 6px rgba(15,23,42,.07), 0 1px 2px rgba(15,23,42,.05);
+  --shadow-md: 0 6px 18px rgba(15,23,42,.10), 0 2px 6px rgba(15,23,42,.06);
+  --shadow-lg: 0 18px 50px rgba(15,23,42,.20), 0 6px 18px rgba(15,23,42,.10);
+  --ring: 0 0 0 3px rgba(37,99,235,.18);
   --cell-bg: #FFFFFF; --cell-wd: #F8FAFC; --cell-we: #FFF7ED;
   --modal-overlay: rgba(15,23,42,.5);
   --status-loading-text: #92400E; --status-ready-text: #065F46; --status-error-text: #991B1B;
@@ -104,14 +150,90 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   background: var(--bg);
+  background-image: var(--bg-grad);
+  background-attachment: fixed;
   color: var(--text);
   height: 100vh; overflow: hidden;
   font-size: 14px; line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color .3s var(--ease-out-expo), color .3s var(--ease-out-expo);
+  /* 两段式：顶部菜单栏固定高度，主体（.app-container）占满剩余空间 */
+  display: flex; flex-direction: column;
+  animation: pageIn 0.5s var(--ease-out-expo);
+}
+
+@keyframes pageIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ── Layout ─────────────────────────────── */
-.app-container { display:flex; height:100vh; }
+.app-container { display:flex; flex:1; min-height:0; }
+
+/* ── Top Menu Bar ───────────────────────── */
+/* 顶部一级菜单：文件 / 个性化 / 关于，各自的二级菜单向下展开。
+   注意 z-index 必须高于 .left-panel(z-index:10) 与 .right-header(z-index:5)，
+   否则下拉面板会被面板盖住、点不到（与 §6.7 的弹窗层叠是同一类问题）。 */
+.top-menubar {
+  flex-shrink: 0;
+  height: 40px;
+  display: flex; align-items: stretch;
+  padding: 0 10px;
+  background: var(--primary-grad);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+  position: relative; z-index: 100;
+}
+.menu-brand {
+  display: flex; align-items: center;
+  padding-right: 16px; margin-right: 6px;
+  font-size: 14px; font-weight: 700; letter-spacing: .5px;
+  white-space: nowrap;
+  border-right: 1px solid rgba(255,255,255,.22);
+}
+.menu { position: relative; display: flex; }
+.menu-btn {
+  border: none; background: transparent; color: #fff;
+  padding: 0 14px; height: 100%;
+  font-family: inherit; font-size: 13px; font-weight: 600; letter-spacing: .5px;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: background var(--transition); white-space: nowrap;
+}
+.menu-btn:hover, .menu.open .menu-btn { background: rgba(255,255,255,.18); }
+.menu-caret { font-size: 9px; opacity: .75; }
+.menu-panel {
+  display: none;
+  position: absolute; top: 100%; left: 0; min-width: 176px;
+  padding: 6px;
+  background: var(--card);
+  border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  box-shadow: var(--shadow-md);
+  z-index: 101;
+}
+.menu.open .menu-panel { display: block; }
+.menu-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 8px 12px; border: none; border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-secondary);
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  text-align: left; cursor: pointer; white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+.menu-item:hover:not(:disabled) { background: var(--primary-light); color: var(--primary); }
+.menu-item:disabled { opacity: .45; cursor: not-allowed; }
+.menu-check { margin-left: auto; color: var(--primary); font-weight: 700; }
+.menu-sep { height: 1px; margin: 5px 6px; background: var(--border); }
+.menu-note {
+  padding: 6px 12px; font-size: 11px; line-height: 1.6;
+  color: var(--text-muted); white-space: normal;
+}
+.menu-note strong { color: var(--text-secondary); }
+/* 「关于 → 软件信息」里的等宽文本（路径、版本号等） */
+.menu-note code { font-family: 'SF Mono', Consolas, monospace; font-size: 11px; }
+
+/* .theme-btn 已随菜单栏右侧的主题快捷按钮一起删除（用户要求）。
+   切换主题现在只有「个性化」菜单这一个入口：深夜模式 / 日间模式 / 跟随系统。 */
 
 /* ── Left Panel ─────────────────────────── */
 .left-panel {
@@ -119,33 +241,30 @@ body {
   background: var(--card);
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   z-index: 10;
 }
-.panel-header {
-  padding: 16px 20px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  color: #fff; font-size: 16px; font-weight: 700;
-  letter-spacing: .5px;
-  display: flex; align-items: center; gap: 8px;
+/* 左侧面板已无 .panel-header（用户要求删除）：面板顶部直接是 .panel-body，
+   排班标题由顶部菜单栏的 .menu-brand 承担，弹窗里的标题改用 .panel-title。 */
+.panel-title {
+  font-size: 12px; font-weight: 700; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 7px;
+  margin-bottom: 8px;
 }
-.theme-btn {
-  margin-left: auto; min-width: 52px; height: 30px; border-radius: 15px;
-  border: 1.5px solid rgba(255,255,255,.35); background: rgba(255,255,255,.10);
-  color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; display: flex;
-  align-items: center; justify-content: center; line-height: 1; padding: 0 12px;
-  transition: all .2s ease; flex-shrink: 0; white-space: nowrap;
-  font-family: inherit; letter-spacing: .5px;
+.panel-title::before {
+  content: ''; width: 3px; height: 12px; border-radius: 2px;
+  background: var(--primary-grad); flex-shrink: 0;
 }
-.theme-btn:hover {
-  background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.55);
-}
-.theme-btn:active { transform: scale(.96); }
 .panel-body { flex:1; overflow:hidden; padding:12px; display:flex; flex-direction:column; gap:10px; }
 
 .section-title {
   font-size: 11px; font-weight: 700; color: var(--text-muted);
   text-transform: uppercase; letter-spacing: 1px;
+  display: flex; align-items: center; gap: 7px;
+}
+.section-title::before {
+  content: ''; width: 3px; height: 11px; border-radius: 2px;
+  background: var(--primary-grad); flex-shrink: 0;
 }
 
 textarea#sidInput {
@@ -153,64 +272,146 @@ textarea#sidInput {
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   padding: 8px 10px; font-size: 12px; font-family: 'SF Mono','Consolas',monospace;
   resize: vertical; outline: none; line-height: 1.5;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
   background: var(--card); color: var(--text);
+  box-shadow: inset 0 1px 2px rgba(15,23,42,.04);
 }
 textarea#sidInput:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+  box-shadow: var(--ring), inset 0 1px 2px rgba(15,23,42,.04);
   background: var(--card); color: var(--text);
 }
+textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 
 .btn-group { display:flex; gap:8px; }
 .btn {
   padding: 9px 16px; border: none; border-radius: var(--radius-sm);
   font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: all var(--transition);
+  transition: all var(--transition-smooth);
   display: inline-flex; align-items: center; gap: 6px;
   white-space: nowrap;
   outline: none;
+  position: relative;
+  letter-spacing: .2px;
+  overflow: hidden;
 }
-.btn:active { transform: scale(.97); }
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  transform: translate(-50%, -50%);
+  transition: width .6s ease, height .6s ease;
+}
+.btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+.btn:active { transform: scale(.96); }
 .btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
-.btn:focus-visible { box-shadow: 0 0 0 3px rgba(37,99,235,.25); }
+.btn:focus-visible { box-shadow: var(--ring); }
 
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+.btn-primary { 
+  background: var(--primary-grad); 
+  color: #fff; 
+  box-shadow: 0 1px 2px rgba(37,99,235,.30);
+  transition: all var(--transition-smooth), box-shadow .3s ease;
+}
+.btn-primary:hover:not(:disabled) { 
+  filter: brightness(1.07); 
+  transform: translateY(-2px) scale(1.02); 
+  box-shadow: 0 8px 20px rgba(37,99,235,.35);
+}
 
-.btn-success { background: var(--success); color: #fff; }
-.btn-success:hover:not(:disabled) { background: #047857; }
+.btn-success { 
+  background: var(--success-grad); 
+  color: #fff; 
+  box-shadow: 0 1px 2px rgba(5,150,105,.30);
+  transition: all var(--transition-smooth), box-shadow .3s ease;
+}
+.btn-success:hover:not(:disabled) { 
+  filter: brightness(1.07); 
+  transform: translateY(-2px) scale(1.02); 
+  box-shadow: 0 8px 20px rgba(5,150,105,.35);
+}
 
-.btn-warning { background: var(--warning); color: #fff; }
-.btn-warning:hover:not(:disabled) { background: #B45309; }
+.btn-warning { 
+  background: var(--warning-grad); 
+  color: #fff; 
+  box-shadow: 0 1px 2px rgba(217,119,6,.30);
+  transition: all var(--transition-smooth), box-shadow .3s ease;
+}
+.btn-warning:hover:not(:disabled) { 
+  filter: brightness(1.07); 
+  transform: translateY(-2px) scale(1.02); 
+  box-shadow: 0 8px 20px rgba(217,119,6,.35);
+}
 
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover:not(:disabled) { background: #B91C1C; }
+.btn-danger { 
+  background: var(--danger-grad); 
+  color: #fff; 
+  box-shadow: 0 1px 2px rgba(220,38,38,.30);
+  transition: all var(--transition-smooth), box-shadow .3s ease;
+}
+.btn-danger:hover:not(:disabled) { 
+  filter: brightness(1.07); 
+  transform: translateY(-2px) scale(1.02); 
+  box-shadow: 0 8px 20px rgba(220,38,38,.35);
+}
 
 .btn-outline {
-  background: transparent; color: var(--text-secondary);
+  background: var(--card); color: var(--text-secondary);
   border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-smooth);
 }
-.btn-outline:hover:not(:disabled) { background: var(--bg); border-color: var(--border); }
+.btn-outline:hover:not(:disabled) {
+  background: var(--primary-light); 
+  border-color: var(--primary); 
+  color: var(--primary);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(37,99,235,.2);
+}
 
 .btn-sm { padding: 5px 10px; font-size: 12px; }
 
 /* ── Student List ───────────────────────── */
 .student-list {
-  flex: 1; overflow-y: auto; min-height: 60px;
+  flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 60px;
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   background: var(--card);
+  box-shadow: inset 0 1px 2px rgba(15,23,42,.03);
 }
 .student-item {
   display: flex; align-items: center;
   padding: 5px 10px; border-bottom: 1px solid var(--border);
   font-size: 12px; cursor: grab; user-select: none;
-  transition: background var(--transition);
+  transition: all var(--transition-smooth);
   position: relative;
+  opacity: 0;
+  animation: slideInFromLeft 0.3s var(--ease-out-expo) forwards;
 }
-.student-item:active { cursor: grabbing; }
+.student-item:nth-child(1) { animation-delay: 0.05s; }
+.student-item:nth-child(2) { animation-delay: 0.1s; }
+.student-item:nth-child(3) { animation-delay: 0.15s; }
+.student-item:nth-child(4) { animation-delay: 0.2s; }
+.student-item:nth-child(5) { animation-delay: 0.25s; }
+.student-item:active { cursor: grabbing; transform: scale(0.98); }
 .student-item:last-child { border-bottom: none; }
-.student-item:hover { background: var(--primary-light); }
+.student-item:hover { 
+  background: var(--primary-light); 
+  padding-left: 15px;
+  box-shadow: inset 3px 0 0 0 var(--primary);
+}
+
+@keyframes slideInFromLeft {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 .student-item .sid { font-family: 'SF Mono',monospace; }
 .student-item .name { font-weight: 600; margin-left: 8px; }
 .student-item .meta { margin-left: auto; display:flex; align-items:center; gap:8px; }
@@ -224,52 +425,99 @@ textarea#sidInput:focus {
 .status {
   font-size: 11px; font-weight: 600; padding: 2px 8px;
   border-radius: 10px; white-space: nowrap;
+  border: 1px solid transparent;
 }
 .status-pending { background: var(--bg); color: var(--text-secondary); }
-.status-loading { background: var(--warning-light); color: var(--status-loading-text); }
-.status-ready { background: var(--success-light); color: var(--status-ready-text); }
-.status-error { background: var(--danger-light); color: var(--status-error-text); }
+.status-loading { background: var(--warning-light); color: var(--status-loading-text); border-color: var(--warning); }
+.status-ready { background: var(--success-light); color: var(--status-ready-text); border-color: var(--success); }
+.status-error { background: var(--danger-light); color: var(--status-error-text); border-color: var(--danger); }
 
 .shift-badge {
   font-size: 10px; font-weight: 700; padding: 1px 7px;
-  border-radius: 8px; background: var(--primary); color: #fff;
+  border-radius: 8px; background: var(--primary-grad); color: #fff;
 }
 .student-count {
   font-size: 11px; color: var(--text-muted); text-align: right;
 }
 
-/* ── 每人每周班次上限（仅均衡排班生效） ── */
-.limit-row {
+/* ── 排班设置卡片（每人每周上限 / 连续排班开关） ── */
+.opt-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; margin-top: 10px;
+  padding: 9px 11px;
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
-.limit-row label {
-  font-size: 12px; font-weight: 600; color: var(--text-secondary);
-  flex-shrink: 0;
-}
-.limit-row input {
-  width: 56px; height: 28px; padding: 0 8px; flex-shrink: 0;
+.opt-row:hover { border-color: var(--text-muted); }
+/* 「限制每人每周班次」右侧的数值输入（与开关同一个 .opt-row 里） */
+.opt-row input[type="number"] {
+  width: 56px; height: 28px; padding: 0 8px; flex-shrink: 0; margin-left: auto;
   font-size: 13px; font-weight: 700; font-family: inherit;
   text-align: center; color: var(--text); background: var(--bg);
   border: 1.5px solid var(--border); border-radius: 5px; outline: none;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
-.limit-row input:focus { border-color: var(--primary); }
-.limit-hint {
-  font-size: 10px; color: var(--text-muted); line-height: 1.35;
-  margin-left: auto; text-align: right;
+.opt-row input[type="number"]:focus { border-color: var(--primary); box-shadow: var(--ring); }
+/* 未勾选「限制每人每周班次」时数值框变灰不可编辑，视觉上表明上限未生效 */
+.opt-row input[type="number"]:disabled { opacity: .45; cursor: not-allowed; }
+
+/* 连续排班开关：真正的 checkbox 藏在后面，外观由 .opt-switch 承担 */
+.opt-row { cursor: pointer; user-select: none; }
+.opt-row input[type="checkbox"] {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
 }
+.opt-switch {
+  position: relative; flex-shrink: 0;
+  width: 38px; height: 22px; border-radius: 11px;
+  background: var(--border);
+  transition: background var(--transition-smooth), box-shadow var(--transition-smooth);
+  box-shadow: inset 0 1px 3px rgba(15,23,42,.14);
+}
+.opt-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(15,23,42,.3);
+  transition: transform .25s var(--ease-out-back);
+}
+.opt-row input[type="checkbox"]:checked + .opt-switch {
+  background: var(--primary-grad);
+  box-shadow: 0 1px 4px rgba(37,99,235,.35);
+}
+.opt-row input[type="checkbox"]:checked + .opt-switch::after { transform: translateX(16px); }
+.opt-row input[type="checkbox"]:focus-visible + .opt-switch { box-shadow: var(--ring); }
+.opt-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.opt-text strong { font-size: 12px; font-weight: 700; color: var(--text); }
+.opt-text small { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
 
 .progress-bar {
   display: none; height: 4px; background: var(--border);
-  border-radius: 2px; overflow: hidden;
+  border-radius: 2px; overflow: hidden; position: relative;
 }
 .progress-bar.active { display: block; }
 .progress-bar .fill {
-  height: 100%; background: var(--primary);
-  border-radius: 2px; transition: width .3s ease; width: 0%;
+  height: 100%; 
+  background: var(--primary-grad);
+  border-radius: 2px; 
+  transition: width .3s var(--ease-out-expo); 
+  width: 0%;
+  position: relative;
+  overflow: hidden;
+}
+.progress-bar .fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255,255,255,.3) 50%, 
+    transparent 100%);
+  animation: progressShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes progressShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
 }
 
 /* ── Right Panel ────────────────────────── */
@@ -280,26 +528,29 @@ textarea#sidInput:focus {
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 8px;
   box-shadow: var(--shadow-sm);
+  z-index: 5;
 }
 
 /* ── View toggle (primary nav) ── */
 .view-toggle {
-  display: flex; gap: 0;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  border: 1.5px solid var(--border);
+  display: flex; gap: 4px;
+  padding: 4px; border-radius: 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 2px rgba(15,23,42,.05);
 }
 .view-toggle button {
-  padding: 8px 20px; border: none; background: var(--card);
+  padding: 6px 20px; border: none; background: transparent;
+  border-radius: 8px;
   font-size: 14px; font-weight: 700; cursor: pointer;
   transition: all var(--transition); color: var(--text-secondary);
-  border-right: 1px solid var(--border);
+  font-family: inherit;
 }
-.view-toggle button:last-child { border-right: none; }
 .view-toggle button.active {
-  background: var(--primary); color: #fff;
+  background: var(--card); color: var(--primary);
+  box-shadow: var(--shadow-sm);
 }
-.view-toggle button:hover:not(.active) { background: var(--bg); }
+.view-toggle button:hover:not(.active) { color: var(--text); }
 
 .header-sep {
   width: 1px; height: 24px; background: var(--border);
@@ -312,17 +563,20 @@ textarea#sidInput:focus {
 }
 .week-toggle button {
   padding: 5px 14px; border: 1.5px solid var(--border);
-  border-radius: 6px; background: var(--card);
+  border-radius: 8px; background: var(--card);
   font-size: 12px; font-weight: 600; cursor: pointer;
   transition: all var(--transition); color: var(--text-secondary);
+  font-family: inherit;
 }
 .week-toggle button.active {
   background: var(--primary-light); color: var(--primary);
   border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary) inset;
 }
-.week-toggle button:hover:not(.active) { background: var(--bg); }
+.week-toggle button:hover:not(.active) { background: var(--bg); border-color: var(--text-muted); }
 
-.header-actions { display:flex; gap:8px; margin-left:auto; }
+/* .header-actions 已随「值班模板 / 重置排班」两个按钮一起删除
+   （两者都搬进了「文件」菜单，见 §4.12），表头右侧不再有按钮组。 */
 
 /* ── Schedule ───────────────────────────── */
 .schedule-wrapper { flex:1; overflow:auto; padding:16px 20px; }
@@ -334,15 +588,17 @@ textarea#sidInput:focus {
 .schedule-grid {
   display: grid; gap: 1px;
   background: var(--border); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); overflow: hidden;
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 .schedule-grid .day-header {
-  background: var(--primary); color: #fff;
-  padding: 7px 4px; text-align: center;
+  background: var(--primary-grad); color: #fff;
+  padding: 8px 4px; text-align: center;
   font-weight: 700; font-size: 12px;
+  letter-spacing: .4px;
   display: flex; align-items: center; justify-content: center;
 }
-.schedule-grid .day-header.weekend-header { background: var(--danger); }
+.schedule-grid .day-header.weekend-header { background: var(--danger-grad); }
 
 .schedule-grid .time-label {
   background: #F8FAFC; padding: 4px 6px;
@@ -358,19 +614,33 @@ textarea#sidInput:focus {
 
 .schedule-grid .shift-cell {
   background: var(--cell-bg); min-height: 56px; padding: 3px 4px;
-  transition: background var(--transition);
+  transition: all var(--transition-smooth);
   display: flex; flex-direction: column; gap: 2px;
   justify-content: flex-start;
+}
+/* hover 只做描边与底色，不加 transform 缩放：
+   格子是网格的一部分，放大后会与相邻格子/边框互相压叠，观感上是「浮起来」的抖动 */
+.schedule-grid .shift-cell:hover { 
+  box-shadow: inset 0 0 0 2px rgba(37,99,235,.3);
+  background: linear-gradient(135deg, var(--cell-bg) 0%, var(--primary-light) 100%);
+}
+/* 未归入本分组的占位格（.shift-cell.void）不参与排班，也没有任何 hover 反馈：
+   它不可放置、不可点击，跟着亮起会被误认为「这一格能排班」。
+   单独写一条比 :hover 优先级更高的规则来抵消，避免改动上面那条的权重
+   （加了 :not(.void) 会让它的权重超过下面的 .grp-N 底色规则，顺带改变正常格子的观感）。 */
+.schedule-grid .shift-cell.void:hover {
+  box-shadow: none;
+  background: var(--bg);
 }
 .schedule-grid .shift-cell.weekday-cell { background: var(--cell-wd); }
 .schedule-grid .shift-cell.weekend-cell { background: var(--cell-we); }
 /* 动态分组配色：grp-0、grp-1 …… 按分组在 layout 中的序号取色（超出 6 组时循环） */
-.schedule-grid .day-header.grp-0 { background: var(--primary); }
-.schedule-grid .day-header.grp-1 { background: var(--danger); }
-.schedule-grid .day-header.grp-2 { background: #7C3AED; }
-.schedule-grid .day-header.grp-3 { background: #0891B2; }
-.schedule-grid .day-header.grp-4 { background: #D97706; }
-.schedule-grid .day-header.grp-5 { background: #059669; }
+.schedule-grid .day-header.grp-0 { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+.schedule-grid .day-header.grp-1 { background: linear-gradient(135deg, #F87171, #DC2626); }
+.schedule-grid .day-header.grp-2 { background: linear-gradient(135deg, #A78BFA, #7C3AED); }
+.schedule-grid .day-header.grp-3 { background: linear-gradient(135deg, #22D3EE, #0891B2); }
+.schedule-grid .day-header.grp-4 { background: linear-gradient(135deg, #FBBF24, #D97706); }
+.schedule-grid .day-header.grp-5 { background: linear-gradient(135deg, #34D399, #059669); }
 .schedule-grid .day-header.ungrouped { background: var(--text-muted); opacity: .6; }
 .schedule-grid .shift-cell.grp-0 { background: var(--cell-wd); }
 .schedule-grid .shift-cell.grp-1 { background: var(--cell-we); }
@@ -404,15 +674,36 @@ textarea#sidInput:focus {
 .schedule-grid .shift-cell.drag-over {
   background: #DBEAFE !important;
   outline: 2px dashed var(--primary); outline-offset: -2px;
+  animation: cellPulse 0.8s ease-in-out infinite;
 }
+
+@keyframes cellPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
 .schedule-grid .shift-cell.drop-available {
   background: #DCFCE7 !important;
   outline: 2px solid #22C55E; outline-offset: -2px;
-  transition: all var(--transition);
+  transition: all var(--transition-smooth);
+  animation: dropAvailable 0.6s ease-in-out infinite;
 }
+
+@keyframes dropAvailable {
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(34,197,94,.3); }
+  50% { box-shadow: inset 0 0 0 4px rgba(34,197,94,.5); }
+}
+
 .schedule-grid .shift-cell.drop-conflict {
   background: #FEE2E2 !important;
   outline: 2px dashed var(--danger); outline-offset: -2px;
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 /* overflow & conflict — unified red warning */
 .schedule-grid .shift-cell.warn {
@@ -449,18 +740,37 @@ textarea#sidInput:focus {
 
 /* ── Student Tag ────────────────────────── */
 .student-tag {
-  display: flex; align-items: center; padding: 3px 7px;
-  border-radius: 4px; font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; padding: 4px 8px;
+  border-radius: 999px; font-size: 12px; font-weight: 600;
   cursor: grab; user-select: none;
-  transition: all var(--transition); white-space: nowrap;
-  background: var(--primary); color: #fff;
-  box-shadow: 0 1px 2px rgba(37,99,235,.25);
+  transition: all var(--transition-smooth); white-space: nowrap;
+  background: var(--primary-grad); color: #fff;
+  box-shadow: 0 1px 3px rgba(37,99,235,.35);
 }
-.student-tag:active { cursor: grabbing; }
-.student-tag.dragging { opacity: .4; }
+.student-tag:hover { 
+  transform: translateY(-2px) scale(1.03); 
+  box-shadow: 0 6px 16px rgba(37,99,235,.42);
+  filter: brightness(1.05);
+}
+.student-tag:active { 
+  cursor: grabbing; 
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+.student-tag.dragging { 
+  opacity: .5; 
+  transform: rotate(3deg) scale(1.05);
+  animation: dragPulse 0.6s ease-in-out infinite;
+}
+
+@keyframes dragPulse {
+  0%, 100% { box-shadow: 0 4px 12px rgba(37,99,235,.4); }
+  50% { box-shadow: 0 8px 24px rgba(37,99,235,.6); }
+}
 .student-tag .remove-btn {
-  margin-left: auto; cursor: pointer; font-size: 14px;
+  margin-left: auto; cursor: pointer; font-size: 13px;
   opacity: .6; transition: opacity var(--transition);
+  padding-left: 3px; line-height: 1;
 }
 .student-tag .remove-btn:hover { opacity: 1; }
 /* 锁定按钮：锁住「该同学 + 该班次」这个位置，重新排班不会改变它 */
@@ -468,24 +778,43 @@ textarea#sidInput:focus {
   cursor: pointer; font-size: 10px; line-height: 1;
   margin-right: 4px; opacity: .7;
   transition: opacity var(--transition);
+  display: inline-flex; align-items: center;
 }
 .student-tag .lock-btn:hover { opacity: 1; }
 .student-tag.locked {
-  background: var(--warning);
-  box-shadow: 0 1px 2px rgba(217,119,6,.35);
+  background: var(--warning-grad);
+  box-shadow: 0 1px 3px rgba(217,119,6,.45);
   cursor: default;
 }
+.student-tag.locked:hover { transform: none; box-shadow: 0 1px 3px rgba(217,119,6,.45); }
 .student-tag.locked .lock-btn { opacity: 1; }
 
 /* ── Student highlight on hover ────────── */
+/* 这里不能写死 border-radius：会把 .student-tag 的胶囊圆角（999px）覆盖成 4px，
+   表现为「hover 高亮后圆角突然变小」。outline 会自动跟随元素自身圆角。
+   outline-color 也刻意不在这条共享规则里写：两个元素需要的颜色不同，见下。 */
 .student-item.highlight-linked,
 .student-tag.highlight-linked {
-  outline: 3px solid var(--primary);
+  outline-width: 3px;
+  outline-style: solid;
   outline-offset: 2px;
-  border-radius: 4px;
   z-index: 5;
   position: relative;
 }
+/*
+ * 学生标签的描边恒为白色。
+ * 坑：.student-tag 带 transition: all，而未高亮时它的 outline-style 是 none，
+ * 于是 outline-color 取初始值 currentColor —— 该标签 color 是 #fff，
+ * 所以「变白再变蓝」：描边出现后先从白(currentColor) 过渡到 var(--primary)。
+ * 这里显式把高亮态的 outline-color 也定成白，起止值相同，颜色过渡自然消失，
+ * 描边从出现到消失全程保持白色。
+ */
+.student-tag.highlight-linked { outline-color: #fff; }
+/*
+ * 左侧学号列表项仍需主题蓝描边：它的文字是深色（currentColor 接近 --text），
+ * 若同样用白色会与浅色卡片背景糊在一起、看不出高亮。
+ */
+.student-item.highlight-linked { outline-color: var(--primary); border-radius: 4px; }
 .shift-cell.highlight-linked {
   background: #DBEAFE !important;
   box-shadow: inset 0 0 0 2px var(--primary);
@@ -497,25 +826,51 @@ textarea#sidInput:focus {
 /* ── Toast ──────────────────────────────── */
 .toast {
   position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-  padding: 10px 22px; border-radius: 8px; color: #fff;
+  padding: 11px 24px; border-radius: 999px; color: #fff;
   font-size: 13px; font-weight: 600; z-index: 10000;
-  opacity: 0; transition: opacity .3s, transform .3s;
+  opacity: 0; 
+  transition: opacity .3s var(--ease-out-expo), transform .3s var(--ease-out-expo);
   pointer-events: none;
+  max-width: 80vw; text-align: center;
   box-shadow: var(--shadow-lg);
+  letter-spacing: .3px;
 }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
-.toast.success { background: var(--success); }
-.toast.error { background: var(--danger); }
-.toast.info { background: var(--primary); }
+.toast.show { 
+  opacity: 1; 
+  transform: translateX(-50%) translateY(-8px);
+  animation: toastBounce 0.5s var(--ease-out-back);
+}
+
+@keyframes toastBounce {
+  0% { 
+    opacity: 0; 
+    transform: translateX(-50%) translateY(20px) scale(0.8); 
+  }
+  60% { 
+    transform: translateX(-50%) translateY(-10px) scale(1.05); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateX(-50%) translateY(-8px) scale(1); 
+  }
+}
+.toast.success { background: var(--success-grad); }
+.toast.error { background: var(--danger-grad); }
+.toast.info { background: var(--primary-grad); }
 
 /* ── Modal ──────────────────────────────── */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
   background: var(--modal-overlay); z-index: 9998;
   align-items: center; justify-content: center;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
+  animation: overlayIn .25s var(--ease-out-expo);
 }
 .modal-overlay.show { display: flex; }
+@keyframes overlayIn { 
+  from { opacity: 0; backdrop-filter: blur(0px); } 
+  to { opacity: 1; backdrop-filter: blur(4px); } 
+}
 
 /*
  * 确认弹窗必须盖在所有普通弹窗之上。
@@ -528,29 +883,37 @@ textarea#sidInput:focus {
 #confirmModal { z-index: 9999; }
 
 .modal {
-  background: var(--card); border-radius: var(--radius);
+  background: var(--card); border-radius: var(--radius-lg);
   width: 92%; max-width: 700px; max-height: 82vh;
   display: flex; flex-direction: column;
   box-shadow: var(--shadow-lg);
-  animation: modalIn .2s ease;
+  border: 1px solid var(--border);
+  animation: modalIn .35s var(--ease-out-back);
 }
 @keyframes modalIn {
-  from { opacity: 0; transform: scale(.96) translateY(8px); }
+  from { opacity: 0; transform: scale(.92) translateY(30px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .modal-header {
   padding: 16px 20px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(180deg, var(--cell-wd) 0%, var(--card) 100%);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 .modal-header h3 { font-size: 16px; font-weight: 700; }
 .modal-header .close-btn {
   width: 34px; height: 34px; border: none; background: none;
   font-size: 22px; cursor: pointer; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  color: var(--text-muted); transition: all var(--transition);
+  color: var(--text-muted); 
+  transition: all var(--transition-smooth);
 }
-.modal-header .close-btn:hover { background: var(--bg); color: var(--text); }
+.modal-header .close-btn:hover { 
+  background: var(--danger-light); 
+  color: var(--danger); 
+  transform: rotate(90deg) scale(1.1); 
+}
 
 .modal-body { flex: 1; overflow: auto; padding: 20px; }
 .modal-footer {
@@ -572,16 +935,17 @@ textarea#sidInput:focus {
 .course-grid {
   display: grid; grid-template-columns: 64px repeat(7, 1fr);
   gap: 1px; background: var(--border);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); border-radius: var(--radius);
   overflow: hidden; min-width: 720px;
+  box-shadow: var(--shadow-sm);
 }
 .course-grid .cg-header {
-  background: var(--primary); color: #fff;
+  background: var(--primary-grad); color: #fff;
   padding: 8px 4px; text-align: center;
   font-weight: 700; font-size: 12px;
   display: flex; align-items: center; justify-content: center;
 }
-.course-grid .cg-header.weekend { background: var(--danger); }
+.course-grid .cg-header.weekend { background: var(--danger-grad); }
 
 .course-grid .cg-period {
   background: var(--cell-wd); padding: 4px;
@@ -659,8 +1023,8 @@ textarea#sidInput:focus {
 /* ── Schedule sections (工作日 / 周末) ───── */
 .schedule-grid .section-row {
   grid-column: 1 / -1;
-  background: var(--card);
-  padding: 6px 10px; font-size: 11px; font-weight: 700;
+  background: linear-gradient(180deg, var(--card) 0%, var(--cell-wd) 100%);
+  padding: 7px 10px; font-size: 11px; font-weight: 700;
   color: var(--text-secondary); letter-spacing: .3px;
   display: flex; align-items: center; gap: 7px;
 }
@@ -691,10 +1055,21 @@ textarea#sidInput:focus {
 }
 /* 未排班 / 未获取课表时的提示条：只占一条，表格骨架照常显示在下方 */
 .schedule-notice {
-  padding: 9px 12px; margin-bottom: 12px;
+  position: relative;
+  padding: 10px 14px 10px 34px; margin-bottom: 14px;
   font-size: 12px; line-height: 1.6; color: var(--text-secondary);
   background: var(--primary-light); border: 1px solid var(--border);
-  border-left: 3px solid var(--primary); border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+.schedule-notice::before {
+  content: 'i';
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; border-radius: 50%;
+  background: var(--primary-grad); color: #fff;
+  font-size: 10px; font-weight: 800; font-style: italic;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
 }
 
 /* ── Template editor modal ──────────────── */
@@ -801,11 +1176,12 @@ textarea#sidInput:focus {
 .tpl-list { display: flex; flex-direction: column; gap: 8px; }
 
 .tpl-shift {
-  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); border-radius: var(--radius);
   background: var(--cell-bg); padding: 9px 10px;
-  transition: border-color var(--transition), opacity var(--transition);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition), opacity var(--transition), box-shadow var(--transition), transform var(--transition);
 }
-.tpl-shift:hover { border-color: var(--text-muted); }
+.tpl-shift:hover { border-color: var(--text-muted); box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .tpl-shift.disabled { opacity: .5; }
 .tpl-shift.wk-odd { border-left: 3px solid var(--primary); }
 .tpl-shift.wk-even { border-left: 3px solid var(--warning); }
@@ -914,10 +1290,15 @@ textarea#sidInput:focus {
 }
 
 /* ── Scrollbar ──────────────────────────── */
-::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar { width:8px; height:8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; background-clip: padding-box; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #475569; background-clip: padding-box; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) ::-webkit-scrollbar-thumb { background: #475569; background-clip: padding-box; }
+}
+* { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 
 /* ── Responsive ─────────────────────────── */
 @media (max-width: 860px) {
@@ -928,20 +1309,79 @@ textarea#sidInput:focus {
 </head>
 <body>
 
+<!-- ===== 顶部菜单栏 ===== -->
+<!-- 一级菜单：文件 / 个性化 / 关于；二级菜单为下拉面板。
+     键盘可用：Esc 关闭；打开后 ←→ 切换一级菜单（见 closeAllMenus / onMenuBarKeydown）。 -->
+<div class="top-menubar" id="topMenubar" onkeydown="onMenuBarKeydown(event)">
+
+  <div class="menu-brand">学生打印社排班系统</div>
+
+  <!-- ── 文件 ── -->
+  <div class="menu" id="menuFile">
+    <button class="menu-btn" type="button" aria-haspopup="true" aria-expanded="false"
+            onclick="toggleMenu('menuFile', event)">文件<span class="menu-caret">▾</span></button>
+    <div class="menu-panel" role="menu">
+      <button class="menu-item" role="menuitem" onclick="menuRun(openSidImport)">导入学号…</button>
+      <button class="menu-item" role="menuitem" onclick="menuRun(importData)">导入数据…</button>
+      <button class="menu-item" role="menuitem"
+              onclick="menuRun(function(){ document.getElementById('tplFileInput').click(); })">导入模板…</button>
+      <div class="menu-sep"></div>
+      <button class="menu-item" role="menuitem" id="menuExportDuty"
+              onclick="menuRun(exportDutySchedule)" disabled>导出值班表</button>
+      <button class="menu-item" role="menuitem" id="menuExportFree"
+              onclick="menuRun(exportFreeSchedule)" disabled>导出空课表</button>
+      <div class="menu-sep"></div>
+      <button class="menu-item" role="menuitem" onclick="menuRun(exportData)">导出数据</button>
+      <button class="menu-item" role="menuitem" onclick="menuRun(exportTemplateFile)">导出值班模板</button>
+      <div class="menu-sep"></div>
+      <button class="menu-item" role="menuitem" onclick="menuRun(openTemplateEditor)">编辑值班模板…</button>
+      <div class="menu-sep"></div>
+      <button class="menu-item" role="menuitem" onclick="menuRun(resetSchedule)">重置排班…</button>
+      <button class="menu-item" role="menuitem" onclick="menuRun(clearAll)">清空学号与排班…</button>
+    </div>
+  </div>
+
+  <!-- ── 个性化 ── -->
+  <div class="menu" id="menuPersonal">
+    <button class="menu-btn" type="button" aria-haspopup="true" aria-expanded="false"
+            onclick="toggleMenu('menuPersonal', event)">个性化<span class="menu-caret">▾</span></button>
+    <div class="menu-panel" role="menu">
+      <button class="menu-item" role="menuitemradio" id="menuThemeDark"
+              onclick="menuRun(function(){ applyTheme('dark'); })">
+        深夜模式<span class="menu-check" id="menuThemeDarkCheck"></span>
+      </button>
+      <button class="menu-item" role="menuitemradio" id="menuThemeLight"
+              onclick="menuRun(function(){ applyTheme('light'); })">
+        日间模式<span class="menu-check" id="menuThemeLightCheck"></span>
+      </button>
+      <button class="menu-item" role="menuitemradio" id="menuThemeAuto"
+              onclick="menuRun(function(){ applyTheme('auto'); })">
+        跟随系统<span class="menu-check" id="menuThemeAutoCheck"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 关于 ── -->
+  <div class="menu" id="menuAbout">
+    <button class="menu-btn" type="button" aria-haspopup="true" aria-expanded="false"
+            onclick="toggleMenu('menuAbout', event)">关于<span class="menu-caret">▾</span></button>
+    <div class="menu-panel" role="menu">
+      <button class="menu-item" role="menuitem" onclick="menuRun(openGuide)">使用指南</button>
+      <button class="menu-item" role="menuitem" onclick="menuRun(openAbout)">软件信息</button>
+    </div>
+  </div>
+
+</div>
+
 <!-- ===== 主容器 ===== -->
 <div class="app-container">
 
   <!-- ===== 左侧面板 ===== -->
+  <!-- 注意：这里已经没有 .panel-header 了（用户要求删除），
+       所以面板顶部直接是 .panel-body。
+       排班标题由顶部菜单栏的 .menu-brand 承担，切换主题只在「个性化」菜单里。 -->
   <div class="left-panel">
-    <div class="panel-header">学生打印社排班系统<button class="theme-btn" onclick="toggleTheme()" title="切换主题" id="themeToggle">自动</button></div>
     <div class="panel-body">
-      <div class="section-title">学号录入</div>
-      <textarea id="sidInput" placeholder="每行一个学号，例如：&#10;2025220039&#10;2025213062"></textarea>
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="loadStudents()">导入学号</button>
-        <button class="btn btn-outline" onclick="clearAll()">清空</button>
-      </div>
-
       <div class="section-title">学号列表</div>
       <div id="studentList" class="student-list"></div>
       <div id="studentCount" class="student-count">共 0 人</div>
@@ -950,41 +1390,48 @@ textarea#sidInput:focus {
         <div class="fill" id="progressFill"></div>
       </div>
 
-      <div class="limit-row">
-        <label for="maxShiftsInput" title="仅「均衡排班」生效；0 表示不限制">每人每周最多班次</label>
-        <input type="number" id="maxShiftsInput" min="0" max="99" step="1" value="3"
-               onchange="setMaxShiftsPerWeek(this.value)" oninput="setMaxShiftsPerWeek(this.value)">
-        <span class="limit-hint">0 = 不限制<br>仅「均衡排班」生效</span>
-      </div>
+      <!-- 「每人每周最多班次」改成开关（与「连续排班」同款），勾选后才套用上限 -->
+      <label class="opt-row" for="maxShiftsToggle"
+             title="勾选：每人每周的班次数不超过右侧设定值（单周、双周各自单独计数）；不勾选：不限每人班次">
+        <input type="checkbox" id="maxShiftsToggle" onchange="setMaxShiftsEnabled(this.checked)">
+        <span class="opt-switch" aria-hidden="true"></span>
+        <span class="opt-text">
+          <strong>限制每人每周班次</strong>
+          <small id="maxShiftsHint">不勾选：不限每人班次</small>
+        </span>
+        <input type="number" id="maxShiftsInput" min="1" max="99" step="1" value="3"
+               title="每人每周最多班次（1~99）"
+               onclick="event.stopPropagation()"
+               oninput="setMaxShiftsPerWeek(this.value)"
+               onchange="setMaxShiftsPerWeek(this.value, {normalize:true})">
+      </label>
+
+      <label class="opt-row" for="continuousToggle"
+             title="勾选：尽量把同一人的班次连在一起（同一天连班、相邻几天都来）；不勾选：尽量分散到不同时段与日期">
+        <input type="checkbox" id="continuousToggle" onchange="setContinuousScheduling(this.checked)">
+        <span class="opt-switch" aria-hidden="true"></span>
+        <span class="opt-text">
+          <strong>连续排班</strong>
+          <small id="continuousHint">未勾选：尽量把同一人的班次分散开</small>
+        </span>
+      </label>
 
       <div class="btn-group" style="flex-direction:column;gap:6px;margin-top:auto;">
-        <button class="btn btn-success" id="btnSchedule" onclick="runSchedule('normal')" disabled style="width:100%;justify-content:center;padding:12px;">
+        <button class="btn btn-success" id="btnSchedule" onclick="runSchedule()" disabled style="width:100%;justify-content:center;padding:12px;">
           开始排班
         </button>
-        <button class="btn btn-primary" id="btnBalance" onclick="runSchedule('balanced')" disabled style="width:100%;justify-content:center;padding:12px;"
-                title="自动排班并强制遵守「每人每周最多班次」，尽量让每人班次数相等">
-          均衡排班
+        <button class="btn btn-outline" onclick="refreshCourses()" id="btnRefreshCourses" disabled style="width:100%;justify-content:center;">
+          刷新课表
         </button>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-primary" id="btnExportDuty" onclick="exportDutySchedule()" disabled style="flex:1;justify-content:center;">
-            导出值班表
-          </button>
-          <button class="btn btn-warning" id="btnExportFree" onclick="exportFreeSchedule()" disabled style="flex:1;justify-content:center;">
-            导出空课表
-          </button>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:4px;">
-          <button class="btn btn-outline btn-sm" onclick="refreshCourses()" id="btnRefreshCourses" disabled style="flex:1;justify-content:center;">
-            刷新课表
-          </button>
-          <button class="btn btn-outline btn-sm" onclick="exportData()" style="flex:1;justify-content:center;">
-            导出数据
-          </button>
-          <button class="btn btn-outline btn-sm" onclick="importData()" style="flex:1;justify-content:center;">
-            导入数据
-          </button>
-          <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(event)">
-        </div>
+        <!-- 导入 / 导出类入口都搬到了顶部「文件」菜单。下面这些隐藏按钮只为保留既有 id，
+             让老脚本与自测仍能触发同一动作，别删、也别显示出来。 -->
+        <button type="button" id="btnExportDuty" style="display:none" onclick="exportDutySchedule()" disabled>导出值班表</button>
+        <button type="button" id="btnExportFree" style="display:none" onclick="exportFreeSchedule()" disabled>导出空课表</button>
+        <button type="button" id="btnMenuImportStudents" style="display:none" onclick="loadStudents()">导入学号</button>
+        <button type="button" id="btnMenuExportData" style="display:none" onclick="exportData()">导出数据</button>
+        <button type="button" id="btnMenuImportData" style="display:none" onclick="importData()">导入数据</button>
+        <button type="button" id="btnMenuExportTemplate" style="display:none" onclick="exportTemplateFile()">导出值班模板</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(event)">
       </div>
     </div>
   </div>
@@ -1000,11 +1447,6 @@ textarea#sidInput:focus {
       <div class="week-toggle" id="weekToggle">
         <button class="active" data-week="odd" onclick="switchWeek('odd')">单周</button>
         <button data-week="even" onclick="switchWeek('even')">双周</button>
-      </div>
-      <div class="header-actions">
-        <button class="btn btn-primary btn-sm" onclick="openTemplateEditor()">值班模板</button>
-        <button class="btn btn-outline btn-sm" onclick="openGuide()">使用指南</button>
-        <button class="btn btn-outline btn-sm" onclick="resetSchedule()">重置排班</button>
       </div>
     </div>
 
@@ -1057,7 +1499,7 @@ textarea#sidInput:focus {
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeCourseModal()">关闭</button>
-      <button class="btn btn-primary" onclick="closeCourseModal();runSchedule('normal')">重新排班</button>
+      <button class="btn btn-primary" onclick="closeCourseModal();runSchedule()">重新排班</button>
     </div>
   </div>
 </div>
@@ -1079,6 +1521,30 @@ textarea#sidInput:focus {
   </div>
 </div>
 
+<!-- ===== 导入学号弹窗（「文件」菜单 → 导入学号…） ===== -->
+<div class="modal-overlay" id="sidImportModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3>导入学号</h3>
+      <button class="close-btn" onclick="closeSidImport()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="panel-title">学号录入</div>
+      <textarea id="sidInput" placeholder="每行一个学号，例如：&#10;2025220039&#10;2025213062"
+                style="height:150px;"></textarea>
+      <div class="menu-note" style="padding:0;">
+        只接受 <strong>10 位纯数字</strong>学号，每行一个；重复学号会自动去重。<br>
+        导入后会自动从教务系统获取课表（需要校园网或 VPN）。<br>
+        已有的排班不会被清空，新学号会追加到学号列表里。
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeSidImport()">取消</button>
+      <button class="btn btn-primary" onclick="loadStudents()">导入</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== 使用指南弹窗 ===== -->
 <div class="modal-overlay" id="guideModal">
   <div class="modal" style="max-width:600px;">
@@ -1088,34 +1554,114 @@ textarea#sidInput:focus {
     </div>
     <div class="modal-body" id="guideContent">
       <div style="line-height:1.8;color:var(--text-secondary);">
-        <p><strong>1. 导入学号</strong>：在左侧输入框中输入10位学号（每行一个），点击「导入学号」。</p>
-        <p><strong>2. 开始排班 / 均衡排班</strong>：两种都是自动获取课表并智能分配值班，都会尽量让每人班次数相近。
-          <strong>「开始排班」不限制每人班次</strong>，谁空谁上、负载均衡；
-          <strong>「均衡排班」会强制遵守「每人每周最多班次」</strong>（0 表示不限制），
-          并额外做一换一交换优化，尽量让每人单双周合计也彼此相等。课表冲突与班次人数上限两种模式都会遵守。</p>
+        <p><strong>1. 导入学号</strong>：点顶部<b>「文件」菜单 → 导入学号…</b>，在弹出的窗口里粘贴 10 位学号（每行一个）后点「导入」。
+          导入 / 导出数据、导入 / 导出值班模板、编辑值班模板、重置排班、导出值班表 / 空课表，也都在这个「文件」菜单里。</p>
+        <p><strong>2. 开始排班</strong>：自动获取课表并智能分配值班，<strong>无论是否限制班次，都会尽量让每人的班次数相近</strong>。
+          <strong>要不要限制每人每周班次数，由左侧「限制每人每周班次」开关决定</strong>：
+          不勾选＝谁空谁上、不限班次；勾选＝每人每周不超过右侧填写的数值（单周、双周各自单独计数）。
+          课表冲突与班次人数上限始终都会遵守。</p>
         <p><strong>3. 查看/调整</strong>：右侧表格<strong>始终显示当前值班模板的时段</strong>（未排班时人数显示为 0/N），
           可<strong>拖拽</strong>学生标签到其他班次调整，也可以直接把左侧的同学拖进格子手动排班。</p>
-        <p><strong>4. 排班锁定</strong>：点学生标签上的<strong>锁图标</strong>可锁住
-          <strong>「该同学 + 该班次」这个位置</strong>——锁定后无论「开始排班」还是「均衡排班」都不会改变它。
+        <p><strong>4. 连续排班</strong>：左侧的「连续排班」开关决定同一人的班次怎么摆放。
+          <strong>勾选</strong>＝尽量把班次连成片（同一天<b>首尾相接</b>的班次尽量给同一个人，相邻几天也尽量连着排）；
+          <strong>不勾选</strong>（默认）＝反过来尽量分散，避免连班、也避免连着几天都排同一个人。
+          这项只是「尽量」的偏好：算法只做<b>不改变任何人班次数</b>的等价交换，因此在满足它的同时
+          不会破坏上面两种模式的均衡性（开关状态会记在浏览器里）。</p>
+        <p><strong>5. 排班锁定</strong>：点学生标签上的<strong>锁图标</strong>可锁住
+          <strong>「该同学 + 该班次」这个位置</strong>——锁定后无论怎么重新排班都不会改变它。
           锁定的标签显示为琥珀色、不能拖动也不能移除（先解锁再操作）；
           该同学在<strong>其它</strong>班次仍可被正常安排。锁定会随「导出/导入数据」一起保存。</p>
-        <p><strong>5. 课表管理</strong>：点击学生姓名查看课表，可<strong>忽略</strong>特定课程后重新排班。</p>
-        <p><strong>6. 值班模板</strong>：点击右上角「值班模板」可自定义每个班次的<strong>值班时间、值班人数、单双周</strong>，
+        <p><strong>6. 课表管理</strong>：点击学生姓名查看课表，可<strong>忽略</strong>特定课程后重新排班。</p>
+        <p><strong>7. 值班模板</strong>：顶部<b>「文件」菜单 → 编辑值班模板…</b>可自定义每个班次的<strong>值班时间、值班人数、单双周</strong>，
           自由<strong>添加/删除/排序</strong>班次，并单独设置与该时段<strong>冲突的课程节次</strong>。<br>
           <strong>排班日分组</strong>支持两种模式：「工作日 / 周末」为预设两组；「一周 7 天自由组合」可自定义分组数量、
           名称与每组包含的星期（例如周一周二一组、周三到周日一组），每组各自一套班次。
-          模板会自动保存在浏览器中，也可导出为文件分享给他人。</p>
-        <p><strong>7. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON（含值班模板与锁定）。</p>
+          模板会自动保存在浏览器中，也可导出为文件分享给他人（顶部「文件」菜单 → 导出/导入值班模板）。</p>
+        <p><strong>8. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON（含值班模板与锁定），
+          全部集中在顶部<b>「文件」菜单</b>。</p>
         <!-- <hr style="border-color:var(--border);margin:12px 0;"> -->
         <p style="font-size:12px;color:var(--text-muted);">
           <strong>提示</strong>：含"实训""实习""课程设计"等关键词的课程会被自动忽略。<br>
           点击课表弹窗中的「刷新」可单独更新某同学的课表。<br>
-          左上角按钮可切换暗色/亮色主题。
+          切换主题请用顶部<b>「个性化」菜单</b>（深夜模式 / 日间模式 / 跟随系统）。<br>
+          软件版本与开发者信息见顶部<b>「关于」菜单 → 软件信息</b>。
         </p>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="closeGuide()">我明白了！</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 软件信息弹窗（「关于」菜单） ===== -->
+<div class="modal-overlay" id="aboutModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3>软件信息</h3>
+      <button class="close-btn" onclick="closeAbout()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="line-height:1.9;color:var(--text-secondary);">
+        <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-grad);color:#fff;
+                      display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;">排</div>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--text);">学生打印社排班系统</div>
+            <div style="font-size:12px;color:var(--text-muted);">值班表 / 空课表自动排班工具</div>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tbody>
+            <tr>
+              <td style="padding:6px 0;width:104px;color:var(--text-muted);">软件版本</td>
+              <td style="padding:6px 0;"><strong id="aboutVersion">-</strong>（数据文件格式 version 3）</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">开发者</td>
+              <td style="padding:6px 0;">重庆邮电大学勤工助学中心学生打印社</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">项目主页</td>
+              <td style="padding:6px 0;">
+                <a href="https://github.com/gufandf/CQUPT_CWS_Scheduling" target="_blank" rel="noopener"
+                   style="color:var(--primary);text-decoration:none;">github.com/gufandf/CQUPT_CWS_Scheduling</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">运行环境</td>
+              <td style="padding:6px 0;">Python 3（后端，<code>app.py</code>）+ 浏览器原生 JS（前端，单文件）</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">本地地址</td>
+              <td style="padding:6px 0;"><code id="aboutOrigin">-</code></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">课表数据源</td>
+              <td style="padding:6px 0;">红岩网校 API（主）、教务在线（备）——需要校园网或 VPN</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">第三方依赖</td>
+              <td style="padding:6px 0;">SheetJS <code>xlsx.full.min.js</code>（CDN 加载，用于导出 Excel，离线不可用）</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">数据存储</td>
+              <td style="padding:6px 0;">排班数据只在内存中，需自行导出 JSON 保存；模板 / 锁定 / 偏好存在浏览器 localStorage</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">构建时间</td>
+              <td style="padding:6px 0;" id="aboutBuild">-</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:12px;">
+          打开本弹窗的时间：<span id="aboutOpened"></span>
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeAbout();openGuide()">查看使用指南</button>
+      <button class="btn btn-primary" onclick="closeAbout()">关闭</button>
     </div>
   </div>
 </div>
@@ -1168,7 +1714,7 @@ const CONFIG = {
   weekdays: [0, 1, 2, 3, 4],  // 周一到周五的索引
   weekendDays: [5, 6],          // 周六周日的索引
   // 注意：每人每周班次上限不再是写死的常量，改由 state.maxShiftsPerWeek 配置
-  //（0=不限制；仅「均衡排班」生效），默认值见 MAX_SHIFTS_DEFAULT。
+  //（是否生效看 state.maxShiftsEnabled 开关），默认值见 MAX_SHIFTS_DEFAULT。
   // 忽略的课程名称关键词（整周实训/实习类课程不计入冲突）
   ignoreCourseKeywords: ['实训', '实习','实践', '课程设计', '毕业设计']
 };
@@ -1193,6 +1739,8 @@ function weekdayWeekendLayout() {
 
 const TEMPLATE_STORAGE_KEY = 'shift_duty_template_v1';
 const WEEK_LABELS = { all: '每周', odd: '单周', even: '双周' };
+/** 单双周的固定展示顺序（人员表明细排序用） */
+const WEEK_ORDER = ['odd', 'even'];
 
 // ============================================================
 //  时间工具
@@ -1505,9 +2053,11 @@ const state = {
   isScheduling: false,
   studentNames: {},       // 学号 -> 姓名映射（缓存）
   ignoredCourses: {},     // { sid: Set of course_num } 被忽略的课程
-  maxShiftsPerWeek: 3,    // 每人每周最多班次（0=不限制）；仅「均衡排班」生效
+  maxShiftsPerWeek: 3,    // 每人每周最多班次数值（见 §4.8）
+  maxShiftsEnabled: false, // 「限制每人每周班次」开关；false=不限制（默认）
+  continuousShifts: false, // 连续排班偏好：true=尽量连班，false=尽量分散（见 §4.10）
   // 锁定的排班：{ odd: { [shiftKey]: [sid, ...] }, even: {...} }
-  // 锁住的是「该同学 + 该班次」这个位置，重新排班（开始排班 / 均衡排班）不会改变它
+  // 锁住的是「该同学 + 该班次」这个位置，重新排班（runSchedule）不会改变它
   locks: { odd: {}, even: {} },
   currentCourseModalSid: null  // 当前打开课表弹窗的学生学号
 };
@@ -1668,29 +2218,112 @@ function applyTheme(theme) {
     html.setAttribute('data-theme', theme);
   }
   localStorage.setItem('theme', theme);
-  updateThemeIcon();
-}
-function toggleTheme() {
-  const current = getTheme();
-  if (current === 'auto') {
-    applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark');
-  } else if (current === 'dark') {
-    applyTheme('light');
-  } else {
-    applyTheme('auto');
-  }
-}
-function updateThemeIcon() {
-  const icon = document.getElementById('themeToggle');
-  if (!icon) return;
-  const theme = getTheme();
-  icon.textContent = theme === 'dark' ? '暗色' : theme === 'light' ? '亮色' : '自动';
-  icon.title = theme === 'dark' ? '暗色主题' : theme === 'light' ? '亮色主题' : '跟随系统';
+  // 切换主题的唯一入口是「个性化」菜单，改完把对勾同步过去
+  refreshThemeMenuUi();
 }
 applyTheme(getTheme());
+// 跟随系统时，系统深浅色变化要让「个性化」菜单的对勾保持正确
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-  if (getTheme() === 'auto') updateThemeIcon();
+  if (getTheme() === 'auto') refreshThemeMenuUi();
 });
+
+// ============================================================
+//  顶部菜单栏（文件 / 个性化 / 关于）
+// ============================================================
+const MENU_IDS = ['menuFile', 'menuPersonal', 'menuAbout'];
+
+/** 当前展开的一级菜单 id（null = 全部收起） */
+let openMenuId = null;
+
+function setMenuOpen(id, open) {
+  MENU_IDS.forEach(mid => {
+    const el = document.getElementById(mid);
+    if (!el) return;
+    const on = open && mid === id;
+    el.classList.toggle('open', on);
+    const btn = el.querySelector ? el.querySelector('.menu-btn') : null;
+    if (btn && btn.setAttribute) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+  });
+  openMenuId = open ? id : null;
+}
+
+function closeAllMenus() { setMenuOpen(null, false); }
+
+/** 点一级菜单：已展开则收起，否则展开（同时收起其它菜单） */
+function toggleMenu(id, event) {
+  if (event && event.stopPropagation) event.stopPropagation();
+  if (openMenuId === id) closeAllMenus();
+  else setMenuOpen(id, true);
+}
+
+/**
+ * 执行二级菜单项：先收起菜单，再执行命令。
+ * 收起必须发生在动作之前 —— 否则打开弹窗后下拉面板会浮在弹窗之上。
+ */
+function menuRun(fn) {
+  closeAllMenus();
+  if (typeof fn === 'function') fn();
+}
+
+/** 同步「个性化」菜单里当前主题的对勾 */
+function refreshThemeMenuUi() {
+  const map = {
+    menuThemeDark: 'menuThemeDarkCheck',
+    menuThemeLight: 'menuThemeLightCheck',
+    menuThemeAuto: 'menuThemeAutoCheck'
+  };
+  const theme = getTheme();
+  const cur = theme === 'dark' ? 'menuThemeDark' : theme === 'light' ? 'menuThemeLight' : 'menuThemeAuto';
+  Object.keys(map).forEach(id => {
+    const tick = document.getElementById(map[id]);
+    if (tick) tick.textContent = (id === cur) ? '✓' : '';
+  });
+}
+
+/** 菜单栏键盘导航：Esc 收起，←→ 在一级菜单间切换 */
+function onMenuBarKeydown(e) {
+  if (!openMenuId) return;
+  if (e.key === 'Escape') { closeAllMenus(); return; }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    const i = MENU_IDS.indexOf(openMenuId);
+    const step = e.key === 'ArrowRight' ? 1 : MENU_IDS.length - 1;
+    setMenuOpen(MENU_IDS[(i + step) % MENU_IDS.length], true);
+    e.preventDefault();
+  }
+}
+
+// 点空白处 / 点菜单外的任意位置都收起菜单
+document.addEventListener('click', (e) => {
+  if (!openMenuId) return;
+  const bar = document.getElementById('topMenubar');
+  if (bar && bar.contains && bar.contains(e.target)) return;
+  closeAllMenus();
+});
+
+// ============================================================
+//  软件信息（「关于」菜单）
+// ============================================================
+/** 软件版本号；与导出数据的 version 字段无关 */
+const APP_VERSION = '1.4.0';
+const APP_BUILD_DATE = '2026-10-04';
+
+function openAbout() {
+  const v = document.getElementById('aboutVersion');
+  if (v) v.textContent = 'v' + APP_VERSION;
+  const b = document.getElementById('aboutBuild');
+  if (b) b.textContent = APP_BUILD_DATE;
+  const o = document.getElementById('aboutOrigin');
+  if (o) {
+    o.textContent = (window.location && window.location.origin) ? window.location.origin : 'http://localhost:8765';
+  }
+  const t = document.getElementById('aboutOpened');
+  if (t) t.textContent = new Date().toLocaleString('zh-CN');
+  document.getElementById('aboutModal').classList.add('show');
+}
+
+function closeAbout() {
+  document.getElementById('aboutModal').classList.remove('show');
+}
 
 // ============================================================
 //  工具函数
@@ -1741,8 +2374,27 @@ function timeToMinutes(t) { return parseTime(t); }
 // ============================================================
 //  学生管理
 // ============================================================
+// ============================================================
+//  导入学号弹窗（「文件」菜单 → 导入学号…）
+// ============================================================
+/**
+ * 学号录入框已从左侧面板搬进这个弹窗（用户要求），
+ * 因此左侧面板不再常驻 textarea，录入入口统一走「文件」菜单。
+ */
+function openSidImport() {
+  document.getElementById('sidImportModal').classList.add('show');
+  const input = document.getElementById('sidInput');
+  if (input && input.focus) input.focus();
+}
+
+function closeSidImport() {
+  document.getElementById('sidImportModal').classList.remove('show');
+}
+
 function loadStudents() {
-  const text = document.getElementById('sidInput').value.trim();
+  const input = document.getElementById('sidInput');
+  const text = input.value.trim();
+  // 校验失败时**不关弹窗**，让用户直接改；成功才关。
   if (!text) { showToast('请先输入学号', 'error'); return; }
 
   const sids = [...new Set(text.split('\n').map(s => s.trim()).filter(s => s && /^\d{10}$/.test(s)))];
@@ -1761,7 +2413,8 @@ function loadStudents() {
   updateButtons();
   refreshView();   // 未排班也先显示当前模板的时段表格
   showToast(`成功导入 ${sids.length} 个学号`);
-  document.getElementById('sidInput').value = '';
+  input.value = '';
+  closeSidImport();
 }
 
 function clearAll() {
@@ -1876,10 +2529,18 @@ function updateButtons() {
 
   const disabled = !hasStudents || state.isScheduling;
   document.getElementById('btnSchedule').disabled = disabled;
-  document.getElementById('btnBalance').disabled = disabled;
   document.getElementById('btnExportDuty').disabled = !hasAssignments;
   document.getElementById('btnExportFree').disabled = !hasSchedule;
   document.getElementById('btnRefreshCourses').disabled = disabled;
+
+  // 「限制每人每周班次」的数值框跟着开关一起启用 / 禁用（不勾选时上限不生效）
+  syncMaxShiftsInput();
+
+  // 顶部「文件」菜单里的同名入口跟着一起禁用（导出值班表 / 导出空课表）
+  const menuDuty = document.getElementById('menuExportDuty');
+  if (menuDuty) menuDuty.disabled = !hasAssignments;
+  const menuFree = document.getElementById('menuExportFree');
+  if (menuFree) menuFree.disabled = !hasSchedule;
 }
 
 // ============================================================
@@ -2170,7 +2831,7 @@ function pruneInvalidAssignments(tpl) {
 //  排班锁定
 // ============================================================
 // 锁定的粒度是「该同学 + 该班次」这个**位置**（用户确认的语义），不是「锁人」：
-//   · 重新排班（开始排班 / 均衡排班）时，这个 tag 原地保留，不换人也不换位；
+//   · 重新排班时，这个 tag 原地保留，不换人也不换位；
 //   · 该同学在**其它**班次仍可被正常安排，其它同学也照样能进这个班次。
 // 因此所有判断都必须同时看 sid 与 key，不能简化成「这个人被锁了」。
 //
@@ -2333,11 +2994,16 @@ function initAssignments() {
  * 每人每周最多班次上限。0 = 不限制。
  *
  * 语义（用户确认，见 AGENT.md §4.8）：
- *   - 该上限**只对「均衡排班」生效**，「开始排班」不套用它；
+ *   - 上限由左侧「限制每人每周班次」开关控制（`state.maxShiftsEnabled`）：
+ *     勾选才套用数值，不勾选一律不限制（等价于旧版「开始排班」）；
  *   - 口径是「每周」：单周、双周各自单独计数；
- *   - 两种模式都尽量让每人的班次数相差不大（极差越小越好）。
+ *   - 无论是否套用上限，都尽量让每人的班次数相差不大（极差越小越好）。
+ *
+ * 用户已要求去掉单独的「均衡排班」按钮，只留一个「开始排班」，
+ * 因此 `runSchedule` 不再有两套模式，上限完全由这个开关决定。
  */
 const MAX_SHIFTS_STORAGE_KEY = 'shift_max_per_week';
+const MAX_SHIFTS_ENABLED_STORAGE_KEY = 'shift_max_enabled';
 const MAX_SHIFTS_DEFAULT = 3;
 
 /** 读取上限设置（非法值一律回落为默认值） */
@@ -2348,21 +3014,42 @@ function getMaxShiftsPerWeek() {
   return Math.min(n, 99);
 }
 
-/** 0 表示不限制 → 返回 Infinity，便于直接比较 */
+/**
+ * 排班时真正生效的上限：
+ *   · 开关未勾选 → Infinity（不限制，等价于旧版「开始排班」）；
+ *   · 开关勾选   → 数值；数值为 0 也视为不限制。
+ */
 function maxShiftsLimit() {
+  if (!state.maxShiftsEnabled) return Infinity;
   const n = getMaxShiftsPerWeek();
   return n === 0 ? Infinity : n;
 }
 
-function setMaxShiftsPerWeek(value) {
+function setMaxShiftsPerWeek(value, options) {
+  const opts = options || {};
   const n = parseInt(value, 10);
-  state.maxShiftsPerWeek = (isNaN(n) || n < 0) ? 0 : Math.min(n, 99);
+  // 数值框最小为 1：0 / 负数 / 非法值都回落到默认值。
+  // 注意这里**不**把归一化结果立刻写回输入框：`oninput` 会在用户每敲一个键时触发，
+  // 若此刻回写，用户想把 3 改成 12 时刚删空就会被改回「3」，根本没法输入。
+  // 因此输入过程中只更新说明文案，等 `onchange`（失焦 / 回车）再回写归一化后的值。
+  state.maxShiftsPerWeek = (isNaN(n) || n <= 0) ? MAX_SHIFTS_DEFAULT : Math.min(n, 99);
   persistMaxShifts();
+  if (opts.normalize) syncMaxShiftsInput();
+  else refreshMaxShiftsHint();
+}
+
+/** 「限制每人每周班次」开关 */
+function setMaxShiftsEnabled(enabled) {
+  state.maxShiftsEnabled = !!enabled;
+  persistMaxShifts();
+  syncMaxShiftsInput();
+  updateButtons();
 }
 
 function persistMaxShifts() {
   try {
     localStorage.setItem(MAX_SHIFTS_STORAGE_KEY, String(state.maxShiftsPerWeek));
+    localStorage.setItem(MAX_SHIFTS_ENABLED_STORAGE_KEY, state.maxShiftsEnabled ? '1' : '0');
   } catch (e) {}
 }
 
@@ -2371,16 +3058,217 @@ function loadMaxShifts() {
     const saved = localStorage.getItem(MAX_SHIFTS_STORAGE_KEY);
     if (saved !== null) {
       const n = parseInt(saved, 10);
-      if (!isNaN(n) && n >= 0) { state.maxShiftsPerWeek = Math.min(n, 99); return; }
+      if (!isNaN(n) && n > 0) state.maxShiftsPerWeek = Math.min(n, 99);
+      else state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
+    } else {
+      state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
     }
-  } catch (e) {}
-  state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
+  } catch (e) {
+    state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
+  }
+  // 开关默认「不勾选」：与旧版「开始排班不套用上限」的默认行为保持一致，
+  // 老用户升级后不会因为多出一个开关而被静默限制班次。
+  try {
+    state.maxShiftsEnabled = localStorage.getItem(MAX_SHIFTS_ENABLED_STORAGE_KEY) === '1';
+  } catch (e) {
+    state.maxShiftsEnabled = false;
+  }
 }
 
-/** 把输入框的值同步进 state（用于导入数据等外部改动 state 后刷新界面） */
+/**
+ * 把上限的数值与开关状态同步进界面
+ * （用于初始化、勾选开关、以及导入数据等外部改动 state 之后）。
+ */
 function syncMaxShiftsInput() {
   const el = document.getElementById('maxShiftsInput');
-  if (el) el.value = String(getMaxShiftsPerWeek());
+  if (el) {
+    el.value = String(getMaxShiftsPerWeek());
+    el.disabled = !state.maxShiftsEnabled;
+  }
+  const toggle = document.getElementById('maxShiftsToggle');
+  if (toggle) toggle.checked = !!state.maxShiftsEnabled;
+  refreshMaxShiftsHint();
+}
+
+/** 只刷新说明文案（不碰输入框的值），供 oninput 过程中的实时反馈使用 */
+function refreshMaxShiftsHint() {
+  const hint = document.getElementById('maxShiftsHint');
+  if (!hint) return;
+  hint.textContent = state.maxShiftsEnabled
+    ? `已限制：每人每周最多 ${getMaxShiftsPerWeek()} 班`
+    : '不勾选：不限每人班次';
+}
+
+// ============================================================
+//  连续 / 分散排班偏好
+// ============================================================
+/**
+ * 「连续排班」开关（用户确认的口径，见 AGENT.md §4.10）：
+ *   · 勾选   → 尽量让同一人的班次连成片（同一天连班 + 相邻几天都来）；
+ *   · 不勾选 → 反过来尽量分散（避免同一天连班、避免连着几天都排他）。
+ *
+ * 判分口径（"连续分"，越高越连续）：
+ *   · 同一天内**首尾相接**的两个班次（连班） → +2 分 / 对；
+ *   · **相邻两天**都值班                        → +1 分 / 天对。
+ * 于是「连续」= 最大化该分数，「分散」= 最小化该分数。
+ *
+ * 注意这与均衡是**两件事**：均衡看的是每人班次数，连续看的是班次在时间轴上的分布。
+ * 两者可能冲突（把两个班并给同一个人，就必然要从别人那里拿走），所以连续只是
+ * 「尽量」的软偏好，且实现上只做**不改变任何人的班次数**的交换（见 optimizeContinuity）。
+ */
+const CONTINUITY_STORAGE_KEY = 'shift_continuous';
+const CONTINUITY_B2B_SCORE = 2;        // 同一天内首尾相接（连班）
+const CONTINUITY_DAY_SCORE = 1;        // 相邻两天都值班
+const CONTINUITY_GAP_TOLERANCE = 30;   // 首尾相接允许的空档（分钟）——默认模板的班次都是无缝相接
+
+/** 当前是否要求「连续排班」（false = 尽量分散） */
+function isContinuousScheduling() {
+  return state.continuousShifts === true;
+}
+
+function persistContinuousScheduling() {
+  try {
+    localStorage.setItem(CONTINUITY_STORAGE_KEY, state.continuousShifts ? '1' : '0');
+  } catch (e) {}
+}
+
+function loadContinuousScheduling() {
+  try {
+    const saved = localStorage.getItem(CONTINUITY_STORAGE_KEY);
+    if (saved !== null) { state.continuousShifts = (saved === '1' || saved === 'true'); return; }
+  } catch (e) {}
+  state.continuousShifts = false;
+}
+
+function setContinuousScheduling(on) {
+  state.continuousShifts = on === true || on === 'true' || on === '1';
+  persistContinuousScheduling();
+  syncContinuousInput();
+}
+
+/** 把开关状态同步到界面（初始化、导入数据、手动切换时调用） */
+function syncContinuousInput() {
+  const on = isContinuousScheduling();
+  const el = document.getElementById('continuousToggle');
+  if (el) el.checked = on;
+  const hint = document.getElementById('continuousHint');
+  if (hint) hint.textContent = on ? '已勾选：尽量把同一人的班次连成片' : '未勾选：尽量把同一人的班次分散开';
+}
+
+/**
+ * 两个班次是否「首尾相接」：同一天内，前一班的结束到后一班的开始几乎没有空档。
+ * 只按时间判断（供同一批天内的相邻班次调用），跨天由 continuityScoreOf 单独处理。
+ */
+function isBackToBackShifts(prev, next) {
+  if (!prev || !next) return false;
+  const gap = timeToMinutes(next.start) - timeToMinutes(prev.end);
+  return gap >= 0 && gap <= CONTINUITY_GAP_TOLERANCE;
+}
+
+/**
+ * 某个单双周的「天 → 班次」快照，供连续性判分在热循环里复用（避免反复读模板）。
+ * ordinal 用于快速找到同一天的「下一个班次」。
+ */
+function makeContinuityContext(weekType) {
+  const days = [];
+  const ordinal = {};
+  for (let d = 0; d < 7; d++) {
+    const list = getShiftsForDay(d).filter(s => shiftAppliesToWeek(s, weekType));
+    days.push(list);
+    list.forEach((s, i) => { ordinal[`${d}|${s.id}`] = i; });
+  }
+  return { weekType, days, ordinal };
+}
+
+/** 槽位在占用集合里的键：`${dayIdx}|${shiftId}` */
+function occupiedSlotKey(dayIdx, shiftId) {
+  return `${dayIdx}|${shiftId}`;
+}
+
+/**
+ * 某人某周的「连续分」：同一天连班 ×2 + 相邻两天 ×1。
+ * occ 为该同学本周占用的槽位集合（键见 occupiedSlotKey）。
+ *
+ * 性能：同一个 ctx 会被 optimizeContinuity 调用上万次（每次候选配对都要打分），
+ * 而「某个槽位属于哪天、它的下一个班次是否首尾相接」**只取决于模板**、与谁占用无关。
+ * 因此把这段解析按槽位字符串缓存进 ctx（`ctx._meta`），
+ * 把原来每次调用都要做的 indexOf/slice/parseInt/字符串拼接/parseTime 降到「每个槽位一次」。
+ * 缓存只存派生数据，不改变任何判断口径，打分结果逐位不变。
+ */
+function continuityScoreOf(occ, ctx) {
+  if (!occ || occ.size === 0) return 0;
+  const meta = ctx._meta || (ctx._meta = {});
+  const workedDays = new Set();
+  const b2bNexts = [];
+  for (const slot of occ) {
+    let m = meta[slot];
+    if (m === undefined) {
+      // 解析一次并缓存：d = 所在天；nextKey = 同一天下一个班次的槽位键（仅当首尾相接）
+      const sep = slot.indexOf('|');
+      if (sep < 0) {
+        m = null;
+      } else {
+        const d = parseInt(slot.slice(0, sep), 10);
+        const id = slot.slice(sep + 1);
+        const o = ctx.ordinal[`${d}|${id}`];
+        let nextKey = null;
+        if (o !== undefined) {
+          const next = ctx.days[d][o + 1];
+          // 只往「下一个班次」看，保证每一对只计一次
+          if (next && isBackToBackShifts(ctx.days[d][o], next)) {
+            nextKey = occupiedSlotKey(d, next.id);
+          }
+        }
+        m = { d, nextKey };
+      }
+      meta[slot] = m;
+    }
+    if (!m) continue;
+    workedDays.add(m.d);
+    if (m.nextKey) b2bNexts.push(m.nextKey);
+  }
+
+  let score = 0;
+  for (let d = 0; d < 6; d++) {
+    if (workedDays.has(d) && workedDays.has(d + 1)) score += CONTINUITY_DAY_SCORE;
+  }
+  for (const nextKey of b2bNexts) {
+    if (occ.has(nextKey)) score += CONTINUITY_B2B_SCORE;
+  }
+  return score;
+}
+
+/** 把某个槽位加进某人的占用集合后，连续分的变化（贪心排序用；正数=更连续） */
+function continuityGainOf(occ, ctx, dayIdx, shift) {
+  if (!occ) return 0;
+  const before = continuityScoreOf(occ, ctx);
+  const next = new Set(occ);
+  next.add(occupiedSlotKey(dayIdx, shift.id));
+  return continuityScoreOf(next, ctx) - before;
+}
+
+/**
+ * 全表的连续分合计（越大越「连续」，越小越「分散」）。
+ * 用于结果提示与测试断言；也方便手动比对两种偏好下的排班效果。
+ */
+function totalContinuityScore(assignments, sids) {
+  const a = assignments || state.assignments;
+  const list = sids || state.students.map(s => s.sid);
+  let total = 0;
+  for (const wt of ['odd', 'even']) {
+    const ctx = makeContinuityContext(wt);
+    const occ = {};
+    for (const sid of list) occ[sid] = new Set();
+    for (const key in (a[wt] || {})) {
+      const info = resolveShift(key);
+      if (!info || !shiftAppliesToWeek(info.shift, wt)) continue;
+      for (const sid of a[wt][key]) {
+        if (occ[sid]) occ[sid].add(occupiedSlotKey(info.dayIdx, info.shift.id));
+      }
+    }
+    for (const sid of list) total += continuityScoreOf(occ[sid], ctx);
+  }
+  return total;
 }
 
 /** 某人某周的班次数（按周独立计数，与上限口径一致） */
@@ -2443,6 +3331,12 @@ function fillWeekGreedy(assignments, students, sids, weekType, cap) {
   const load = {};
   for (const sid of sids) load[sid] = 0;
 
+  // 连续 / 分散偏好所需的上下文：该周的「天 → 班次」快照 + 每人已占用的槽位集合
+  const ctx = makeContinuityContext(weekType);
+  const wantContinuous = isContinuousScheduling();
+  const occ = {};
+  for (const sid of sids) occ[sid] = new Set();
+
   // 先把「已锁定」的既有人数计入负载，否则锁定的人会被当成没排班、反复被加派。
   // 只统计当前模板里真实存在的班次，避免残留的失效锁定键虚增负载。
   for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
@@ -2450,7 +3344,10 @@ function fillWeekGreedy(assignments, students, sids, weekType, cap) {
       if (!shiftAppliesToWeek(shift, weekType)) continue;
       const key = generateShiftKey(weekType, dayIdx, shift.id);
       for (const sid of lockedSidsOf(key, weekType)) {
-        if (load[sid] !== undefined) load[sid]++;
+        if (load[sid] !== undefined) {
+          load[sid]++;
+          occ[sid].add(occupiedSlotKey(dayIdx, shift.id));
+        }
       }
     }
   }
@@ -2481,10 +3378,24 @@ function fillWeekGreedy(assignments, students, sids, weekType, cap) {
     const pool = candidates.slice(0, Math.max(1, Math.min(candidates.length, remaining * 3)));
     shuffleArray(pool);
 
+    // 连续 / 分散偏好：在同一批「最低负载」候选人内部，优先挑最能形成（或最不会形成）
+    // 连班的同学。负载仍是第一关键字（池子按负载截取），所以均衡性不受影响，
+    // 这里只决定「同样是低负载的几个人里，谁先上」。
+    if (pool.length > 1) {
+      const gain = new Map();
+      for (const sid of pool) gain.set(sid, continuityGainOf(occ[sid], ctx, dayIdx, shift));
+      // 先 shuffle 再按偏好稳定排序 → 偏好相同的候选人保持随机，避免固定偏爱某些学号
+      pool.sort((a, b) => {
+        const ga = gain.get(a), gb = gain.get(b);
+        return wantContinuous ? gb - ga : ga - gb;
+      });
+    }
+
     const selected = [...kept];
     for (let i = 0; i < Math.min(remaining, pool.length); i++) {
       selected.push(pool[i]);
       load[pool[i]]++;
+      occ[pool[i]].add(occupiedSlotKey(dayIdx, shift.id));
     }
     assignments[weekType][key] = selected;
   }
@@ -2624,6 +3535,129 @@ function optimizeBalance(assignments, students, sids, cap, maxRounds) {
   return tracker.cost();
 }
 
+/**
+ * 连续 / 分散偏好的局部搜索：**交换两个槽位里的成员**（a 去 B 槽、b 去 A 槽）。
+ *
+ * 为什么用「交换」而不是像 optimizeBalance 那样单点替换：
+ * 单点替换必然改变两个人的当周班次数，会反噬已经调好的均衡（AGENT.md §4.10）。
+ * 交换则让每个人的班次数**一个都不变**，因此 balanceCost 分毫不动 ——
+ * 「连续 / 分散」只是叠加在均衡之上的软偏好，不能拿均衡去换。
+ *
+ * 硬约束照旧全部遵守：
+ *   · 锁定位置（该同学 + 该班次）不参与交换（进出都拦下）；
+ *   · 换入的两个人必须都对该班次没有课程冲突；
+ *   · 班次容量天然不受影响（交换不改变任何槽位的人数）。
+ *
+ * 返回实际执行的交换次数（供提示与测试使用）。
+ */
+function optimizeContinuity(assignments, students, sids, maxRounds) {
+  const wantContinuous = isContinuousScheduling();
+  const rounds = maxRounds === undefined ? 12 : maxRounds;
+  const studentBySid = {};
+  for (const s of students) studentBySid[s.sid] = s;
+  let moved = 0;
+
+  for (const wt of ['odd', 'even']) {
+    const ctx = makeContinuityContext(wt);
+
+    // ── 预处理：把非空槽位连同「可换入的人」一次算好，热循环里只做 O(1) 查表 ──
+    const slots = [];
+    for (const key of Object.keys(assignments[wt] || {})) {
+      const info = resolveShift(key);
+      if (!info || !shiftAppliesToWeek(info.shift, wt)) continue;
+      const slot = assignments[wt][key];
+      if (!Array.isArray(slot) || slot.length === 0) continue;
+      slots.push({
+        key, slot,
+        cell: occupiedSlotKey(info.dayIdx, info.shift.id),
+        eligible: new Set(sids.filter(sid =>
+          canTakeShift(studentBySid[sid], wt, info.dayIdx, info.shift)))
+      });
+    }
+    if (slots.length < 2) continue;   // 少于两个槽位无从交换
+
+    // 每人当前占用的槽位集合 + 连续分缓存（交换只影响被交换的两个人，可增量维护）
+    const occ = {};
+    for (const sid of sids) occ[sid] = new Set();
+    const score = {};
+    for (const s of slots) for (const sid of s.slot) if (occ[sid]) occ[sid].add(s.cell);
+    for (const sid of sids) score[sid] = continuityScoreOf(occ[sid], ctx);
+
+    for (let round = 0; round < rounds; round++) {
+      let best = null;   // { A, B, a, b, scoreA, scoreB, mag }
+
+      for (let i = 0; i < slots.length; i++) {
+        const A = slots[i];
+        for (let j = i + 1; j < slots.length; j++) {
+          const B = slots[j];
+
+          // ── 先按人各打一次分，再配对比较 ──
+          // scoreA 只取决于 a 与「A.cell → B.cell」，与 b 是谁完全无关（scoreB 同理）。
+          // 原实现把两次打分放在 (a,b) 双层循环内部，等于对每个 b 都把同一个 a 的
+          // 连续分重算一遍，反之亦然 —— 这正是 optimizeContinuity 的热点
+          //（CPU profile：continuityScoreOf 独占 57%）。
+          // 提到外层后调用次数从「配对数 × 2」降到「|A.slot| + |B.slot|」。
+          // 候选的生成顺序（A.slot 序、B.slot 序）与比较方式（严格 > 才替换）都保持不变，
+          // 因此并列时的取舍也逐位一致。
+          const candA = [];
+          for (const a of A.slot) {
+            // 锁定的位置原地不动：本人不能离开 A，也不能被塞进锁定的 B
+            if (isLocked(a, A.key, wt) || isLocked(a, B.key, wt)) continue;
+            if (B.slot.includes(a)) continue;      // a 已在 B 里，换过去会重复
+            if (!B.eligible.has(a)) continue;      // a 换到 B 有课
+            occ[a].delete(A.cell); occ[a].add(B.cell);
+            const s = continuityScoreOf(occ[a], ctx);
+            occ[a].add(A.cell); occ[a].delete(B.cell);
+            candA.push({ sid: a, score: s });
+          }
+          if (candA.length === 0) continue;
+
+          const candB = [];
+          for (const b of B.slot) {
+            if (isLocked(b, B.key, wt) || isLocked(b, A.key, wt)) continue;
+            if (A.slot.includes(b)) continue;
+            if (!A.eligible.has(b)) continue;      // b 换到 A 有课
+            occ[b].delete(B.cell); occ[b].add(A.cell);
+            const s = continuityScoreOf(occ[b], ctx);
+            occ[b].add(B.cell); occ[b].delete(A.cell);
+            candB.push({ sid: b, score: s });
+          }
+          if (candB.length === 0) continue;
+
+          for (const ca of candA) {
+            const a = ca.sid;
+            for (const cb of candB) {
+              const b = cb.sid;
+              if (a === b) continue;
+
+              const delta = (ca.score - score[a]) + (cb.score - score[b]);
+              // 连续 → 分数越高越好；分散 → 分数越低越好
+              if (wantContinuous ? delta <= 0 : delta >= 0) continue;
+
+              const mag = Math.abs(delta);
+              if (!best || mag > best.mag) {
+                best = { A, B, a, b, scoreA: ca.score, scoreB: cb.score, mag };
+              }
+            }
+          }
+        }
+      }
+
+      if (!best) break;
+      const { A, B, a, b } = best;
+      A.slot[A.slot.indexOf(a)] = b;
+      B.slot[B.slot.indexOf(b)] = a;
+      occ[a].delete(A.cell); occ[a].add(B.cell);
+      occ[b].delete(B.cell); occ[b].add(A.cell);
+      score[a] = best.scoreA;
+      score[b] = best.scoreB;
+      moved++;
+    }
+  }
+
+  return moved;
+}
+
 /** 当前的负载统计（单周 / 双周 / 合计），用于结果提示与测试断言 */
 function loadStats(assignments, sids) {
   const per = {};
@@ -2652,14 +3686,20 @@ function countEmptySlots(assignments) {
 }
 
 /**
- * 排班主入口。
- * mode = 'normal'   「开始排班」：不套用每人班次上限，尽量均衡
- * mode = 'balanced' 「均衡排班」：强制遵守每人每周上限，并多轮交换追求每人班次相等
- * 两种模式都保证：课程不冲突、不超班次容量、尽量让每人班次数相近。
+ * 排班主入口（由左侧「开始排班」按钮触发）。
+ *
+ * 用户已要求去掉单独的「均衡排班」按钮：每人每周上限改为左侧的一个开关
+ * （`state.maxShiftsEnabled` + `state.maxShiftsPerWeek`，见 §4.8），
+ * 因此这里**不再有模式参数** —— 上限是否生效完全由开关决定。
+ *
+ * 无论开关如何，都保证：课程不冲突、不超班次容量、尽量让每人班次数相近，
+ * 并遵守「连续 / 分散排班」偏好（见 §4.10）。
+ *
+ * 历史遗留：旧调用点会传 `'normal'` / `'balanced'`，该参数已被忽略 ——
+ * 传与不传行为完全一致，上限只看开关状态。
  */
-async function runSchedule(mode) {
+async function runSchedule() {
   if (state.isScheduling) return;
-  const balanced = mode === 'balanced';
 
   // 先获取所有课表
   const pendingStudents = state.students.filter(s => s.status === 'pending' || s.status === 'error');
@@ -2676,13 +3716,14 @@ async function runSchedule(mode) {
 
   state.isScheduling = true;
   updateButtons();
-  showToast(balanced ? '正在均衡排班...' : '正在排班...', 'info');
 
   initAssignments();
 
   const sids = readyStudents.map(s => s.sid);
-  const cap = balanced ? maxShiftsLimit() : Infinity;
+  const cap = maxShiftsLimit();
   const capLabel = getMaxShiftsPerWeek();
+  const capOn = cap !== Infinity;
+  showToast(capOn ? `正在排班（每人每周最多 ${capLabel} 班）...` : '正在排班...', 'info');
 
   // ── 第一轮：每周贪心填充（负载最低者优先） ──
   for (const weekType of ['odd', 'even']) {
@@ -2692,8 +3733,13 @@ async function runSchedule(mode) {
   // ── 第二轮：局部搜索均衡 ──
   // 贪心只看当下最低负载，收尾时仍可能留下极差 2~3。这里做「一换一」的单点替换，
   // 以「单周极差 + 双周极差 + 合计极差」为代价反复下降，直到无法再改进。
-  // 两种模式都跑；均衡模式额外受每人每周上限约束。
+  // 勾选了上限开关时，替换额外受每人每周上限约束。
   optimizeBalance(state.assignments, state.students, sids, cap);
+
+  // ── 第三轮：连续 / 分散偏好 ──
+  // 只做「两个槽位换人」的交换，每个人的班次数一个都不变 → 上一轮的均衡结果原样保住。
+  // 勾选「连续排班」时把同一人的班次往一起凑，不勾选时反过来尽量拆散。
+  const movedByPreference = optimizeContinuity(state.assignments, state.students, sids);
 
   const stats = loadStats(state.assignments, sids);
   const emptySlots = countEmptySlots(state.assignments);
@@ -2705,15 +3751,16 @@ async function runSchedule(mode) {
 
   // 结果提示：先说明无法均衡，再说明有班次空了，最后才是成功
   const range = `单周${stats.oddMin}-${stats.oddMax}班，双周${stats.evenMin}-${stats.evenMax}班`;
+  const prefTxt = isContinuousScheduling() ? '连续' : '分散';
   if (stats.oddSpread > 1 || stats.evenSpread > 1) {
     showToast(`排班完成，但无法完全均衡（${range}）`, 'error');
   } else if (emptySlots > 0) {
     showToast(`排班完成（${range}），但有 ${emptySlots} 个班次没有可排的同学，请检查模板人数或课表`, 'error');
-  } else if (balanced && capLabel > 0) {
-    showToast(`均衡排班完成（${range}），已遵守每人每周最多 ${capLabel} 班`, 'success');
+  } else if (capOn && capLabel > 0) {
+    showToast(`排班完成（${range}），已遵守每人每周最多 ${capLabel} 班，已尽量${prefTxt}排班`, 'success');
   } else {
     const capTxt = stats.oddMax <= 0 && stats.evenMax <= 0 ? '' : `，${range}`;
-    showToast(`排班完成${capTxt}`, 'success');
+    showToast(`排班完成${capTxt}，已尽量${prefTxt}排班`, 'success');
   }
 }
 
@@ -2845,7 +3892,7 @@ function ensureAssignmentSlots() {
  */
 function scheduleNoticeText() {
   if (state.students.length === 0) {
-    return '尚未导入学号：先在左侧粘贴 10 位学号并点击「导入学号」，再点「开始排班」自动分配。' +
+    return '尚未导入学号：先到顶部「文件」菜单点「导入学号…」，在弹窗里粘贴 10 位学号并导入，再点「开始排班」自动分配。' +
            '下方是当前值班模板的时段，也可以直接把同学拖进格子手动排班。';
   }
   if (state.currentView === 'free') {
@@ -3048,7 +4095,7 @@ function markAvailableCells(sid) {
   if (!container) return;
   container.querySelectorAll('.shift-cell').forEach(cell => {
     const key = cell.dataset.key;
-    if (!key) return;
+    if (!key) return;   // 占位格（.shift-cell.void）没有 data-key，天然跳过
     const info = resolveShift(key);
     if (!info) return;
     const { dayIdx, shift } = info;
@@ -3653,6 +4700,101 @@ function buildSheetRows(weekType, cellText) {
   return ws;
 }
 
+/**
+ * 生成「人员表」工作表：把值班表（按班次看人）翻转成按人看班次，
+ * 方便每位值班人员快速查看「自己在何时、一共有几个班」。
+ *
+ * 表结构（单一工作表内两段）：
+ *   1) 概览：姓名 | 学号 | 单周班次 | 双周班次 | 合计
+ *   2) 明细：姓名 | 学号 | 周别 | 星期 | 班次名称 | 时间段 | 分组
+ *
+ * 统计口径：只统计模板中真实存在的班次（陈旧键不计），
+ * 「每周」的班次在单周、双周各计一次（它每周都要值），明细里标注为「每周」。
+ * 概览的班次数直接数明细行，保证两段永远对得上。
+ * 未排班的人员保留一行（显示 0），避免查不到自己。
+ */
+function buildPersonSheet() {
+  const days = CONFIG.dayNames;
+
+  // 名单里的人都先在概览中出现（含 0 班）
+  const persons = {};
+  state.students.forEach(s => { persons[s.sid] = { sid: s.sid, name: getStudentName(s.sid), detail: [] }; });
+
+  // 把排班翻成「人 → 班次列表」；班次定义按单双周各建一次索引，避免重复读模板
+  const shiftIndex = { odd: {}, even: {} };
+  for (const wt of ['odd', 'even']) {
+    for (let d = 0; d < 7; d++) {
+      for (const shift of getShiftsForDay(d).filter(s => shiftAppliesToWeek(s, wt))) {
+        shiftIndex[wt][generateShiftKey(wt, d, shift.id)] = {
+          shift, dayIdx: d, group: getGroupForDay(d)
+        };
+      }
+    }
+  }
+
+  for (const wt of ['odd', 'even']) {
+    for (const key in (state.assignments[wt] || {})) {
+      const info = shiftIndex[wt][key];
+      if (!info) continue;                      // 模板里已不存在/本周不生效的槽位，跳过
+      const slot = state.assignments[wt][key];
+      if (!Array.isArray(slot)) continue;
+      for (const sid of slot) {
+        if (!sid) continue;
+        if (!persons[sid]) persons[sid] = { sid, name: getStudentName(sid), detail: [] };
+        persons[sid].detail.push({ weekType: wt, info });
+      }
+    }
+  }
+
+  const people = Object.keys(persons).map(sid => {
+    const p = persons[sid];
+    p.odd = p.detail.filter(e => e.weekType === 'odd').length;
+    p.even = p.detail.filter(e => e.weekType === 'even').length;
+    p.total = p.odd + p.even;
+    p.detail.sort((a, b) =>
+      WEEK_ORDER.indexOf(a.weekType) - WEEK_ORDER.indexOf(b.weekType) ||
+      a.info.dayIdx - b.info.dayIdx || timeToMinutes(a.info.shift.start) - timeToMinutes(b.info.shift.start));
+    return p;
+  });
+  // 班多的排前面，同班次按学号稳定排序（方便一眼看出谁班多）
+  people.sort((a, b) => b.total - a.total || String(a.sid).localeCompare(String(b.sid)));
+
+  // ── 概览段 ──
+  const rows = [
+    ['人员表（每人何时有几个班）', '', '', '', ''],
+    ['姓名', '学号', '单周班次', '双周班次', '合计'],
+  ];
+  const merges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }];
+  if (people.length === 0) {
+    const r = rows.length;
+    rows.push(['（暂无排班数据）', '', '', '', '']);
+    merges.push({ s: { r, c: 0 }, e: { r, c: 4 } });
+  }
+  people.forEach(p => rows.push([p.name, p.sid, p.odd, p.even, p.total]));
+
+  // ── 明细段 ──
+  rows.push([]);
+  const detailStart = rows.length;
+  rows.push(['排班明细（每人何时有几个班）', '', '', '', '', '', '']);
+  merges.push({ s: { r: detailStart, c: 0 }, e: { r: detailStart, c: 6 } });
+  rows.push(['姓名', '学号', '周别', '星期', '班次名称', '时间段', '分组']);
+  people.forEach(p => {
+    p.detail.forEach(entry => {
+      const info = entry.info;
+      const s = info.shift;
+      rows.push([
+        p.name, p.sid, WEEK_LABELS[s.weeks] || '每周', days[info.dayIdx], s.label,
+        `${s.start}-${s.end}`, (info.group && info.group.name) || '',
+      ]);
+    });
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 7 }, { wch: 7 }, { wch: 16 }, { wch: 14 }, { wch: 14 }];
+  ws['!merges'] = merges;
+  return ws;
+}
+
 function exportDutySchedule() {
   const wb = XLSX.utils.book_new();
 
@@ -3664,6 +4806,9 @@ function exportDutySchedule() {
     });
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
   }
+
+  // 人员表：仅加在值班表导出里（空课表不涉及班次归属，保持原样）
+  XLSX.utils.book_append_sheet(wb, buildPersonSheet(), '人员表');
 
   XLSX.writeFile(wb, `值班表_${new Date().toISOString().slice(0, 10)}.xlsx`);
   showToast('值班表已导出为 Excel', 'success');
@@ -4585,6 +5730,11 @@ function renderShiftCard(group, s, idx, total) {
 // ============================================================
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    // 顶部菜单下拉先收起（它不属于弹窗层级）
+    if (typeof openMenuId !== 'undefined' && openMenuId) {
+      closeAllMenus();
+      return;
+    }
     // 确认框永远在最上层，Esc 必须先关它 —— 否则会先关掉底下的模板窗口，
     // 让用户误以为「删了班次又整窗消失」。
     if (document.getElementById('confirmModal').classList.contains('show')) {
@@ -4599,16 +5749,29 @@ document.addEventListener('keydown', (e) => {
       closeCourseModal();
       return;
     }
+    if (document.getElementById('aboutModal').classList.contains('show')) {
+      closeAbout();
+      return;
+    }
     if (document.getElementById('guideModal').classList.contains('show')) {
       closeGuide();
       return;
     }
+    if (document.getElementById('sidImportModal').classList.contains('show')) {
+      closeSidImport();
+      return;
+    }
     closeModal();
   }
-  // Ctrl+Enter 触发排班（Shift 同时按下 → 均衡排班）
+  // Ctrl+Enter 触发排班（上限是否生效由左侧「限制每人每周班次」开关决定）
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-    if (state.students.length > 0) runSchedule(e.shiftKey ? 'balanced' : 'normal');
+    if (state.students.length > 0) runSchedule();
   }
+});
+
+// 关闭软件信息弹窗（点击外部）
+document.getElementById('aboutModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeAbout();
 });
 
 // 关闭弹窗点击外部
@@ -4622,19 +5785,22 @@ document.getElementById('exportModal').addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
   loadIgnoredCourses();
   loadTemplate();
-  loadMaxShifts();          // 每人每周班次上限（仅均衡排班生效）
+  loadMaxShifts();          // 每人每周班次上限的数值 + 开关（见 §4.8）
+  loadContinuousScheduling(); // 连续排班偏好（勾选=连班，不勾选=分散）
   loadLocks();              // 已锁定的排班位置
-  syncMaxShiftsInput();
+  syncMaxShiftsInput();     // 数值框 + 开关 + 说明文案
+  syncContinuousInput();
   renderStudentList();
   updateButtons();
   refreshView();   // 首次进入即显示当前值班模板的时段表格（此时还没有排班）
-  showToast('欢迎使用学生排班系统！请在左侧导入学号', 'info');
+  showToast('欢迎使用学生排班系统！请在顶部「文件」菜单导入学号', 'info');
 });
 
-// 关闭值班模板弹窗（点击外部）
-document.getElementById('templateModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) closeTemplateEditor();
-});
+// 值班模板弹窗**故意不监听「点击外部关闭」**（用户要求防误触）：
+// 模板里的改动只写在草稿 state.tplDraft 上，误点一下遮罩就整窗消失会让用户白改一场。
+// 关闭入口只有三个：右上角 ×、底部「取消」、以及 Esc（Esc 同样会丢弃草稿，
+// 但它是明确的键盘意图，不像点空白那样容易误触）。
+// 换言之：这里**不要**加 `if (e.target === e.currentTarget) closeTemplateEditor();`。
 
 // 关闭课表弹窗（点击外部）
 document.getElementById('courseModal').addEventListener('click', (e) => {
@@ -4649,6 +5815,11 @@ document.getElementById('guideModal').addEventListener('click', (e) => {
 // 关闭确认弹窗（点击外部）
 document.getElementById('confirmModal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeConfirm();
+});
+
+// 关闭导入学号弹窗（点击外部）
+document.getElementById('sidImportModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeSidImport();
 });
 </script>
 </body>

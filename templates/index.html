@@ -1593,7 +1593,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
           <strong>勾选</strong>＝尽量把班次连成片（同一天<b>首尾相接</b>的班次尽量给同一个人，相邻几天也尽量连着排）；
           <strong>不勾选</strong>（默认）＝反过来尽量分散，避免连班、也避免连着几天都排同一个人。
           这项只是「尽量」的偏好：算法只做<b>不改变任何人班次数</b>的等价交换，因此在满足它的同时
-          不会破坏「尽量让每人班次数相近」这条均衡性（开关状态会记在浏览器里）。</p>
+          不会破坏「尽量让每人班次数相近」这条均衡性（开关状态只在本次会话内有效，刷新后回到默认）。</p>
         <p><strong>5. 排班锁定</strong>：点学生标签上的<strong>锁图标</strong>可锁住
           <strong>「该同学 + 该班次」这个位置</strong>——锁定后无论怎么重新排班都不会改变它。
           锁定的标签显示为琥珀色、不能拖动也不能移除（先解锁再操作）；
@@ -1604,7 +1604,8 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
           <strong>排班日分组</strong>支持两种模式：「工作日 / 周末」为预设两组；「一周 7 天自由组合」可自定义分组数量、
           名称与每组包含的星期（例如周一周二一组、周三到周日一组），每组各自一套班次。
           <strong>允许整个分组只排单周或只排双周</strong>（例如工作日组只排单周），保存不会被拦截，只给提示。<br>
-          模板会自动保存在浏览器中，也可导出为文件分享给他人（顶部「文件」菜单 → 导出/导入值班模板）。
+          <strong>模板不会自动保存</strong>，刷新或关闭页面就会回到默认模板；改完请用顶部「文件」菜单 →
+          <strong>导出值班模板…</strong>存成文件，下次用<strong>「导入模板…」</strong>载入，也可分享给他人。
           注意从「导入模板…」载入的是草稿，<b>不会自动打开编辑器</b>，请再点「编辑值班模板…」确认后按「保存并应用」。</p>
         <p><strong>8. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON（含值班模板与锁定），
           全部集中在顶部<b>「文件」菜单</b>。<strong>「导出值班表」得到的 Excel 还附带第三个工作表「人员表」</strong>，
@@ -1612,9 +1613,10 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
           方便每位值班同学快速查看自己在何时有几班；没有排到班的同学也会保留一行并显示 0。
           「导出空课表」不含人员表。</p>
         <p style="color:var(--danger);">
-          <strong>⚠ 重要：排班数据只存在内存里，刷新页面就会丢失。</strong>
+          <strong>⚠ 重要：本工具不在浏览器里保存任何数据，刷新页面一切归零。</strong>
+          学号、课表、排班、锁定、模板、主题与各开关都只存在内存中，
           请养成<strong>排完班立刻用「文件」菜单 →「导出数据」保存 JSON</strong>的习惯，
-          下次打开再用「导入数据…」恢复。存进浏览器（localStorage）的只有值班模板、锁定与两个排班开关。<br>
+          下次打开再用「导入数据…」恢复（模板另可用「导出值班模板…」单独留存）。<br>
           <strong>抓课表需要校园网或 VPN</strong>，并且必须通过 <code>python3 app.py</code> 打开本页面
           （直接双击 <code>index.html</code> 无法抓取课表）；抓取失败的同学会标记为错误，可用左侧「刷新课表」重试。
         </p>
@@ -1686,7 +1688,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
             </tr>
             <tr>
               <td style="padding:6px 0;color:var(--text-muted);">数据存储</td>
-              <td style="padding:6px 0;">排班数据只在内存中，需自行导出 JSON 保存；模板 / 锁定 / 偏好存在浏览器 localStorage</td>
+              <td style="padding:6px 0;">全部数据只在内存中，页面不向浏览器存储写入任何内容；需留存请用「文件」菜单导出 JSON / 模板文件</td>
             </tr>
             <tr>
               <td style="padding:6px 0;color:var(--text-muted);">构建时间</td>
@@ -1777,7 +1779,25 @@ function weekdayWeekendLayout() {
   ];
 }
 
-const TEMPLATE_STORAGE_KEY = 'shift_duty_template_v1';
+/*
+ * ══════════════════════════════════════════════════════════════════════════
+ *  浏览器不保存任何信息（用户要求）
+ * ══════════════════════════════════════════════════════════════════════════
+ * 本页面**不向 localStorage / sessionStorage / cookie / IndexedDB 写入任何数据**，
+ * 启动时也**不从浏览器存储读取任何数据**：刷新（或重开）页面即回到内置默认状态。
+ *
+ * 因此现在的口径是「内存态 + 显式导入导出」：
+ *   · 值班模板 → 每次打开都是内置默认模板，改完若要留存请用
+ *     「文件」菜单 → 导出值班模板…，下次用「导入模板…」载入；
+ *   · 排班 / 锁定 / 忽略课程 / 各开关 → 只在内存中，刷新即丢；
+ *     需要留存请用「文件」菜单 →「导出数据」保存 JSON，「导入数据…」恢复。
+ *
+ * 实现方式：所有 load / persist 类函数都退化成「读默认值」/「空实现」，
+ * 调用点保持不变（见 persistTemplate 的注释）。**不要再往里面加 setItem**，
+ * 那会重新引入浏览器存储。API 代理（app.py）的响应头是另一套东西（HTTP 缓存），
+ * 不受此处影响。
+ */
+// 模板不再有浏览器存储键（原 TEMPLATE_STORAGE_KEY 已随「浏览器不保存任何信息」一并删除，见 §7.3）
 const WEEK_LABELS = { all: '每周', odd: '单周', even: '双周' };
 /** 单双周的固定展示顺序（人员表明细排序用） */
 const WEEK_ORDER = ['odd', 'even'];
@@ -2159,22 +2179,22 @@ function shiftAppliesToWeek(shift, weekType) {
   return shift.weeks === 'all' || shift.weeks === weekType;
 }
 
+/*
+ * 模板一律用内置默认值：不再从浏览器存储读取。
+ * 用户要求「浏览器 cache 不保存任何信息」，模板的持久化随之取掉，
+ * 详见文件上方（原 TEMPLATE_STORAGE_KEY 声明处）的「浏览器不保存任何信息」总说明。
+ */
 function loadTemplate() {
-  try {
-    const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
-    if (saved) {
-      state.template = normalizeTemplate(JSON.parse(saved));
-      return;
-    }
-  } catch (e) { /* 忽略损坏的本地数据 */ }
   state.template = makeDefaultTemplate();
 }
 
-function persistTemplate() {
-  try {
-    localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(state.template));
-  } catch (e) {}
-}
+/*
+ * 空实现：模板不再写入浏览器存储。
+ * 刻意保留这个函数名（以及下面同类的 load / persist 函数）而不是把调用点全删掉：
+ * 一来策略集中在这几个函数里，一眼能看出「什么都没存」；二来调用点不必散落改动，
+ * 将来若要恢复持久化，只改这几处即可。
+ */
+function persistTemplate() {}
 
 /** 模板摘要，用于提示 */
 function describeTemplate(tpl) {
@@ -2219,45 +2239,38 @@ function groupDaysBadge(group) {
   return txt === (group && group.name) ? '' : txt;
 }
 
-// 从 localStorage 恢复忽略课程
+// 忽略课程不再从浏览器存储恢复（用户要求，见文件上方的「浏览器不保存任何信息」说明）
 function loadIgnoredCourses() {
-  try {
-    const saved = localStorage.getItem('shift_ignored_courses');
-    if (saved) {
-      const data = JSON.parse(saved);
-      for (const sid in data) {
-        state.ignoredCourses[sid] = new Set(data[sid]);
-      }
-    }
-  } catch(e) {
-    state.ignoredCourses = {};
-  }
+  state.ignoredCourses = {};
 }
 
-function saveIgnoredCourses() {
-  try {
-    const data = {};
-    for (const sid in state.ignoredCourses) {
-      data[sid] = [...state.ignoredCourses[sid]];
-    }
-    localStorage.setItem('shift_ignored_courses', JSON.stringify(data));
-  } catch(e) {}
-}
+function saveIgnoredCourses() {}
 
 // ============================================================
 //  暗色模式切换
 // ============================================================
+/*
+ * 主题不再记忆：每次打开都从「跟随系统」起步（用户要求，见文件上方的
+ * 「浏览器不保存任何信息」说明）。
+ *
+ * 注意主题必须记在**内存变量**里，不能让 getTheme() 直接 return 'auto'：
+ * refreshThemeMenuUi() 是靠 getTheme() 决定「个性化」菜单里哪个打勾的，
+ * 若恒返回 'auto'，用户刚点「深夜模式」对勾就会立刻跳回「跟随系统」。
+ * 也就是说「不持久化」≠「不记忆」——本次会话内仍旧生效，只是刷新后就回默认。
+ */
+let currentTheme = 'auto';
 function getTheme() {
-  return localStorage.getItem('theme') || 'auto';
+  return currentTheme;
 }
 function applyTheme(theme) {
+  currentTheme = (theme === 'dark' || theme === 'light') ? theme : 'auto';
   const html = document.documentElement;
-  if (theme === 'auto') {
+  if (currentTheme === 'auto') {
     html.removeAttribute('data-theme');
   } else {
-    html.setAttribute('data-theme', theme);
+    html.setAttribute('data-theme', currentTheme);
   }
-  localStorage.setItem('theme', theme);
+  // 不写入浏览器存储（原为 localStorage.setItem('theme', theme)）
   // 切换主题的唯一入口是「个性化」菜单，改完把对勾同步过去
   refreshThemeMenuUi();
 }
@@ -2960,7 +2973,7 @@ function pruneInvalidAssignments(tpl) {
 //   2. optimizeBalance 不得把已锁定的成员当作 heavy 换出。
 // 手工操作（拖拽 / × 移除）同样拦下并提示，否则用户会在不知情的情况下弄丢锁定。
 
-const LOCKS_STORAGE_KEY = 'shift_locks';
+// 锁定不再有浏览器存储键（原 LOCKS_STORAGE_KEY 已随「浏览器不保存任何信息」一并删除，见 §7.3）
 
 /** 锁图标（内联 SVG，用 currentColor 跟随明暗主题；比 emoji 在各平台渲染更一致） */
 const LOCK_ICON_CLOSED = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
@@ -3064,20 +3077,11 @@ function dropLocksOfStudent(sid) {
   }
 }
 
-function persistLocks() {
-  try {
-    localStorage.setItem(LOCKS_STORAGE_KEY, JSON.stringify(state.locks));
-  } catch (e) {}
-}
+// 锁定不再写入 / 读取浏览器存储（用户要求，见文件上方的「浏览器不保存任何信息」说明）。
+// 锁定仍随「导出数据 / 导入数据」往返，因此导出 JSON 依旧是留存的唯一办法。
+function persistLocks() {}
 
 function loadLocks() {
-  try {
-    const saved = localStorage.getItem(LOCKS_STORAGE_KEY);
-    if (saved) {
-      state.locks = normalizeLocks(JSON.parse(saved));
-      return;
-    }
-  } catch (e) {}
   state.locks = { odd: {}, even: {} };
 }
 
@@ -3122,8 +3126,8 @@ function initAssignments() {
  * 用户已要求去掉单独的「均衡排班」按钮，只留一个「开始排班」，
  * 因此 `runSchedule` 不再有两套模式，上限完全由这个开关决定。
  */
-const MAX_SHIFTS_STORAGE_KEY = 'shift_max_per_week';
-const MAX_SHIFTS_ENABLED_STORAGE_KEY = 'shift_max_enabled';
+// 上限不再有浏览器存储键（原 MAX_SHIFTS_STORAGE_KEY / MAX_SHIFTS_ENABLED_STORAGE_KEY
+// 已随「浏览器不保存任何信息」一并删除，见 §7.3）
 const MAX_SHIFTS_DEFAULT = 3;
 
 /** 读取上限设置（非法值一律回落为默认值） */
@@ -3166,33 +3170,15 @@ function setMaxShiftsEnabled(enabled) {
   updateButtons();
 }
 
-function persistMaxShifts() {
-  try {
-    localStorage.setItem(MAX_SHIFTS_STORAGE_KEY, String(state.maxShiftsPerWeek));
-    localStorage.setItem(MAX_SHIFTS_ENABLED_STORAGE_KEY, state.maxShiftsEnabled ? '1' : '0');
-  } catch (e) {}
-}
+// 上限的数值与开关不再写入 / 读取浏览器存储
+// （用户要求，见文件上方的「浏览器不保存任何信息」说明）。
+function persistMaxShifts() {}
 
 function loadMaxShifts() {
-  try {
-    const saved = localStorage.getItem(MAX_SHIFTS_STORAGE_KEY);
-    if (saved !== null) {
-      const n = parseInt(saved, 10);
-      if (!isNaN(n) && n > 0) state.maxShiftsPerWeek = Math.min(n, 99);
-      else state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
-    } else {
-      state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
-    }
-  } catch (e) {
-    state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
-  }
-  // 开关默认「不勾选」：与旧版「开始排班不套用上限」的默认行为保持一致，
-  // 老用户升级后不会因为多出一个开关而被静默限制班次。
-  try {
-    state.maxShiftsEnabled = localStorage.getItem(MAX_SHIFTS_ENABLED_STORAGE_KEY) === '1';
-  } catch (e) {
-    state.maxShiftsEnabled = false;
-  }
+  // 数值回落到默认值；开关默认「不勾选」：与旧版「开始排班不套用上限」的默认行为保持一致，
+  // 也避免凭空多出一个开关就静默限制班次。
+  state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
+  state.maxShiftsEnabled = false;
 }
 
 /**
@@ -3236,7 +3222,6 @@ function refreshMaxShiftsHint() {
  * 两者可能冲突（把两个班并给同一个人，就必然要从别人那里拿走），所以连续只是
  * 「尽量」的软偏好，且实现上只做**不改变任何人的班次数**的交换（见 optimizeContinuity）。
  */
-const CONTINUITY_STORAGE_KEY = 'shift_continuous';
 const CONTINUITY_B2B_SCORE = 2;        // 同一天内首尾相接（连班）
 const CONTINUITY_DAY_SCORE = 1;        // 相邻两天都值班
 const CONTINUITY_GAP_TOLERANCE = 30;   // 首尾相接允许的空档（分钟）——默认模板的班次都是无缝相接
@@ -3246,17 +3231,12 @@ function isContinuousScheduling() {
   return state.continuousShifts === true;
 }
 
-function persistContinuousScheduling() {
-  try {
-    localStorage.setItem(CONTINUITY_STORAGE_KEY, state.continuousShifts ? '1' : '0');
-  } catch (e) {}
-}
+// 「连续排班」开关不再写入 / 读取浏览器存储
+// （用户要求，见文件上方的「浏览器不保存任何信息」说明）。
+function persistContinuousScheduling() {}
 
 function loadContinuousScheduling() {
-  try {
-    const saved = localStorage.getItem(CONTINUITY_STORAGE_KEY);
-    if (saved !== null) { state.continuousShifts = (saved === '1' || saved === 'true'); return; }
-  } catch (e) {}
+  // 默认不勾选 = 尽量分散
   state.continuousShifts = false;
 }
 

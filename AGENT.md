@@ -113,14 +113,14 @@ API 端点：
 | `initAssignments()` / `runSchedule()` | 初始化槽位 / 自动排班**唯一入口（无参数）**，三轮：贪心 → 均衡 → 连续偏好；上限只看 `state.maxShiftsEnabled` 开关，见 §4.8 / §4.10 |
 | `collectShiftsForWeek()` / `fillWeekGreedy()` | 收集本周班次（难度+同日交错排序）/ 贪心填充 |
 | `optimizeBalance()` / `balanceCost()` / `makeLoadTracker()` | 均衡局部搜索 / 代价函数 / 负载缓存，见 §4.8 |
-| `getMaxShiftsPerWeek()` / `maxShiftsLimit()` / `loadMaxShifts()` / `setMaxShiftsPerWeek()` / `setMaxShiftsEnabled()` / `syncMaxShiftsInput()` | 每人每周上限的读取、开关、持久化与界面同步。**开关 `state.maxShiftsEnabled` 决定上限是否生效**（未勾选 = `Infinity`），数值 `0`/负数/非法回落默认值，见 §4.8 |
+| `getMaxShiftsPerWeek()` / `maxShiftsLimit()` / `loadMaxShifts()` / `setMaxShiftsPerWeek()` / `setMaxShiftsEnabled()` / `syncMaxShiftsInput()` | 每人每周上限的读取、开关与界面同步（**不持久化**，见 §7.3）。**开关 `state.maxShiftsEnabled` 决定上限是否生效**（未勾选 = `Infinity`），数值 `0`/负数/非法回落默认值，见 §4.8 |
 | `openSidImport()` / `closeSidImport()` | 学号录入弹窗 `#sidImportModal` 的开关（入口是「文件」菜单 → 导入学号…）；`loadStudents()` 只读弹窗里的 `#sidInput` |
 | `renderStudentList()` / `updateStudentListItem()` / `_animatedSids` | 左侧学号列表的整列渲染 / **单条就地更新**，后者供刷新课表的逐条进度使用；`_animatedSids` 记录已播过入场动画的人，配合 `STAGGER_STEP_MS` / `STAGGER_MAX_MS` 逐条写 `--stagger-delay`，见 §4.13 第 4、5 条 |
-| `isContinuousScheduling()` / `setContinuousScheduling()` / `loadContinuousScheduling()` | 「连续排班」开关的读写与持久化，见 §4.10 |
+| `isContinuousScheduling()` / `setContinuousScheduling()` / `loadContinuousScheduling()` | 「连续排班」开关的读写（**不持久化**，见 §7.3），见 §4.10 |
 | `makeContinuityContext()` / `continuityScoreOf()` / `continuityGainOf()` / `totalContinuityScore()` | 连续 / 分散判分（同一天连班 + 相邻天），见 §4.10 |
 | `optimizeContinuity()` | 保负载的「换人」局部搜索：勾选则尽量连续，不勾选则尽量分散，见 §4.10 |
 | `isLocked()` / `lockedSidsOf()` / `toggleLock()` | 排班锁定的判断与切换（锁「该同学+该班次」的位置），见 §4.9 |
-| `normalizeLocks()` / `pruneLocks()` / `dropLocksOfStudent()` / `loadLocks()` / `persistLocks()` | 锁定数据的规范化、剪枝、清理与持久化 |
+| `normalizeLocks()` / `pruneLocks()` / `dropLocksOfStudent()` / `loadLocks()` / `persistLocks()` | 锁定数据的规范化、剪枝与清理（`load/persist` 已退化为默认值 / 空实现，见 §7.3） |
 | `remapLockKeys()` | 随 `remapAssignmentIds()` 迁移锁定键（导入被清洗过的 id 时必需） |
 | `weeklyLoadOf()` / `totalLoadOf()` / `loadStats()` / `countEmptySlots()` | 负载统计工具 |
 | `canTakeShift()` | 课程冲突判断的唯一入口（显式传参，便于干跑推演） |
@@ -170,7 +170,8 @@ API 端点：
 
 ### 4.3 `normalizeTemplate()` 是唯一可信的模板入口
 
-任何来自外部的模板（localStorage、导入的 JSON、模板文件）**都必须经过它**。
+任何来自外部的模板（导入的 JSON、模板文件）**都必须经过它**。
+（浏览器存储已彻底不用，见 §7.3；`normalizeTemplate()` 仍是唯一入口，因为导入路径仍在。）
 它会丢弃非法项并补齐缺省字段。注意它在导入阶段就会丢弃 `start >= end` 的班次，
 而编辑器中时间是被直接改到草稿上的，由 `validateDraft()` 负责拦截——两条路径职责不同。
 
@@ -258,8 +259,8 @@ API 端点：
 
 | 状态 | 持久化 | 含义 |
 | --- | --- | --- |
-| `state.maxShiftsEnabled` | `localStorage['shift_max_enabled']`（`'1'` / `'0'`） | 左侧「限制每人每周班次」开关；**默认 `false`（不勾选）** |
-| `state.maxShiftsPerWeek` | `localStorage['shift_max_per_week']` | 上限数值，默认 `MAX_SHIFTS_DEFAULT = 3` |
+| `state.maxShiftsEnabled` | **无**（只在内存，见 §7.3） | 左侧「限制每人每周班次」开关；**默认 `false`（不勾选）** |
+| `state.maxShiftsPerWeek` | **无**（只在内存，见 §7.3） | 上限数值，默认 `MAX_SHIFTS_DEFAULT = 3` |
 
 - `maxShiftsLimit()` 是**唯一**的上限口径：开关未勾选 → `Infinity`；勾选 → `getMaxShiftsPerWeek()`
   （该值若为 `0` 同样映射成 `Infinity`）。直接比较时不必再判 `null`。
@@ -310,7 +311,7 @@ API 端点：
 
 ### 4.10 连续 / 分散排班偏好（勾选式软偏好，绝不反噬均衡）
 
-左侧「连续排班」开关（`state.continuousShifts`，持久化在 `localStorage['shift_continuous']`）：
+左侧「连续排班」开关（`state.continuousShifts`，**只在内存，不持久化**，见 §7.3）：
 **勾选 = 尽量让同一人的班次连成片，不勾选（默认）= 尽量分散**。这是用户明确确认的口径。
 
 判分口径（「连续分」，越高越连续），全部落在 `continuityScoreOf(occ, ctx)`：
@@ -351,7 +352,7 @@ API 端点：
 100 人规模实测 < 50ms（见测试 §39 的耗时断言）。第三轮在 `runSchedule` 里紧跟在
 `optimizeBalance` 之后调用，**顺序不能颠倒**（先均衡、后偏好）。
 
-测试见 `.selftest/test-integration.js` §43：判分口径与容差边界、开关持久化、
+测试见 `.selftest/test-integration.js` §43：判分口径与容差边界、开关读写、
 连续/分散两个方向的确定性用例、`balanceCost` 不变、课程冲突与锁定拦截、以及
 `runSchedule` 端到端（连续分 0 → 117、极差仍为 0）。
 另有 **§43b**：用「朴素参考实现」交叉验证 `continuityScoreOf` 的缓存语义
@@ -367,7 +368,7 @@ API 端点：
 - 但**该同学在其它班次仍可被正常安排**，其它同学也照样能进这个班次。
   因此**所有判断都必须同时看 `sid` 与 `key`**，绝不能简化成「这个人被锁了」。
 - 数据存在 `state.locks = { odd: { [shiftKey]: [sid, ...] }, even: {...} }`，
-  持久化在 `localStorage['shift_locks']`，并随 `exportData()` / `handleImportFile()` 往返（version 仍为 3，
+  **只在内存（不持久化，见 §7.3）**，但随 `exportData()` / `handleImportFile()` 往返（version 仍为 3，
   旧文件无 `locks` 字段 → 视为全部未锁定）。
 
 三个必须守住的点（否则锁定会被**静默破坏**，用户不会收到任何报错）：
@@ -593,8 +594,8 @@ z-index 大小关系、`#aboutModal` 不破坏 §6.7 的 DOM 顺序前提、以�
 3. 左侧面板两个开关下的 `#maxShiftsHint` / `#continuousHint` 文案（由
    `refreshMaxShiftsHint()` / `syncContinuousInput()` 动态写入）
 
-> 提醒用户「**排班数据只在内存里、刷新页面会丢**」的那段提示是**有意写进使用指南的**
-> （`AGENT.md` §7.3 说明了为什么排班不进 localStorage），**不要因为「看着啰嗦」删掉**——
+> 提醒用户「**本工具不在浏览器里保存任何数据、刷新页面一切归零**」的那段提示是**有意写进使用指南的**
+> （§7.3 说明了为什么彻底不用浏览器存储），**不要因为「看着啰嗦」删掉**——
 > 这是最容易让用户白干一下午的坑。同理，抓课表需校园网/VPN、必须经 `app.py` 打开、
 > 离线时导出 Excel 失效，这三条也在指南里。
 
@@ -605,8 +606,8 @@ z-index 大小关系、`#aboutModal` 不破坏 §6.7 的 DOM 顺序前提、以�
 `.selftest/` 是一个**不依赖浏览器**的 Node 自测套件（各文件项数以 `bash .selftest/run-all.sh` 末行输出为准，这里不写死具体数字）：
 
 ```
-harness.js              最小 DOM / localStorage / XLSX 桩
-test-model.js           模板模型、键解析、冲突推导、持久化
+harness.js              最小 DOM / localStorage 桩（localStorage 仍保留以断言「页面不用它」）/ XLSX 桩
+test-model.js           模板模型、键解析、冲突推导、不持久化（§7.3）
 test-integration.js     排班、剪枝、渲染、导出、导入往返、每人每周上限与均衡性、
                                 排班锁定（§41，锁「位置」而非「人」）、弹窗层叠断言（§42，见 §6.7）、
                                 连续 / 分散排班偏好（§43，见 §4.10）、
@@ -885,20 +886,46 @@ git check-ignore -v .selftest/test-new.js   # 无输出 = 不会被忽略
 }
 ```
 
-### 7.3 localStorage 键
+### 7.3 浏览器存储：**一个都不用**（用户要求）
 
-| 键 | 内容 |
+**本页面不向 `localStorage` / `sessionStorage` / `cookie` / `IndexedDB` 写入任何数据，
+启动时也不从它们读取任何数据。** 刷新或重开页面即回到内置默认状态。
+
+历史上有过 7 个 localStorage 键（模板、忽略课程、上限数值 / 开关、连续排班、锁定、主题），
+现已全部移除；下表保留仅作对照，**不要在实现里重新引入**：
+
+| 曾经的键 | 现在 |
 | --- | --- |
-| `shift_duty_template_v1` | 当前值班模板（`TEMPLATE_STORAGE_KEY`） |
-| `shift_ignored_courses` | 各学生被忽略的课程 ID |
-| `shift_max_per_week` | 每人每周最多班次的**数值**（1~99；`0`/负数/非法值一律回落默认值 3） |
-| `shift_max_enabled` | 「限制每人每周班次」**开关**（`'1'`=勾选、套用上面的数值；`'0'`/无=不限制；**默认 `'0'`**，见 §4.8） |
-| `shift_continuous` | 「连续排班」开关（`1`=连班偏好，`0`/无=分散偏好，见 §4.10） |
-| `shift_locks` | 已锁定的排班位置（见 §4.9） |
-| `theme` | `auto` / `light` / `dark` |
+| `shift_duty_template_v1` | `persistTemplate()` 空实现；`loadTemplate()` 一律 `makeDefaultTemplate()` |
+| `shift_ignored_courses` | `saveIgnoredCourses()` 空实现；`loadIgnoredCourses()` 置空表 |
+| `shift_max_per_week` / `shift_max_enabled` | `persistMaxShifts()` 空实现；`loadMaxShifts()` 回落 `3` / `false` |
+| `shift_continuous` | `persistContinuousScheduling()` 空实现；`loadContinuousScheduling()` 回落 `false` |
+| `shift_locks` | `persistLocks()` 空实现；`loadLocks()` 置空锁定 |
+| `theme` | `applyTheme()` 只改内存变量 `currentTheme`；`getTheme()` 读该变量 |
 
-> 注意：**排班数据本身不进 localStorage**（只在内存中，靠导出 JSON 保存）。
-> 因此 `shift_locks` 存档在刷新页面后可能指向尚未恢复的排班，`pruneLocks()` 已按此做了保护（§4.9）。
+四条约束（改代码前务必理解）：
+
+1. **`load*/persist*` 这些函数名刻意保留**，只是退化成「读默认值」/「空实现」。
+   策略集中在这几处，调用点不必散落改动，将来若要恢复持久化也只改这几处。
+   但**绝不能在它们内部重新加 `setItem` / `getItem`**。
+2. **「不持久化」≠「不记忆」。** 主题必须记在内存变量 `currentTheme` 里，
+   不能让 `getTheme()` 直接 `return 'auto'`：`refreshThemeMenuUi()` 靠它决定「个性化」菜单
+   哪个项打勾，恒返回 `'auto'` 会让用户刚点「深夜模式」对勾就跳回「跟随系统」。
+   同理两个排班开关在本次会话内照常生效，只是刷新后回默认。
+3. **局部缓存的 `persist*` 调用点不必删除**（它们现在是空操作）。排班数据本来就不进浏览器存储。
+4. **HTTP 缓存头是另一回事**，见 §6.1：`app.py` 的 `end_headers()` 仍发
+   `Cache-Control: no-cache, must-revalidate`。**不要以为「浏览器不保存任何信息」就等于
+   可以把那些响应头删掉** —— 那是防「代码更新了但页面没变」的，与 localStorage 无关。
+
+> 留存的唯一途径是**显式导出文件**：「文件」菜单 →「导出数据」（JSON，含模板 / 排班 / 锁定）、
+> 「导出值班模板…」（模板 JSON）、「导出值班表 / 空课表」（Excel）。
+> 因此 `state.template` 每次打开都是默认模板，`state.locks` 每次都是空 —— 与导入导出往返逻辑无关
+> （`handleImportFile()` 仍会正常读入文件里的 template / locks）。
+
+> 测试守卫：`.selftest/test-integration.js` §46 会**扫描整份源码**，出现
+> `localStorage.setItem` / `getItem`、`document.cookie =`、`indexedDB.open` 等即判失败
+> （先剥掉注释再扫，所以注释里提到这些词是允许的），并逐项调用所有 `persist*/load*`
+> 断言 localStorage 始终为空、状态一律回默认。**已用注入 bug 的方式确认该断言真的会红。**
 
 ---
 

@@ -790,17 +790,31 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 .student-tag.locked .lock-btn { opacity: 1; }
 
 /* ── Student highlight on hover ────────── */
+/* 这里不能写死 border-radius：会把 .student-tag 的胶囊圆角（999px）覆盖成 4px，
+   表现为「hover 高亮后圆角突然变小」。outline 会自动跟随元素自身圆角。
+   outline-color 也刻意不在这条共享规则里写：两个元素需要的颜色不同，见下。 */
 .student-item.highlight-linked,
 .student-tag.highlight-linked {
-  outline: 3px solid var(--primary);
+  outline-width: 3px;
+  outline-style: solid;
   outline-offset: 2px;
-  /* 这里不能写死 border-radius：会把 .student-tag 的胶囊圆角（999px）覆盖成 4px，
-     表现为「hover 高亮后圆角突然变小」。outline 会自动跟随元素自身圆角。 */
   z-index: 5;
   position: relative;
 }
-/* 左侧学号列表项自身没有圆角，高亮时单独给一点即可 */
-.student-item.highlight-linked { border-radius: 4px; }
+/*
+ * 学生标签的描边恒为白色。
+ * 坑：.student-tag 带 transition: all，而未高亮时它的 outline-style 是 none，
+ * 于是 outline-color 取初始值 currentColor —— 该标签 color 是 #fff，
+ * 所以「变白再变蓝」：描边出现后先从白(currentColor) 过渡到 var(--primary)。
+ * 这里显式把高亮态的 outline-color 也定成白，起止值相同，颜色过渡自然消失，
+ * 描边从出现到消失全程保持白色。
+ */
+.student-tag.highlight-linked { outline-color: #fff; }
+/*
+ * 左侧学号列表项仍需主题蓝描边：它的文字是深色（currentColor 接近 --text），
+ * 若同样用白色会与浅色卡片背景糊在一起、看不出高亮。
+ */
+.student-item.highlight-linked { outline-color: var(--primary); border-radius: 4px; }
 .shift-cell.highlight-linked {
   background: #DBEAFE !important;
   box-shadow: inset 0 0 0 2px var(--primary);

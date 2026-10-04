@@ -353,21 +353,33 @@ Promise.resolve(g('(async () => { await runSchedule(); return true; })()')).then
   })()`);
   eq(dupInGroup, [], '每个分组内部班次 id 唯一');
 
-  section('L19. 持久化：自定义分组模板存入 localStorage 后可读回');
+  section('L19. 自定义分组模板不落盘：loadTemplate 一律回到内置默认模板');
+  // 口径已变更（用户要求：浏览器 cache 不保存任何信息）。此前这一节验证的是
+  // 「自定义分组模板存入 localStorage 后可读回」，现在改为验证它**不会**被持久化，
+  // 且即使浏览器里有旧存档也会被忽略。自定义模板的留存改走「文件」菜单导出模板文件。
   localStorage.clear();
-  g(`state.template = normalizeTemplate({ name:'持久自定义', mode:'custom', layout:[
+  g(`state.template = normalizeTemplate({ name:'不应被保存', mode:'custom', layout:[
     {key:'a',name:'前半周',days:[0,1,2]},{key:'b',name:'后半周',days:[3,4,5,6]}
   ], groups:{
     a:[{id:'a1',label:'A',start:'10:00',end:'12:00',capacity:1}],
     b:[{id:'b1',label:'B',start:'14:00',end:'16:00',capacity:1}]
   }})`.replace(/\n/g, ''));
   g('persistTemplate()');
+  ok(localStorage.getItem('shift_duty_template_v1') === null,
+     'persistTemplate 不写入 localStorage');
+  // 预置一份「旧版本存档」，loadTemplate 必须忽略它
+  localStorage._set('shift_duty_template_v1', JSON.stringify({
+    name: '旧自定义存档', mode: 'custom',
+    layout: [{ key: 'a', name: '前半周', days: [0, 1, 2] }, { key: 'b', name: '后半周', days: [3, 4, 5, 6] }],
+    groups: { a: [{ id: 'a1', label: 'A', start: '10:00', end: '12:00', capacity: 1 }],
+              b: [{ id: 'b1', label: 'B', start: '14:00', end: '16:00', capacity: 1 }] }
+  }));
   g('state.template = makeDefaultTemplate()');
   g('loadTemplate()');
-  eq(g('state.template.name'), '持久自定义', '读回模板名');
-  eq(g('state.template.mode'), 'custom', '读回自定义模式');
-  eq(g('state.template.layout.map(l=>l.days)'), [[0, 1, 2], [3, 4, 5, 6]], '读回分组天数');
-  eq(g('state.template.groups.b[0].id'), 'b1', '读回班次 id');
+  eq(g('state.template.name'), '默认模板', '忽略旧存档，模板名回到默认');
+  eq(g('state.template.mode'), 'weekday', '忽略旧存档，模式回到预设 weekday');
+  eq(g('state.template.layout.map(l=>l.days)'), [[0, 1, 2, 3, 4], [5, 6]], '忽略旧存档，分组天数回到默认');
+  eq(g('state.template.groups.weekday[0].id'), 'wd0', '忽略旧存档，班次来自内置默认模板');
   localStorage.clear();
 
   section('L20. 天数徽标不与分组名重复');

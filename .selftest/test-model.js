@@ -129,29 +129,37 @@ eq(t9.groups.weekday[0].weeks, 'even', '合法 weeks=even 保留');
 const t10 = norm({ name: '   ', groups: {} });
 eq(t10.name, '自定义模板', '空白模板名回退为默认名');
 
-section('7. 模板持久化（localStorage）');
+section('7. 模板不做浏览器持久化（用户要求：浏览器 cache 不保存任何信息）');
+// 口径已变更：模板不再写入 / 读取 localStorage，每次 loadTemplate() 都回到内置默认模板。
+// 留存的唯一途径是「文件」菜单 → 导出值班模板… / 导入模板…（走文件，不走浏览器存储）。
 localStorage.clear();
-g("state.template = normalizeTemplate({ name:'持久化测试', groups:{ weekday:[{id:'p1',label:'P',start:'09:00',end:'10:00',capacity:5}] } })");
+g("state.template = normalizeTemplate({ name:'不应被保存', groups:{ weekday:[{id:'p1',label:'P',start:'09:00',end:'10:00',capacity:5}] } })");
 g('persistTemplate()');
-const raw = localStorage.getItem('shift_duty_template_v1');
-ok(!!raw, 'persistTemplate 写入了 localStorage');
-g('state.template = makeDefaultTemplate()');  // 打乱内存
-g('loadTemplate()');
-eq(g('state.template.name'), '持久化测试', 'loadTemplate 恢复模板名');
-eq(g('state.template.groups.weekday[0].capacity'), 5, 'loadTemplate 恢复班次容量');
-eq(g('state.template.groups.weekday[0].label'), 'P', 'loadTemplate 恢复班次名称');
+ok(localStorage.getItem('shift_duty_template_v1') === null,
+   'persistTemplate 不再写入 localStorage（若失败说明持久化被改回来了）');
 
+// 即使浏览器里残留了旧版本的模板数据，也必须被忽略（否则老用户升级后仍会被旧存档影响）
+localStorage._set('shift_duty_template_v1', JSON.stringify({
+  name: '旧存档', groups: { weekday: [{ id: 'p1', label: 'P', start: '09:00', end: '10:00', capacity: 5 }] }
+}));
+g('loadTemplate()');
+eq(g('state.template.name'), '默认模板', 'loadTemplate 忽略 localStorage 里的旧存档，回到默认模板');
+eq(g('state.template.groups.weekday[0].label'), '早班', 'loadTemplate 的班次来自内置默认模板');
+ok(localStorage.getItem('shift_duty_template_v1') !== null,
+   '（预置的旧数据仍在原处：页面既不读它也不清除它，清除同样属于「动浏览器存储」）');
 localStorage.clear();
+
 g('state.template = makeDefaultTemplate()');
 g('loadTemplate()');
-eq(g('state.template.groups.weekday.length'), 6, '无本地数据时回退默认模板');
+eq(g('state.template.groups.weekday.length'), 6, '无本地数据时同样得到默认模板');
 
+// 损坏的存档也不能影响启动（现在根本不解析它）
 localStorage._set('shift_duty_template_v1', '{ 这不是合法 JSON');
 g('state.template = makeDefaultTemplate()');
 let threw = false;
 try { g('loadTemplate()'); } catch (e) { threw = true; }
-ok(!threw, '损坏的 localStorage 数据不抛异常');
-eq(g('state.template.groups.weekday.length'), 6, '损坏数据 → 回退默认模板');
+ok(!threw, '损坏的 localStorage 数据不影响启动');
+eq(g('state.template.groups.weekday.length'), 6, '损坏数据下仍是默认模板');
 localStorage.clear();
 
 section('8. 模板描述');

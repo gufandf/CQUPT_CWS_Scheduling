@@ -508,7 +508,8 @@ Promise.resolve(run).then(() => {
   ok(ed.includes('tplRemoveShift') && ed.includes('tplDuplicateShift'), '编辑器含删除/复制班次按钮');
   ok(ed.includes('tplMoveShift'), '编辑器含排序按钮');
 
-  section('26. 保存模板：应用 + 剪枝 + 持久化');
+  section('26. 保存模板：应用 + 剪枝（不再持久化）');
+  localStorage.clear();
   g('state.template = makeDefaultTemplate(); initAssignments();');
   g("state.assignments.odd['odd_d0_wd0'] = ['S1'];");
   g(`state.tplDraft = normalizeTemplate((() => {
@@ -521,8 +522,8 @@ Promise.resolve(run).then(() => {
   eq(g('state.template.name'), '保存测试', '保存后新模板生效');
   eq(g('state.tplDraft'), null, '保存后草稿被清空');
   eq(g('state.assignments.odd["odd_d0_wd0"]'), undefined, '被删班次的排班已清除');
-  ok(!!localStorage.getItem('shift_duty_template_v1'), '保存后写入 localStorage');
-  ok(JSON.parse(localStorage.getItem('shift_duty_template_v1')).name === '保存测试', 'localStorage 内容为新模板');
+  ok(localStorage.getItem('shift_duty_template_v1') === null,
+     '保存模板不再写入 localStorage（写入了说明持久化被改回来了）');
 
   section('27. 取消编辑不影响生效模板');
   g('state.template = makeDefaultTemplate()');
@@ -648,24 +649,26 @@ Promise.resolve(run).then(() => {
   eq(g('state.maxShiftsPerWeek'), 3, "setMaxShiftsPerWeek('abc') 回落为默认值 3");
   setMaxShifts('7');
   eq(g('state.maxShiftsPerWeek'), 7, 'setMaxShiftsPerWeek 写入 state');
-  eq(localStorage.getItem('shift_max_per_week'), '7', '上限持久化到 localStorage');
+  // 口径已变更（用户要求：浏览器 cache 不保存任何信息）：上限不再落盘
+  ok(localStorage.getItem('shift_max_per_week') === null,
+     '上限不再持久化到 localStorage（写入了说明持久化被改回来了）');
   setMaxShifts('200');
   eq(g('state.maxShiftsPerWeek'), 99, "setMaxShiftsPerWeek('200') 被上限 99 钳制");
   eq(g('getMaxShiftsPerWeek()'), 99, 'getMaxShiftsPerWeek 同样以 99 封顶');
 
-  // 开关本身的持久化：'1' / '0'，且重新 load 能读回
+  // 开关只改内存（不再写 localStorage），且 loadMaxShifts 一律回落到默认
   setMaxEnabled(true);
   eq(g('state.maxShiftsEnabled'), true, 'setMaxShiftsEnabled(true) 写入 state');
-  eq(localStorage.getItem('shift_max_enabled'), '1', "勾选后 localStorage['shift_max_enabled'] === '1'");
+  ok(localStorage.getItem('shift_max_enabled') === null,
+     "勾选后不写 localStorage['shift_max_enabled']");
   setMaxEnabled(false);
-  eq(localStorage.getItem('shift_max_enabled'), '0', "取消勾选后 localStorage['shift_max_enabled'] === '0'");
+  eq(g('state.maxShiftsEnabled'), false, 'setMaxShiftsEnabled(false) 写入 state');
+  ok(localStorage.getItem('shift_max_enabled') === null,
+     "取消勾选后同样不写 localStorage['shift_max_enabled']");
   setMaxEnabled(true);
-  g('state.maxShiftsEnabled = false; loadMaxShifts();');
-  eq(g('state.maxShiftsEnabled'), true, 'loadMaxShifts 从 localStorage 读回勾选状态');
-  setMaxShifts('7');
-  g('state.maxShiftsPerWeek = 3');
-  g('loadMaxShifts()');
-  eq(g('state.maxShiftsPerWeek'), 7, 'loadMaxShifts 从 localStorage 读回数值');
+  g('state.maxShiftsEnabled = false; state.maxShiftsPerWeek = 7; loadMaxShifts();');
+  eq(g('state.maxShiftsEnabled'), false, 'loadMaxShifts 一律回到「不勾选」的默认态（不读存档）');
+  eq(g('state.maxShiftsPerWeek'), 3, 'loadMaxShifts 一律回到默认值 3（不读存档）');
   g('localStorage.removeItem("shift_max_per_week"); localStorage.removeItem("shift_max_enabled"); loadMaxShifts();');
   eq(g('state.maxShiftsPerWeek'), 3, '无存档时数值回落默认值 3（再确认一次）');
   eq(g('state.maxShiftsEnabled'), false, '无存档时开关回落为不勾选（再确认一次）');
@@ -1165,15 +1168,16 @@ Promise.resolve(run).then(() => {
   eq(g(`isBackToBackShifts({start:'12:05',end:'13:45'},{start:'10:00',end:'12:05'})`), false,
      '顺序颠倒不算连班（不能倒着接）');
 
-  // 开关的持久化
+  // 开关只改内存（口径已变更：用户要求浏览器不保存任何信息，不再持久化）
   g('setContinuousScheduling(true)');
   eq(g('state.continuousShifts'), true, 'setContinuousScheduling(true) 写入 state');
-  eq(localStorage.getItem('shift_continuous'), '1', '开关持久化到 localStorage');
+  ok(localStorage.getItem('shift_continuous') === null,
+     '开关不再持久化到 localStorage（写入了说明持久化被改回来了）');
   g('setContinuousScheduling(false)');
   g('loadContinuousScheduling()');
-  eq(g('state.continuousShifts'), false, 'loadContinuousScheduling 读回开关值');
-  g('localStorage.removeItem("shift_continuous"); loadContinuousScheduling();');
-  eq(g('state.continuousShifts'), false, '无存档时默认「分散」（不勾选）');
+  eq(g('state.continuousShifts'), false, 'loadContinuousScheduling 一律回到「分散」（不读存档）');
+  g('setContinuousScheduling(true); loadContinuousScheduling();');
+  eq(g('state.continuousShifts'), false, '即使内存里是 true，loadContinuousScheduling 仍回落 false（不读存档）');
 
   // 界面：开关控件与说明文案
   ok(rawHtml().includes('id="continuousToggle"'), '侧栏存在「连续排班」开关控件');
@@ -1732,6 +1736,63 @@ Promise.resolve(run).then(() => {
   g('state.students = []; state.currentView = "duty"; refreshView();');
   ok(String(el('scheduleNotice').textContent).includes('「文件」菜单'),
      '未导入学号时的提示条指向顶部「文件」菜单');
+
+  // ── 46. 浏览器不保存任何信息（用户要求）──
+  // 这是策略性断言：整份页面源码里不得再出现任何「写浏览器存储」的调用。
+  // 只看注释里提到 localStorage 是可以的（说明文字），所以先剥掉注释再扫。
+  section('46. 浏览器不保存任何信息');
+  const src = rawHtml();
+  // 去掉 // 行注释与 /* */ 块注释，避免注释里的字样造成误判
+  const srcNoComment = src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+  const writeCalls = [
+    [/localStorage\s*\.\s*setItem/, 'localStorage.setItem'],
+    [/sessionStorage\s*\.\s*setItem/, 'sessionStorage.setItem'],
+    [/document\s*\.\s*cookie\s*=/, 'document.cookie ='],
+    [/indexedDB\s*\.\s*open/, 'indexedDB.open'],
+    [/\.\s*localStorage\s*=/  , 'localStorage 赋值'],
+  ];
+  for (const [re, name] of writeCalls) {
+    ok(!re.test(srcNoComment), `源码中没有 ${name}（浏览器不保存任何信息）`);
+  }
+  // 也不应出现任何「读取」调用，否则启动时又会被旧存档影响
+  const readCalls = [
+    [/localStorage\s*\.\s*getItem/, 'localStorage.getItem'],
+    [/sessionStorage\s*\.\s*getItem/, 'sessionStorage.getItem'],
+  ];
+  for (const [re, name] of readCalls) {
+    ok(!re.test(srcNoComment), `源码中没有 ${name}（启动不读浏览器存储）`);
+  }
+
+  // 行为断言：走一遍所有 load*/persist*，localStorage 必须始终为空
+  localStorage.clear();
+  g('persistTemplate()');
+  g('saveIgnoredCourses()');
+  g('persistLocks()');
+  g('persistMaxShifts()');
+  g('persistContinuousScheduling()');
+  g('applyTheme("dark")');
+  const dump = JSON.stringify(localStorage._dump());
+  eq(dump, '{}', '调用全部 persist/applyTheme 后 localStorage 仍为空（无任何写入）');
+
+  // 各 load* 一律回到默认值（即使内存被改成别的）
+  g('state.maxShiftsPerWeek = 9; state.maxShiftsEnabled = true; state.continuousShifts = true;');
+  g('loadMaxShifts(); loadContinuousScheduling(); loadLocks(); loadIgnoredCourses(); loadTemplate();');
+  eq(g('state.maxShiftsPerWeek'), 3, 'loadMaxShifts 回到默认值 3');
+  eq(g('state.maxShiftsEnabled'), false, 'loadMaxShifts 回到「不勾选」');
+  eq(g('state.continuousShifts'), false, 'loadContinuousScheduling 回到「分散」');
+  eq(g('JSON.stringify(state.locks)'), '{"odd":{},"even":{}}', 'loadLocks 回到空锁定');
+  eq(g('JSON.stringify(state.ignoredCourses)'), '{}', 'loadIgnoredCourses 回到空表');
+  eq(g('state.template.name'), '默认模板', 'loadTemplate 回到默认模板');
+
+  // 主题仍要在「本次会话内」生效（不持久化 ≠ 不记忆），否则「个性化」菜单对勾会立刻跳回
+  g('applyTheme("dark")');
+  eq(g('getTheme()'), 'dark', 'applyTheme("dark") 后 getTheme() 为 dark（本次会话内仍记忆）');
+  eq(g('currentTheme'), 'dark', '主题记在内存变量 currentTheme 里');
+  g('applyTheme("auto")');
+  eq(g('getTheme()'), 'auto', 'applyTheme("auto") 后回到跟随系统');
+  eq(JSON.stringify(g('localStorage._dump()')), '{}', '主题切换同样不写入 localStorage');
 
   summary();
 }).catch(e => {

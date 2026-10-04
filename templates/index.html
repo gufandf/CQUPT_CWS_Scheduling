@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>学生打印社排班系统</title>
+<title>重邮学生排班系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* ============================================================
@@ -392,19 +392,45 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
   font-size: 12px; cursor: grab; user-select: none;
   transition: all var(--transition-smooth);
   position: relative;
+}
+/*
+ * 入场动画只挂在「本次新出现」的条目上（.is-new 由 renderStudentList() 标出）。
+ *
+ * 坑一：列表每次刷新都是整段重写 container.innerHTML，节点全是新建的。
+ * 曾经把 opacity/animation 直接写在 .student-item 上，于是「刷新课表」时
+ * fetchAllSchedules() 每完成一个请求就重渲染一次列表（见其 .finally()），
+ * 每个学号都会让整列重放一遍滑入动画 —— 导入 25 个学号就是二十多次抽搐。
+ * 现在只有真正新增的人才播一次，老条目立即以最终状态出现。
+ *
+ * 坑二（错峰只写 nth-child(1)~(5) 的后果）：那时只有前 5 条带 animation-delay，
+ * 第 6 条起一律 0s 同时起跑；而本动画用的是 ease-out-expo（前段极陡），
+ * 300ms 里约 60ms 就走完大半，于是第 6 条往后几乎「啪」地一起出现，
+ * 肉眼只看到前五条在缓入。错峰量现在由 JS 逐条写进 --stagger-delay：
+ * 每个新条目都有份，总时长封顶，人数多时自动压缩间隔（见 renderStudentList）。
+ */
+.student-item.is-new {
   opacity: 0;
   animation: slideInFromLeft 0.3s var(--ease-out-expo) forwards;
+  animation-delay: var(--stagger-delay, 0s);
 }
-.student-item:nth-child(1) { animation-delay: 0.05s; }
-.student-item:nth-child(2) { animation-delay: 0.1s; }
-.student-item:nth-child(3) { animation-delay: 0.15s; }
-.student-item:nth-child(4) { animation-delay: 0.2s; }
-.student-item:nth-child(5) { animation-delay: 0.25s; }
-.student-item:active { cursor: grabbing; transform: scale(0.98); }
+/* 系统开启「减少动态效果」时彻底不播放（含逐条错峰延迟） */
+@media (prefers-reduced-motion: reduce) {
+  .student-item.is-new { animation: none; opacity: 1; }
+}
+/* 按下时只做「缩一下」的反馈，缩放锚点定在左缘。
+   锚在中心（默认）会让整行向中心收缩、左边界被动右移约 2.6px，内容跟着右移，
+   与 hover 的 padding 位移是同一类「选中后向右移动」。锚在左缘则左边界不动。 */
+.student-item:active { cursor: grabbing; transform: scale(0.98); transform-origin: left center; }
 .student-item:last-child { border-bottom: none; }
+/*
+ * hover(chrome) 高亮只改颜色，绝不能改 padding / margin / width 之类的几何属性。
+ * 基线是 `padding-left: 10px` 在 hover 时变成 `15px`，配合 .student-item 的
+ * `transition: all`，鼠标一移上去整行文字就向右滑动 5px（实测 10.0 → 15.0），
+ * 用户报的「学号列表选中后向右移动」即此。
+ * 现在保持 padding-left 不变，高亮完全交给底色 + 左侧内嵌色条（box-shadow，不占布局）。
+ */
 .student-item:hover { 
   background: var(--primary-light); 
-  padding-left: 15px;
   box-shadow: inset 3px 0 0 0 var(--primary);
 }
 
@@ -814,7 +840,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
  * 左侧学号列表项仍需主题蓝描边：它的文字是深色（currentColor 接近 --text），
  * 若同样用白色会与浅色卡片背景糊在一起、看不出高亮。
  */
-.student-item.highlight-linked { outline-color: var(--primary); border-radius: 4px; }
+.student-item.highlight-linked { outline-color: var(--primary); }
 .shift-cell.highlight-linked {
   background: #DBEAFE !important;
   box-shadow: inset 0 0 0 2px var(--primary);
@@ -1314,7 +1340,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
      键盘可用：Esc 关闭；打开后 ←→ 切换一级菜单（见 closeAllMenus / onMenuBarKeydown）。 -->
 <div class="top-menubar" id="topMenubar" onkeydown="onMenuBarKeydown(event)">
 
-  <div class="menu-brand">学生打印社排班系统</div>
+  <div class="menu-brand">重邮学生排班系统</div>
 
   <!-- ── 文件 ── -->
   <div class="menu" id="menuFile">
@@ -1561,12 +1587,13 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
           不勾选＝谁空谁上、不限班次；勾选＝每人每周不超过右侧填写的数值（单周、双周各自单独计数）。
           课表冲突与班次人数上限始终都会遵守。</p>
         <p><strong>3. 查看/调整</strong>：右侧表格<strong>始终显示当前值班模板的时段</strong>（未排班时人数显示为 0/N），
-          可<strong>拖拽</strong>学生标签到其他班次调整，也可以直接把左侧的同学拖进格子手动排班。</p>
+          可<strong>拖拽</strong>学生标签到其他班次调整，也可以直接把左侧的同学拖进格子手动排班。
+          右上角可在<strong>「值班表」</strong>（谁在值班）与<strong>「空课表」</strong>（每个时段谁有空）之间切换，单周 / 双周也在那里切换。</p>
         <p><strong>4. 连续排班</strong>：左侧的「连续排班」开关决定同一人的班次怎么摆放。
           <strong>勾选</strong>＝尽量把班次连成片（同一天<b>首尾相接</b>的班次尽量给同一个人，相邻几天也尽量连着排）；
           <strong>不勾选</strong>（默认）＝反过来尽量分散，避免连班、也避免连着几天都排同一个人。
           这项只是「尽量」的偏好：算法只做<b>不改变任何人班次数</b>的等价交换，因此在满足它的同时
-          不会破坏上面两种模式的均衡性（开关状态会记在浏览器里）。</p>
+          不会破坏「尽量让每人班次数相近」这条均衡性。</p>
         <p><strong>5. 排班锁定</strong>：点学生标签上的<strong>锁图标</strong>可锁住
           <strong>「该同学 + 该班次」这个位置</strong>——锁定后无论怎么重新排班都不会改变它。
           锁定的标签显示为琥珀色、不能拖动也不能移除（先解锁再操作）；
@@ -1576,13 +1603,27 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
           自由<strong>添加/删除/排序</strong>班次，并单独设置与该时段<strong>冲突的课程节次</strong>。<br>
           <strong>排班日分组</strong>支持两种模式：「工作日 / 周末」为预设两组；「一周 7 天自由组合」可自定义分组数量、
           名称与每组包含的星期（例如周一周二一组、周三到周日一组），每组各自一套班次。
-          模板会自动保存在浏览器中，也可导出为文件分享给他人（顶部「文件」菜单 → 导出/导入值班模板）。</p>
+          <strong>允许整个分组只排单周或只排双周</strong>（例如工作日组只排单周），保存不会被拦截，只给提示。<br>
+          模板改完点<strong>「保存并应用」</strong>立即生效；如需留存或分享，用顶部「文件」菜单 →
+          <strong>导出值班模板…</strong>存成文件，下次用<strong>「导入模板…」</strong>载入。
+          注意从「导入模板…」载入的是草稿，<b>不会自动打开编辑器</b>，请再点「编辑值班模板…」确认后按「保存并应用」。</p>
         <p><strong>8. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON（含值班模板与锁定），
-          全部集中在顶部<b>「文件」菜单</b>。</p>
+          全部集中在顶部<b>「文件」菜单</b>。<strong>「导出值班表」得到的 Excel 还附带第三个工作表「人员表」</strong>，
+          把「按班次看人」翻转成「按人看班次」（姓名 / 学号 / 单周班次 / 双周班次 / 合计 + 逐条明细），
+          方便每位值班同学快速查看自己在何时有几班；没有排到班的同学也会保留一行并显示 0。
+          「导出空课表」不含人员表。</p>
+        <p>
+          <strong>数据保存</strong>：本工具不在浏览器里保存数据，<strong>刷新或关闭页面后需要重新导入</strong>。
+          请用顶部「文件」菜单 →<strong>「导出数据」</strong>保存 JSON（含学号、模板、排班与锁定），
+          下次打开用「导入数据…」恢复；只导模板可用「导出值班模板…」。<br>
+          <strong>抓课表需要校园网或 VPN</strong>，并且必须通过 <code>python3 app.py</code> 打开本页面
+          （直接双击 <code>index.html</code> 无法抓取课表）；抓取失败的同学会标记为错误，可用左侧「刷新课表」重试。
+        </p>
         <!-- <hr style="border-color:var(--border);margin:12px 0;"> -->
         <p style="font-size:12px;color:var(--text-muted);">
           <strong>提示</strong>：含"实训""实习""课程设计"等关键词的课程会被自动忽略。<br>
           点击课表弹窗中的「刷新」可单独更新某同学的课表。<br>
+          导出 Excel 依赖 CDN 上的 xlsx 库，<b>完全离线时导出会失效</b>。<br>
           切换主题请用顶部<b>「个性化」菜单</b>（深夜模式 / 日间模式 / 跟随系统）。<br>
           软件版本与开发者信息见顶部<b>「关于」菜单 → 软件信息</b>。
         </p>
@@ -1607,7 +1648,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
           <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-grad);color:#fff;
                       display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;">排</div>
           <div>
-            <div style="font-size:16px;font-weight:700;color:var(--text);">学生打印社排班系统</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text);">重邮学生排班系统</div>
             <div style="font-size:12px;color:var(--text-muted);">值班表 / 空课表自动排班工具</div>
           </div>
         </div>
@@ -1646,7 +1687,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
             </tr>
             <tr>
               <td style="padding:6px 0;color:var(--text-muted);">数据存储</td>
-              <td style="padding:6px 0;">排班数据只在内存中，需自行导出 JSON 保存；模板 / 锁定 / 偏好存在浏览器 localStorage</td>
+              <td style="padding:6px 0;">数据保存在内存中，需用「文件」菜单导出 JSON / 模板文件留存</td>
             </tr>
             <tr>
               <td style="padding:6px 0;color:var(--text-muted);">构建时间</td>
@@ -1737,7 +1778,24 @@ function weekdayWeekendLayout() {
   ];
 }
 
-const TEMPLATE_STORAGE_KEY = 'shift_duty_template_v1';
+/*
+ * ══════════════════════════════════════════════════════════════════════════
+ *  浏览器不保存任何信息（用户要求）
+ * ══════════════════════════════════════════════════════════════════════════
+ * 本页面**不向 localStorage / sessionStorage / cookie / IndexedDB 写入任何数据**，
+ * 启动时也**不从浏览器存储读取任何数据**：刷新（或重开）页面即回到内置默认状态。
+ *
+ * 因此现在的口径是「内存态 + 显式导入导出」：
+ *   · 值班模板 → 每次打开都是内置默认模板，改完若要留存请用
+ *     「文件」菜单 → 导出值班模板…，下次用「导入模板…」载入；
+ *   · 排班 / 锁定 / 忽略课程 / 各开关 → 只在内存中，刷新即丢；
+ *     需要留存请用「文件」菜单 →「导出数据」保存 JSON，「导入数据…」恢复。
+ *
+ * 实现方式：所有 load / persist 类函数都退化成「读默认值」/「空实现」，
+ * 调用点保持不变（见 persistTemplate 的注释）。**不要再往里面加 setItem**，
+ * 那会重新引入浏览器存储。API 代理（app.py）的响应头是另一套东西（HTTP 缓存），
+ * 不受此处影响。
+ */
 const WEEK_LABELS = { all: '每周', odd: '单周', even: '双周' };
 /** 单双周的固定展示顺序（人员表明细排序用） */
 const WEEK_ORDER = ['odd', 'even'];
@@ -2119,22 +2177,14 @@ function shiftAppliesToWeek(shift, weekType) {
   return shift.weeks === 'all' || shift.weeks === weekType;
 }
 
+// 一律用内置默认模板（不用浏览器存储，见上方总说明）
 function loadTemplate() {
-  try {
-    const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
-    if (saved) {
-      state.template = normalizeTemplate(JSON.parse(saved));
-      return;
-    }
-  } catch (e) { /* 忽略损坏的本地数据 */ }
   state.template = makeDefaultTemplate();
 }
 
-function persistTemplate() {
-  try {
-    localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(state.template));
-  } catch (e) {}
-}
+/* 空实现。这类 load / persist 函数刻意保留名字、只退化行为，
+   调用点不必散落改动，将来要恢复持久化也只改这几处。 */
+function persistTemplate() {}
 
 /** 模板摘要，用于提示 */
 function describeTemplate(tpl) {
@@ -2179,46 +2229,34 @@ function groupDaysBadge(group) {
   return txt === (group && group.name) ? '' : txt;
 }
 
-// 从 localStorage 恢复忽略课程
 function loadIgnoredCourses() {
-  try {
-    const saved = localStorage.getItem('shift_ignored_courses');
-    if (saved) {
-      const data = JSON.parse(saved);
-      for (const sid in data) {
-        state.ignoredCourses[sid] = new Set(data[sid]);
-      }
-    }
-  } catch(e) {
-    state.ignoredCourses = {};
-  }
+  state.ignoredCourses = {};
 }
 
-function saveIgnoredCourses() {
-  try {
-    const data = {};
-    for (const sid in state.ignoredCourses) {
-      data[sid] = [...state.ignoredCourses[sid]];
-    }
-    localStorage.setItem('shift_ignored_courses', JSON.stringify(data));
-  } catch(e) {}
-}
+function saveIgnoredCourses() {}
 
 // ============================================================
 //  暗色模式切换
 // ============================================================
+/*
+ * 主题只在内存里（见上方总说明）。注意必须记在**内存变量**中，
+ * 不能让 getTheme() 直接 return 'auto'：refreshThemeMenuUi() 靠它决定
+ * 「个性化」菜单哪个打勾，恒返回 'auto' 会让用户刚点「深夜模式」对勾就跳回
+ * 「跟随系统」。「不持久化」≠「不记忆」——会话内照常生效，刷新后回默认。
+ */
+let currentTheme = 'auto';
 function getTheme() {
-  return localStorage.getItem('theme') || 'auto';
+  return currentTheme;
 }
 function applyTheme(theme) {
+  currentTheme = (theme === 'dark' || theme === 'light') ? theme : 'auto';
   const html = document.documentElement;
-  if (theme === 'auto') {
+  if (currentTheme === 'auto') {
     html.removeAttribute('data-theme');
   } else {
-    html.setAttribute('data-theme', theme);
+    html.setAttribute('data-theme', currentTheme);
   }
-  localStorage.setItem('theme', theme);
-  // 切换主题的唯一入口是「个性化」菜单，改完把对勾同步过去
+  // 只改内存，不写浏览器存储；切换主题的唯一入口是「个性化」菜单，改完同步对勾
   refreshThemeMenuUi();
 }
 applyTheme(getTheme());
@@ -2469,6 +2507,28 @@ function getTotalShiftCount() {
   return total;
 }
 
+/**
+ * 已经播放过入场动画的学号。
+ *
+ * 列表每次刷新都会整段重写 container.innerHTML（节点全新建），若不记住「谁播过了」，
+ * 每次重渲染都会让整列重放一遍 slideInFromLeft。而 fetchAllSchedules() 是
+ * 「每收到一个课表就重渲染一次」，导入 25 个学号就等于整列抽搐二十多次。
+ * 这里配合 CSS 的 .student-item.is-new：只有首次出现的人播一次动画。
+ */
+let _animatedSids = new Set();
+
+/*
+ * 入场错峰的参数（毫秒）。
+ *
+ * 早先错峰是写死在 CSS 里的 nth-child(1)~(5)，只有前 5 条拿到延迟，
+ * 第 6 条起全部 0s 同时起跑 —— 配上 ease-out-expo 这种前段极陡的曲线，
+ * 后 20 条会「啪」地一起出现，用户看到的就是「只有前五个有缓入动画」。
+ * 现在逐条给延迟：所有人都参与错峰，同时把「最后一条的延迟」封顶，
+ * 人多时自动压缩每一步的间隔，避免几百个学号时列表要等好几秒才出现完。
+ */
+const STAGGER_STEP_MS = 30;    // 相邻两条的起跑间隔
+const STAGGER_MAX_MS = 400;    // 最后一个新条目的延迟上限
+
 function renderStudentList() {
   const container = document.getElementById('studentList');
   const count = document.getElementById('studentCount');
@@ -2476,10 +2536,17 @@ function renderStudentList() {
   if (state.students.length === 0) {
     container.innerHTML = '<div style="padding:20px;text-align:center;color:#999;">暂无学号</div>';
     count.textContent = '共 0 人';
+    _animatedSids = new Set();   // 清空后重新导入，应当重新播放入场动画
     return;
   }
 
   const hasAssignments = getTotalShiftCount() > 0;
+
+  // 本次「新出现」的学号（首次渲染，或清空后重新导入）
+  const newSids = new Set();
+  for (const s of state.students) {
+    if (!_animatedSids.has(s.sid)) newSids.add(s.sid);
+  }
 
   // 按班次数量降序排列
   const sorted = [...state.students].sort((a, b) => {
@@ -2488,10 +2555,30 @@ function renderStudentList() {
     return cb - ca;
   });
 
+  // 每个新条目的错峰延迟：按新条目在「渲染次序」里的序号递增，整体封顶
+  // （人多时自动压缩间隔：新人越多，每一步越小，最后一条的延迟不超过 STAGGER_MAX_MS）
+  const newCount = newSids.size;
+  const step = newCount > 1
+    ? Math.min(STAGGER_STEP_MS, STAGGER_MAX_MS / (newCount - 1))
+    : 0;
+  const delayOfNewSid = new Map();
+  let newIdx = 0;
+  for (const s of sorted) {
+    if (newSids.has(s.sid)) {
+      delayOfNewSid.set(s.sid, Math.round(newIdx * step));
+      newIdx++;
+    }
+  }
+
   container.innerHTML = sorted.map(s => {
     const shiftCount = hasAssignments ? getStudentShiftCount(s.sid) : 0;
+    const isNew = newSids.has(s.sid);
+    // 延迟用 CSS 变量逐条写入：只给真正要播动画的新条目，老条目不产生内联动画样式
+    const stagger = isNew && step > 0
+      ? ` style="--stagger-delay:${delayOfNewSid.get(s.sid)}ms"`
+      : '';
     return `
-    <div class="student-item" onclick="showStudentCourse('${s.sid}')"
+    <div class="student-item${isNew ? ' is-new' : ''}"${stagger} onclick="showStudentCourse('${s.sid}')"
          title="点击查看课表 | 拖拽到值班表"
          draggable="true" data-sid="${s.sid}"
          ondragstart="onStudentDragStart(event)"
@@ -2514,11 +2601,41 @@ function renderStudentList() {
   } else {
     count.textContent = `共 ${state.students.length} 人`;
   }
+
+  // 已渲染过的学号记为「播过动画」；顺带把已移除的人丢掉，
+  // 这样同一个人被删掉后重新导入仍会正常播放入场动画（也避免集合无限增长）。
+  _animatedSids = new Set(state.students.map(s => s.sid));
 }
 
 function statusLabel(status) {
   const map = { pending: '待获取', loading: '获取中', ready: '已就绪', error: '失败' };
   return map[status] || status;
+}
+
+/**
+ * 「刷新课表」时只改这一条的状态，不整列重渲染。
+ *
+ * renderStudentList() 是整段重写 innerHTML：每收到一个课表就调用一次的话，
+ * 除了让整列重放动画（见 .student-item.is-new 的说明），还会把列表滚动位置顶回顶部、
+ * 丢掉鼠标悬停状态 —— 导入几十个学号时看起来就是列表在反复抽动。
+ * 这里就地更新姓名与状态徽标，顺序与统计都没变，所以不需要重排。
+ *
+ * 返回 false 表示这条不在 DOM 里（例如列表刚被清空），调用方回退到整列重渲染。
+ */
+function updateStudentListItem(sid) {
+  const node = document.querySelector(`.student-item[data-sid="${sid}"]`);
+  if (!node) return false;
+  const student = state.students.find(s => s.sid === sid);
+  if (!student) return false;
+
+  const nameEl = node.querySelector('.name');
+  if (nameEl) nameEl.textContent = student.name;
+  const statusEl = node.querySelector('.status');
+  if (statusEl) {
+    statusEl.className = `status status-${student.status}`;
+    statusEl.textContent = statusLabel(student.status);
+  }
+  return true;
 }
 
 function updateButtons() {
@@ -2644,7 +2761,8 @@ async function fetchAllSchedules() {
       .finally(() => {
         completed++;
         progressFill.style.width = `${(completed / total) * 100}%`;
-        renderStudentList();
+        // 就地更新这一条（姓名 / 状态），避免每收到一个课表就整列重渲染而抽动
+        if (!updateStudentListItem(student.sid)) renderStudentList();
       })
   );
 
@@ -2840,8 +2958,6 @@ function pruneInvalidAssignments(tpl) {
 //   2. optimizeBalance 不得把已锁定的成员当作 heavy 换出。
 // 手工操作（拖拽 / × 移除）同样拦下并提示，否则用户会在不知情的情况下弄丢锁定。
 
-const LOCKS_STORAGE_KEY = 'shift_locks';
-
 /** 锁图标（内联 SVG，用 currentColor 跟随明暗主题；比 emoji 在各平台渲染更一致） */
 const LOCK_ICON_CLOSED = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 const LOCK_ICON_OPEN = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>';
@@ -2944,20 +3060,10 @@ function dropLocksOfStudent(sid) {
   }
 }
 
-function persistLocks() {
-  try {
-    localStorage.setItem(LOCKS_STORAGE_KEY, JSON.stringify(state.locks));
-  } catch (e) {}
-}
+// 锁定只在内存中（见上方总说明），仍随「导出数据 / 导入数据」往返。
+function persistLocks() {}
 
 function loadLocks() {
-  try {
-    const saved = localStorage.getItem(LOCKS_STORAGE_KEY);
-    if (saved) {
-      state.locks = normalizeLocks(JSON.parse(saved));
-      return;
-    }
-  } catch (e) {}
   state.locks = { odd: {}, even: {} };
 }
 
@@ -3002,8 +3108,6 @@ function initAssignments() {
  * 用户已要求去掉单独的「均衡排班」按钮，只留一个「开始排班」，
  * 因此 `runSchedule` 不再有两套模式，上限完全由这个开关决定。
  */
-const MAX_SHIFTS_STORAGE_KEY = 'shift_max_per_week';
-const MAX_SHIFTS_ENABLED_STORAGE_KEY = 'shift_max_enabled';
 const MAX_SHIFTS_DEFAULT = 3;
 
 /** 读取上限设置（非法值一律回落为默认值） */
@@ -3046,33 +3150,13 @@ function setMaxShiftsEnabled(enabled) {
   updateButtons();
 }
 
-function persistMaxShifts() {
-  try {
-    localStorage.setItem(MAX_SHIFTS_STORAGE_KEY, String(state.maxShiftsPerWeek));
-    localStorage.setItem(MAX_SHIFTS_ENABLED_STORAGE_KEY, state.maxShiftsEnabled ? '1' : '0');
-  } catch (e) {}
-}
+function persistMaxShifts() {}
 
 function loadMaxShifts() {
-  try {
-    const saved = localStorage.getItem(MAX_SHIFTS_STORAGE_KEY);
-    if (saved !== null) {
-      const n = parseInt(saved, 10);
-      if (!isNaN(n) && n > 0) state.maxShiftsPerWeek = Math.min(n, 99);
-      else state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
-    } else {
-      state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
-    }
-  } catch (e) {
-    state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
-  }
-  // 开关默认「不勾选」：与旧版「开始排班不套用上限」的默认行为保持一致，
-  // 老用户升级后不会因为多出一个开关而被静默限制班次。
-  try {
-    state.maxShiftsEnabled = localStorage.getItem(MAX_SHIFTS_ENABLED_STORAGE_KEY) === '1';
-  } catch (e) {
-    state.maxShiftsEnabled = false;
-  }
+  // 数值回落到默认值；开关默认「不勾选」：与旧版「开始排班不套用上限」的默认行为保持一致，
+  // 也避免凭空多出一个开关就静默限制班次。
+  state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
+  state.maxShiftsEnabled = false;
 }
 
 /**
@@ -3116,7 +3200,6 @@ function refreshMaxShiftsHint() {
  * 两者可能冲突（把两个班并给同一个人，就必然要从别人那里拿走），所以连续只是
  * 「尽量」的软偏好，且实现上只做**不改变任何人的班次数**的交换（见 optimizeContinuity）。
  */
-const CONTINUITY_STORAGE_KEY = 'shift_continuous';
 const CONTINUITY_B2B_SCORE = 2;        // 同一天内首尾相接（连班）
 const CONTINUITY_DAY_SCORE = 1;        // 相邻两天都值班
 const CONTINUITY_GAP_TOLERANCE = 30;   // 首尾相接允许的空档（分钟）——默认模板的班次都是无缝相接
@@ -3126,17 +3209,10 @@ function isContinuousScheduling() {
   return state.continuousShifts === true;
 }
 
-function persistContinuousScheduling() {
-  try {
-    localStorage.setItem(CONTINUITY_STORAGE_KEY, state.continuousShifts ? '1' : '0');
-  } catch (e) {}
-}
+function persistContinuousScheduling() {}
 
 function loadContinuousScheduling() {
-  try {
-    const saved = localStorage.getItem(CONTINUITY_STORAGE_KEY);
-    if (saved !== null) { state.continuousShifts = (saved === '1' || saved === 'true'); return; }
-  } catch (e) {}
+  // 默认不勾选 = 尽量分散
   state.continuousShifts = false;
 }
 
@@ -4709,7 +4785,8 @@ function buildSheetRows(weekType, cellText) {
  *   2) 明细：姓名 | 学号 | 周别 | 星期 | 班次名称 | 时间段 | 分组
  *
  * 统计口径：只统计模板中真实存在的班次（陈旧键不计），
- * 「每周」的班次在单周、双周各计一次（它每周都要值），明细里标注为「每周」。
+ * 单周与双周各自独立计数（`weeks:'all'` 的班次在两周各有独立槽位，
+ * 因此同一人可能单周有、双周没有 → 合计 1，属合法结果），明细里标注班次自身的「每周 / 单周 / 双周」。
  * 概览的班次数直接数明细行，保证两段永远对得上。
  * 未排班的人员保留一行（显示 0），避免查不到自己。
  */
@@ -5793,7 +5870,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderStudentList();
   updateButtons();
   refreshView();   // 首次进入即显示当前值班模板的时段表格（此时还没有排班）
-  showToast('欢迎使用学生排班系统！请在顶部「文件」菜单导入学号', 'info');
+  showToast('欢迎使用重邮学生排班系统！请在顶部「文件」菜单导入学号', 'info');
 });
 
 // 值班模板弹窗**故意不监听「点击外部关闭」**（用户要求防误触）：

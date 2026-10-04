@@ -1,6 +1,6 @@
 // 排班日分组自测：工作日/周末预设 ↔ 一周7天自由组合
 // 重点验证：向后兼容、分组结构规范化、模式往返不丢排班、渲染/导出/排班跟随动态分组
-const { g, ok, eq, section, summary, localStorage, el, writeFiles } = require('./harness.js');
+const { g, ok, eq, section, summary, localStorage, el, writeFiles, rawHtml } = require('./harness.js');
 
 const mkCourse = (name, weekday, begin, period, weeks, ignored) => ({
   name, courseId: `${name}_d${weekday}_p${begin}`, courseNum: 'C1', teacher: 'T', type: '必修',
@@ -353,21 +353,33 @@ Promise.resolve(g('(async () => { await runSchedule(); return true; })()')).then
   })()`);
   eq(dupInGroup, [], '每个分组内部班次 id 唯一');
 
-  section('L19. 持久化：自定义分组模板存入 localStorage 后可读回');
+  section('L19. 自定义分组模板不落盘：loadTemplate 一律回到内置默认模板');
+  // 口径已变更（用户要求：浏览器 cache 不保存任何信息）。此前这一节验证的是
+  // 「自定义分组模板存入 localStorage 后可读回」，现在改为验证它**不会**被持久化，
+  // 且即使浏览器里有旧存档也会被忽略。自定义模板的留存改走「文件」菜单导出模板文件。
   localStorage.clear();
-  g(`state.template = normalizeTemplate({ name:'持久自定义', mode:'custom', layout:[
+  g(`state.template = normalizeTemplate({ name:'不应被保存', mode:'custom', layout:[
     {key:'a',name:'前半周',days:[0,1,2]},{key:'b',name:'后半周',days:[3,4,5,6]}
   ], groups:{
     a:[{id:'a1',label:'A',start:'10:00',end:'12:00',capacity:1}],
     b:[{id:'b1',label:'B',start:'14:00',end:'16:00',capacity:1}]
   }})`.replace(/\n/g, ''));
   g('persistTemplate()');
+  ok(localStorage.getItem('shift_duty_template_v1') === null,
+     'persistTemplate 不写入 localStorage');
+  // 预置一份「旧版本存档」，loadTemplate 必须忽略它
+  localStorage._set('shift_duty_template_v1', JSON.stringify({
+    name: '旧自定义存档', mode: 'custom',
+    layout: [{ key: 'a', name: '前半周', days: [0, 1, 2] }, { key: 'b', name: '后半周', days: [3, 4, 5, 6] }],
+    groups: { a: [{ id: 'a1', label: 'A', start: '10:00', end: '12:00', capacity: 1 }],
+              b: [{ id: 'b1', label: 'B', start: '14:00', end: '16:00', capacity: 1 }] }
+  }));
   g('state.template = makeDefaultTemplate()');
   g('loadTemplate()');
-  eq(g('state.template.name'), '持久自定义', '读回模板名');
-  eq(g('state.template.mode'), 'custom', '读回自定义模式');
-  eq(g('state.template.layout.map(l=>l.days)'), [[0, 1, 2], [3, 4, 5, 6]], '读回分组天数');
-  eq(g('state.template.groups.b[0].id'), 'b1', '读回班次 id');
+  eq(g('state.template.name'), '默认模板', '忽略旧存档，模板名回到默认');
+  eq(g('state.template.mode'), 'weekday', '忽略旧存档，模式回到预设 weekday');
+  eq(g('state.template.layout.map(l=>l.days)'), [[0, 1, 2, 3, 4], [5, 6]], '忽略旧存档，分组天数回到默认');
+  eq(g('state.template.groups.weekday[0].id'), 'wd0', '忽略旧存档，班次来自内置默认模板');
   localStorage.clear();
 
   section('L20. 天数徽标不与分组名重复');
@@ -471,6 +483,104 @@ g('refreshView()');
 eq((el('scheduleContainer').innerHTML.match(/class="shift-cell[^"]*" data-key/g) || []).length, 38,
    '重置排班后仍显示 38 个空槽位');
 ok(el('scheduleNotice').textContent.includes('尚未导入学号'), '清空后回到「尚未导入学号」提示');
+
+section('L25b. 学号列表入场动画：只有新条目才播，刷新课表不再整列抽搐');
+
+// 静态断言：opacity/animation 不能挂在 .student-item 本身，否则每次整段重写 innerHTML
+// 都会让整列重放动画（每收到一个课表就重渲染一次 → 导入 N 个学号就抽搐 N 次）。
+const listCss = /\.student-item\s*\{[^}]*\}/.exec(rawHtml())[0];
+ok(!/animation\s*:/.test(listCss), '.student-item 自身不再声明 animation');
+ok(!/opacity\s*:\s*0/.test(listCss), '.student-item 自身不再置 opacity:0');
+ok(/\.student-item\.is-new\s*\{[^}]*animation\s*:/.test(rawHtml()),
+   '入场动画改挂在 .student-item.is-new 上');
+// 错峰曾写死成 nth-child(1)~(5)，只有前 5 条拿到延迟 → 后 20 条同时起跑，
+// 用户看到「只有前五个有缓入动画」。现在改成逐条写 CSS 变量，所有人都参与。
+ok(!/\.student-item\.is-new:nth-child\(/.test(rawHtml()),
+   '错峰不再写死成 nth-child(1)~(5)（那会让第 6 条起没有延迟）');
+ok(/\.student-item\.is-new\s*\{[^}]*animation-delay\s*:\s*var\(--stagger-delay/.test(rawHtml()),
+   '错峰改为逐条注入 CSS 变量 --stagger-delay');
+ok(/@media\s*\(prefers-reduced-motion:\s*reduce\)/.test(rawHtml()),
+   '尊重系统「减少动态效果」设置');
+
+// 行为断言：首次渲染所有人都标 is-new；再渲染（状态变化）则一个都不标
+g("state.assignments = { odd: {}, even: {} }; _animatedSids = new Set();");
+g(`state.students = [
+  {sid:'2025210001',name:'甲',status:'pending',courses:null},
+  {sid:'2025210002',name:'乙',status:'pending',courses:null},
+  {sid:'2025210003',name:'丙',status:'pending',courses:null}
+]`);
+g('renderStudentList()');
+const firstHtml = el('studentList').innerHTML;
+eq((firstHtml.match(/class="student-item is-new"/g) || []).length, 3, '首次渲染 3 项都播入场动画');
+eq((firstHtml.match(/class="student-item"/g) || []).length, 0, '首次渲染没有不带 is-new 的项');
+
+// 模拟「刷新课表」：状态逐个变化后重渲染，此时不应再有动画
+g("state.students.forEach(s => s.status = 'loading'); renderStudentList();");
+eq((el('studentList').innerHTML.match(/is-new/g) || []).length, 0,
+   '刷新课表时重渲染不再重放动画（0 项 is-new）');
+g("state.students[0].status = 'ready'; renderStudentList();");
+eq((el('studentList').innerHTML.match(/is-new/g) || []).length, 0,
+   '单个课表返回后重渲染也不重放动画');
+
+// 新增学号时，只有新来的那个播动画
+g("state.students.push({sid:'2025210004',name:'丁',status:'pending',courses:null}); renderStudentList();");
+const addHtml = el('studentList').innerHTML;
+eq((addHtml.match(/is-new/g) || []).length, 1, '新增 1 人时只有这 1 项播动画');
+ok(/data-sid="2025210004"[^>]*/.test(addHtml) && /class="student-item is-new"[^>]*data-sid="2025210004"/.test(addHtml),
+   '播动画的正是新增的那一项');
+
+// 清空后再导入，应当重新播（否则列表会「没有入场动画」）
+g("state.students = []; renderStudentList();");
+g("state.students = [{sid:'2025210009',name:'戊',status:'pending',courses:null}]; renderStudentList();");
+eq((el('studentList').innerHTML.match(/is-new/g) || []).length, 1, '清空后重新导入会重新播动画');
+
+// 错峰：批量导入时**每一条**都要有自己的延迟，而不是只有前 5 条
+// （曾经的 bug：nth-child(1)~(5) 之外一律 0s → 第 6 条起同时起跑，看起来没有缓入）
+const many = Array.from({ length: 25 }, (_, i) =>
+  `{sid:'202522${String(i + 1).padStart(4, '0')}',name:'同学${i + 1}',status:'pending',courses:null}`);
+g(`state.students = [${many.join(',')}]; _animatedSids = new Set(); renderStudentList();`);
+const bulkHtml = el('studentList').innerHTML;
+const delays = [...bulkHtml.matchAll(/--stagger-delay:(\d+)ms/g)].map(m => Number(m[1]));
+eq(delays.length, 25, '25 条批量导入：25 条都注入了错峰延迟（不是只有前 5 条）');
+eq(delays[0], 0, '第一条延迟为 0（立即开始）');
+ok(delays.every((d, i) => i === 0 || d > delays[i - 1]), '延迟严格递增，逐条错峰');
+eq(new Set(delays).size, 25, '25 条延迟互不相同');
+ok(delays[delays.length - 1] <= 400,
+   '总错峰封顶 400ms（人多时不至于让列表等太久）', delays[delays.length - 1]);
+ok(delays[1] > 0 && delays[5] > delays[4], '第 6 条也带延迟（这正是此前漏掉的那一批）');
+
+// 人数很多时压缩间隔：仍封顶，且全员参与
+const big = JSON.stringify(Array.from({ length: 200 }, (_, i) => ({
+  sid: '20253' + String(i + 1).padStart(5, '0'), name: 'x' + i, status: 'pending', courses: null,
+})));
+g(`state.students = ${big}; _animatedSids = new Set(); renderStudentList();`);
+const bigDelays = [...el('studentList').innerHTML.matchAll(/--stagger-delay:(\d+)ms/g)].map(m => Number(m[1]));
+eq(bigDelays.length, 200, '200 条时仍然全员错峰');
+ok(bigDelays[bigDelays.length - 1] <= 400, '200 条时总错峰仍封顶 400ms', bigDelays[bigDelays.length - 1]);
+
+// 单独新增 1 人时不该有错峰延迟（只有它自己，step=0）
+g("state.students = [{sid:'2025210001',name:'甲',status:'pending',courses:null}]; _animatedSids = new Set(); renderStudentList();");
+g("state.students.push({sid:'2025210002',name:'乙',status:'pending',courses:null}); renderStudentList();");
+const oneNewHtml = el('studentList').innerHTML;
+eq((oneNewHtml.match(/is-new/g) || []).length, 1, '单独新增 1 人时只有它播动画');
+ok(!/--stagger-delay/.test(oneNewHtml), '只有 1 个新条目时不写错峰延迟（无需等待）');
+
+// 同一个人删掉后重新导入，也要能再播一次
+g("state.students = [{sid:'2025210009',name:'戊',status:'pending',courses:null},{sid:'2025210010',name:'己',status:'pending',courses:null}]; renderStudentList();");
+g("state.students = state.students.filter(s => s.sid !== '2025210009'); renderStudentList();");
+g("state.students.push({sid:'2025210009',name:'戊',status:'pending',courses:null}); renderStudentList();");
+ok(/class="student-item is-new"[^>]*data-sid="2025210009"/.test(el('studentList').innerHTML),
+   '被移除的人重新导入后仍会播放入场动画（集合不会无限增长地挡住动画）');
+
+// 就地更新：刷新课表时只改单条，不整列重写（保住滚动位置与 hover）
+g("state.students = [{sid:'2025210001',name:'旧名',status:'loading',courses:null}]; renderStudentList();");
+g("state.students[0].name = '新名'; state.students[0].status = 'ready';");
+eq(g("updateStudentListItem('2025210001')"), true, '就地更新命中已渲染的条目');
+const inPlaceHtml = el('studentList').innerHTML;
+ok(inPlaceHtml.includes('新名'), '就地更新写入新姓名');
+ok(inPlaceHtml.includes('status-ready') && inPlaceHtml.includes('已就绪'), '就地更新写入新状态徽标');
+ok(!inPlaceHtml.includes('status-loading'), '旧状态类被替换掉');
+eq(g("updateStudentListItem('2025999999')"), false, '条目不在 DOM 中时返回 false，调用方可回退整列重渲染');
 
 section('L26. 分组只配单周 / 只配双周：合法配置，全链路可用');
 

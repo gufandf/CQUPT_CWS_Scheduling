@@ -7,12 +7,13 @@
 
 ## 1. 项目概览
 
-重庆邮电大学勤工助学中心学生打印社的**排班工具**：输入学号 → 抓取教务课表 → 自动排值班表，
-并支持拖拽微调、导出值班表 / 空课表 Excel。
+**重邮学生排班系统** —— 为重庆邮电大学勤工助学中心学生打印社做的**排班工具**：
+输入学号 → 抓取教务课表 → 自动排值班表，并支持拖拽微调、导出值班表 / 空课表 Excel。
 
 - **形态**：单机本地工具，无构建步骤、无打包器、无前端框架
 - **技术栈**：Python 3 标准库 `http.server` 作后端 + 单个 HTML 文件作前端（原生 JS）
-- **代码量**：`app.py` 约 590 行，`templates/index.html` 约 5600 行（含内联 CSS/JS）
+- **代码量**：`app.py` 约 590 行，`templates/index.html` 约 5840 行（含内联 CSS/JS）
+  （行数会漂移，别把具体数字当契约；需要准确值时用 `wc -l` 现查）
 - **使用语言**：面向用户的文案、代码注释、提交信息**全部用中文**，请保持一致
 
 ---
@@ -64,7 +65,8 @@ AGENT.md                   本文件
 ```
 
 > 未纳入版本控制但存在于工作区：`.venv/`、`.venv-linux/`、`skill.md`、`2025.txt`、
-> `重庆邮电大学勤工助学中心第二十七届成员信息表.csv`、`__pycache__/`。
+> `重庆邮电大学勤工助学中心第二十七届成员信息表.csv`、`__pycache__/`、`文档暂存/`（示例表格）、
+> `值班表空课表制作.code-workspace`、`.gitignore` 自身（见 §6.3）。
 
 **关于 `requirements.txt`**：它是一份完整的 `pip freeze`（26 项），但 `app.py`
 实际只用到 **`requests`** 和 **`urllib3`** 两个第三方库，其余（Flask、Flask-CORS、
@@ -111,13 +113,14 @@ API 端点：
 | `initAssignments()` / `runSchedule()` | 初始化槽位 / 自动排班**唯一入口（无参数）**，三轮：贪心 → 均衡 → 连续偏好；上限只看 `state.maxShiftsEnabled` 开关，见 §4.8 / §4.10 |
 | `collectShiftsForWeek()` / `fillWeekGreedy()` | 收集本周班次（难度+同日交错排序）/ 贪心填充 |
 | `optimizeBalance()` / `balanceCost()` / `makeLoadTracker()` | 均衡局部搜索 / 代价函数 / 负载缓存，见 §4.8 |
-| `getMaxShiftsPerWeek()` / `maxShiftsLimit()` / `loadMaxShifts()` / `setMaxShiftsPerWeek()` / `setMaxShiftsEnabled()` / `syncMaxShiftsInput()` | 每人每周上限的读取、开关、持久化与界面同步。**开关 `state.maxShiftsEnabled` 决定上限是否生效**（未勾选 = `Infinity`），数值 `0`/负数/非法回落默认值，见 §4.8 |
+| `getMaxShiftsPerWeek()` / `maxShiftsLimit()` / `loadMaxShifts()` / `setMaxShiftsPerWeek()` / `setMaxShiftsEnabled()` / `syncMaxShiftsInput()` | 每人每周上限的读取、开关与界面同步（**不持久化**，见 §7.3）。**开关 `state.maxShiftsEnabled` 决定上限是否生效**（未勾选 = `Infinity`），数值 `0`/负数/非法回落默认值，见 §4.8 |
 | `openSidImport()` / `closeSidImport()` | 学号录入弹窗 `#sidImportModal` 的开关（入口是「文件」菜单 → 导入学号…）；`loadStudents()` 只读弹窗里的 `#sidInput` |
-| `isContinuousScheduling()` / `setContinuousScheduling()` / `loadContinuousScheduling()` | 「连续排班」开关的读写与持久化，见 §4.10 |
+| `renderStudentList()` / `updateStudentListItem()` / `_animatedSids` | 左侧学号列表的整列渲染 / **单条就地更新**，后者供刷新课表的逐条进度使用；`_animatedSids` 记录已播过入场动画的人，配合 `STAGGER_STEP_MS` / `STAGGER_MAX_MS` 逐条写 `--stagger-delay`，见 §4.13 第 4、5 条 |
+| `isContinuousScheduling()` / `setContinuousScheduling()` / `loadContinuousScheduling()` | 「连续排班」开关的读写（**不持久化**，见 §7.3），见 §4.10 |
 | `makeContinuityContext()` / `continuityScoreOf()` / `continuityGainOf()` / `totalContinuityScore()` | 连续 / 分散判分（同一天连班 + 相邻天），见 §4.10 |
 | `optimizeContinuity()` | 保负载的「换人」局部搜索：勾选则尽量连续，不勾选则尽量分散，见 §4.10 |
 | `isLocked()` / `lockedSidsOf()` / `toggleLock()` | 排班锁定的判断与切换（锁「该同学+该班次」的位置），见 §4.9 |
-| `normalizeLocks()` / `pruneLocks()` / `dropLocksOfStudent()` / `loadLocks()` / `persistLocks()` | 锁定数据的规范化、剪枝、清理与持久化 |
+| `normalizeLocks()` / `pruneLocks()` / `dropLocksOfStudent()` / `loadLocks()` / `persistLocks()` | 锁定数据的规范化、剪枝与清理（`load/persist` 已退化为默认值 / 空实现，见 §7.3） |
 | `remapLockKeys()` | 随 `remapAssignmentIds()` 迁移锁定键（导入被清洗过的 id 时必需） |
 | `weeklyLoadOf()` / `totalLoadOf()` / `loadStats()` / `countEmptySlots()` | 负载统计工具 |
 | `canTakeShift()` | 课程冲突判断的唯一入口（显式传参，便于干跑推演） |
@@ -167,7 +170,8 @@ API 端点：
 
 ### 4.3 `normalizeTemplate()` 是唯一可信的模板入口
 
-任何来自外部的模板（localStorage、导入的 JSON、模板文件）**都必须经过它**。
+任何来自外部的模板（导入的 JSON、模板文件）**都必须经过它**。
+（浏览器存储已彻底不用，见 §7.3；`normalizeTemplate()` 仍是唯一入口，因为导入路径仍在。）
 它会丢弃非法项并补齐缺省字段。注意它在导入阶段就会丢弃 `start >= end` 的班次，
 而编辑器中时间是被直接改到草稿上的，由 `validateDraft()` 负责拦截——两条路径职责不同。
 
@@ -255,8 +259,8 @@ API 端点：
 
 | 状态 | 持久化 | 含义 |
 | --- | --- | --- |
-| `state.maxShiftsEnabled` | `localStorage['shift_max_enabled']`（`'1'` / `'0'`） | 左侧「限制每人每周班次」开关；**默认 `false`（不勾选）** |
-| `state.maxShiftsPerWeek` | `localStorage['shift_max_per_week']` | 上限数值，默认 `MAX_SHIFTS_DEFAULT = 3` |
+| `state.maxShiftsEnabled` | **无**（只在内存，见 §7.3） | 左侧「限制每人每周班次」开关；**默认 `false`（不勾选）** |
+| `state.maxShiftsPerWeek` | **无**（只在内存，见 §7.3） | 上限数值，默认 `MAX_SHIFTS_DEFAULT = 3` |
 
 - `maxShiftsLimit()` 是**唯一**的上限口径：开关未勾选 → `Infinity`；勾选 → `getMaxShiftsPerWeek()`
   （该值若为 `0` 同样映射成 `Infinity`）。直接比较时不必再判 `null`。
@@ -307,7 +311,7 @@ API 端点：
 
 ### 4.10 连续 / 分散排班偏好（勾选式软偏好，绝不反噬均衡）
 
-左侧「连续排班」开关（`state.continuousShifts`，持久化在 `localStorage['shift_continuous']`）：
+左侧「连续排班」开关（`state.continuousShifts`，**只在内存，不持久化**，见 §7.3）：
 **勾选 = 尽量让同一人的班次连成片，不勾选（默认）= 尽量分散**。这是用户明确确认的口径。
 
 判分口径（「连续分」，越高越连续），全部落在 `continuityScoreOf(occ, ctx)`：
@@ -348,7 +352,7 @@ API 端点：
 100 人规模实测 < 50ms（见测试 §39 的耗时断言）。第三轮在 `runSchedule` 里紧跟在
 `optimizeBalance` 之后调用，**顺序不能颠倒**（先均衡、后偏好）。
 
-测试见 `.selftest/test-integration.js` §43：判分口径与容差边界、开关持久化、
+测试见 `.selftest/test-integration.js` §43：判分口径与容差边界、开关读写、
 连续/分散两个方向的确定性用例、`balanceCost` 不变、课程冲突与锁定拦截、以及
 `runSchedule` 端到端（连续分 0 → 117、极差仍为 0）。
 另有 **§43b**：用「朴素参考实现」交叉验证 `continuityScoreOf` 的缓存语义
@@ -364,7 +368,7 @@ API 端点：
 - 但**该同学在其它班次仍可被正常安排**，其它同学也照样能进这个班次。
   因此**所有判断都必须同时看 `sid` 与 `key`**，绝不能简化成「这个人被锁了」。
 - 数据存在 `state.locks = { odd: { [shiftKey]: [sid, ...] }, even: {...} }`，
-  持久化在 `localStorage['shift_locks']`，并随 `exportData()` / `handleImportFile()` 往返（version 仍为 3，
+  **只在内存（不持久化，见 §7.3）**，但随 `exportData()` / `handleImportFile()` 往返（version 仍为 3，
   旧文件无 `locks` 字段 → 视为全部未锁定）。
 
 三个必须守住的点（否则锁定会被**静默破坏**，用户不会收到任何报错）：
@@ -412,11 +416,18 @@ API 端点：
    保证两段永远对得上。注意这与侧栏的 `weeklyLoadOf()` **在陈旧键上会有差异**：
    后者数的是 `assignments` 里的键，前者只数模板里真实存在的班次。正常数据（经过
    `pruneInvalidAssignments()`）两者一致，测试 §44 对两种口径都做了断言。
-3. **「每周」的班次在单周、双周各计一次**——这是 `assignments` 自身的形状决定的：
-   `weeks:'all'` 的班次只在**单周花名册**里存人，双周并不复制一份。所以
-   「乙只排了每周班」→ 单周 1 + 双周 0 = 合计 1。**不要为了「看起来对称」把它改成 2**，
-   那会和侧栏的负载口令打架。明细行的「周别」列写的是**班次自身**的 `weeks`
-   （每周 / 单周 / 双周），不是它被排进的那一周。
+3. **单周与双周各自独立排班，每一个都单独计数**——这是 `assignments` 自身的形状决定的：
+   `initAssignments()` / `ensureAssignmentSlots()` 会为 `weeks:'all'` 的班次在**单周、双周各建一个槽位**
+   （`odd_d0_wd0` 与 `even_d0_wd0` 并存，实测默认模板单双周各 38 个槽位），
+   `fillWeekGreedy` 也分别对两周各排一遍。所以
+   「乙只排了每周班」可能只排进了单周 → 单周 1 + 双周 0 = 合计 1。**这是合法结果，不是数据缺失**；
+   反过来两周都排上就是合计 2。**不要为了「看起来对称」把某周的人数镜像到另一周**，
+   那会和侧栏的负载口径、冲突判断打架。明细行的「周别」列写的是**班次自身**的 `weeks`
+   （每周 / 仅单周 / 仅双周），不是它被排进的那一周。
+   > ⚠️ 本条曾写错：旧版本称「`weeks:'all'` 的班次只在单周花名册里存人，双周并不复制一份」，
+   > 与 `initAssignments()` / `fillWeekGreedy()` 的实际行为**不符**（两者都按周独立建槽与填充）。
+   > 测试 §44 的「乙 → 合计 1」只是**手工只往单周槽位放了乙**，推不出「双周不存人」。
+   > 判分口径一律以 `weeklyLoadOf()` / `totalLoadOf()` 为准。
 4. 未在 `state.students` 名单里、却被排进槽位的人也要出现（`名称` 用 `getStudentName()` 兜底）；
    名单里没有被排班的人保留 0 班行，避免「查不到自己」。
 5. 合并单元格（`!merges`）只用在两段的标题行与空表提示行上，**不要**影响 `buildSheetRows()`
@@ -494,6 +505,105 @@ API 端点：
 主题三态与对勾位置、`menuRun` 先收菜单再执行、`←`/`→`/`Esc` 键盘导航、菜单栏与左侧面板的
 z-index 大小关系、`#aboutModal` 不破坏 §6.7 的 DOM 顺序前提、以及提示条指向「文件」菜单。
 
+### 4.13 界面动效是「纯 CSS 装饰层」，不得承载任何逻辑
+
+`#guideContent` 之外的界面观感（动效、渐变、阴影）集中在 `<style>` 顶部的设计变量与
+一组 `@keyframes` 里，**改文案 / 改逻辑时不要顺手动它们**，反之改动效时也别碰 JS：
+
+- **设计变量**（`:root`）：`--transition-smooth` / `--transition-fast` / `--transition-bounce`
+  与缓动曲线 `--ease-out-expo` / `--ease-out-back`。新写过渡请复用这些变量，别再散落魔法值。
+- **动效清单**：`pageIn`（页面淡入）、`slideInFromLeft`（学号列表项入场，**逐条错峰**，见下）、
+  `progressShimmer`（进度条流光）、`cellPulse`（拖拽经过的脉冲）、`dropAvailable`（可放置呼吸）、
+  `shake`（冲突抖动）、`dragPulse`（拖拽中的标签）、`toastBounce`、`overlayIn`（遮罩模糊）、
+  `modalIn`（弹窗回弹）。
+
+> **唯一的例外：`slideInFromLeft` 需要 JS 配合**（见下面第 4、5 条）。它挂在
+> `.student-item.is-new` 而非 `.student-item` 上，`is-new` 由 `renderStudentList()`
+> 通过 `_animatedSids` 记账后标出，逐条错峰量也由它写进 `--stagger-delay`。
+> 这是「列表每次都整段重写 innerHTML」逼出来的：
+> 纯 CSS 无法区分「这一条是刚冒出来的」还是「这一条一直都在、只是被重画了」。
+> 其余动效仍应保持纯 CSS，别拿这个例外当先例去给别的动画加 JS 开关。
+
+五条已踩过的坑（前三条详见 commit `30ab539` 的提交信息）：
+
+1. **`.student-tag` 的高亮规则不能写死 `border-radius`。** 它和 `.student-item` 共用
+   `.highlight-linked`，其中原有一句 `border-radius: 4px`，会把胶囊（`999px`）在 hover 时
+   压成方角。现已从共享规则移除，只给本身无圆角的 `.student-item` 单独保留。
+2. **`.schedule-grid .shift-cell:hover` 不能加 `transform: scale()`。** 格子属于网格，
+   放大后与相邻格子/边框互相压叠，观感上是「浮起来」的抖动；hover 只保留描边与底色。
+   （`.drag-over` / `.drop-available` / `.drop-conflict` 的动画**属于拖拽落点反馈，要保留**。）
+3. **占位格 `.shift-cell.void:hover` 必须精确抵消。** `.void` 是「该天未归入本分组」的
+   不可放置占位格，跟着 `:hover` 一起亮起会被误认为「这一格能排班」。现单独写一条优先级更高的
+   规则把它压掉。**刻意不用 `:hover:not(.void)`**：那会把权重从 `[0,3,0]` 抬到 `[0,4,0]`，
+   超过下方的 `.grp-N` 底色规则，顺带改变正常格子的观感。
+4. **入场动画不能挂在 `.student-item` 基类上，否则「刷新课表」会让整列抽搐。**
+   基线是 `opacity: 0; animation: slideInFromLeft ... forwards;` 直接写在 `.student-item` 上，
+   而 `renderStudentList()` 每次都整段重写 `container.innerHTML`（节点全是新建的）——
+   于是**每次调用都让整列重放一遍滑入动画**。`fetchAllSchedules()` 又恰恰是
+   「每收到一个课表就重渲染一次」（其 `.finally()`），实测导入 `2025.txt` 的 25 个学号后
+   点「刷新课表」＝整列重写 **27 次**、25 个条目反复回到 `opacity: 0` 再滑回来，
+   观感就是用户报的「左边学号列表抽搐多次」。
+   现在动画只在 `.student-item.is-new` 上，`renderStudentList()` 用模块级
+   `_animatedSids` 记住「谁播过了」，只有**首次出现的人**播一次（清空 / 移除后重新导入会重新播）。
+   `fetchAllSchedules()` 的逐条进度改走 `updateStudentListItem(sid)` **就地更新**
+   该条的姓名与状态，不再整列重写 —— 这同时保住了列表滚动位置与 hover 状态
+   （整列重写会把 `scrollTop` 顶回顶部）。实测：刷新期间动画重放 0 次、整列重写 2 次
+   （仅「标记 loading」与「结束时最终刷新」，都是必要的），且 25 条全部 `opacity: 1`。
+   另外补了 `@media (prefers-reduced-motion: reduce)`：勾了系统「减少动态效果」就完全不播
+   （已在真实浏览器里用 `ui.prefersReducedMotion=1` 验证：`animationName` 全为 `none`、`opacity` 全为 1）。
+
+5. **错峰量必须逐条写，写死成 `:nth-child(1)~(5)` 只有前 5 条有缓入动画。**
+   第 4 条的修复落地后，用户立刻发现新症状：**批量导入时「只有前五个有缓入动画」**。
+   根因不是动画丢了（实测 25 条**全部**带 `is-new`、`animationName` 全是 `slideInFromLeft`），
+   而是错峰只覆盖 `nth-child(1)~(5)`：第 6 条起 `animation-delay` 一律 `0s`，
+   20 条同时起跑；`--ease-out-expo` 前段极陡（300ms 的动画约 60ms 就走完大半），
+   于是它们几乎「啪」地一起出现，只剩前 5 条还把延迟拖到 ~430ms —— 肉眼即「只有前五条在缓入」。
+   实测时间线（毫秒:仍透明条数）修复前是 `…155:25 179:5 204:5…`（25 直坠 5 的跳变），
+   修复后是 `…168:25 189:24 209:23 229:22 249:20…571:1 592:0`（逐条平滑递减）。
+   现在延迟由 `renderStudentList()` 逐条写进 CSS 变量 `--stagger-delay`
+   （CSS 只保留 `animation-delay: var(--stagger-delay, 0s)`）：
+   `STAGGER_STEP_MS = 30` 为相邻间隔，`STAGGER_MAX_MS = 400` 给最后一条封顶，
+   人多时用 `Math.min(30, 400/(n-1))` 自动压缩间隔（实测 25 条 → 25 个互不相同的延迟，
+   最后一条正好 400ms；200 条仍全员错峰且封顶 400ms）。只有 1 个新条目时不写延迟。
+   > 注意 CSS 里 `animation` 简写会重置 `animation-delay`，**长写必须排在简写之后**，
+   > 否则延迟被悄悄清成 0 —— 改这两条规则时留意顺序。
+
+> 前三条**都是 node 自测查不出来的**（harness 没有 CSS 引擎），与 §6.7 同属
+> 「必须在真实浏览器里用 `getComputedStyle` / CSSOM 验证」的一类。改 hover 或层叠相关样式后，
+> 请照 §6.7 的手法实测，别只看代码。
+> 第 4、5 条则是**一半可测**：`.selftest/test-layout.js` §L25b 用静态断言锁住
+> 「`.student-item` 基类里不许再出现 `animation` / `opacity`」「错峰不许再写死成 `:nth-child`」
+> 「延迟必须走 `var(--stagger-delay)`」，并用行为断言锁住
+> 「首次渲染 N 条都带 `is-new`、重渲染 0 条带、新增 1 人只 1 条带」
+> 与「25 / 200 条批量导入时逐条延迟递增且封顶 400ms」。
+> 但「动画到底有没有真的在播、错峰肉眼看得出吗」仍只能在浏览器里用
+> `getComputedStyle(el).animationName` / `animationDelay` 并按时间采样确认 ——
+> 第 5 条那个 bug 正是**只数了 `is-new` 类而没量 `animationDelay`** 才漏掉的。
+
+### 4.14 使用指南弹窗是「面向用户的文档」，改功能时要同步
+
+`#guideModal` 的正文（`#guideContent`，在 `templates/index.html` 里）是给最终用户看的图文说明，
+**与根目录 `README.md` 内容重叠、需要一起维护**。历史上它曾漏掉「人员表」「空课表视图」，
+也说过「不会破坏上面两种模式的均衡性」——而「均衡排班」按钮早已删除、**没有两种模式**了。
+
+因此：**任何面向用户的改动（新增功能、改菜单、改开关语义、改导出结构）落地时，
+都要顺手检查这三处的说法是否还成立**：
+
+1. `#guideContent`（程序内「关于 → 使用指南」）
+2. `README.md`
+3. 左侧面板两个开关下的 `#maxShiftsHint` / `#continuousHint` 文案（由
+   `refreshMaxShiftsHint()` / `syncContinuousInput()` 动态写入）
+
+> 提醒用户「**数据不会自动保留、排完班要自己导出 JSON**」的那段提示必须留在使用指南里
+> （§7.3 说明了为什么彻底不用浏览器存储）——这是最容易让用户白干一下午的坑。
+> 同理，抓课表需校园网/VPN、必须经 `app.py` 打开、离线时导出 Excel 失效，这三条也在指南里。
+>
+> **但只写在「数据保存」那一段就够了，别到处复述。** 用户明确要求过
+> 「不需要文档的每个地方都强调不会保存」：使用指南与 README 里各**只保留一处**完整说明
+> （指南的「数据保存」段、README 的「注意事项」第 1 条），其它地方（模板小节、两个开关的说明、
+> 「关于」弹窗的数据存储行）只用一句「不自动保留（见注意事项/见上文）」带过即可。
+> 反复用「⚠ 重要」「一切归零」这类重语气会让人以为程序有缺陷，反而稀释了真正该注意的那条。
+
 ---
 
 ## 5. 测试
@@ -501,20 +611,32 @@ z-index 大小关系、`#aboutModal` 不破坏 §6.7 的 DOM 顺序前提、以�
 `.selftest/` 是一个**不依赖浏览器**的 Node 自测套件（各文件项数以 `bash .selftest/run-all.sh` 末行输出为准，这里不写死具体数字）：
 
 ```
-harness.js              最小 DOM / localStorage / XLSX 桩
-test-model.js           模板模型、键解析、冲突推导、持久化
+harness.js              最小 DOM / localStorage 桩（localStorage 仍保留以断言「页面不用它」）/ XLSX 桩
+test-model.js           模板模型、键解析、冲突推导、不持久化（§7.3）
 test-integration.js     排班、剪枝、渲染、导出、导入往返、每人每周上限与均衡性、
                                 排班锁定（§41，锁「位置」而非「人」）、弹窗层叠断言（§42，见 §6.7）、
                                 连续 / 分散排班偏好（§43，见 §4.10）、
                                 连续分缓存与朴素实现等价（§43b，见 §4.10 / §5.1）、
                                 人员表（§44，见 §4.11）、顶部菜单栏（§45，见 §4.12）
 test-layout.js          排班日分组（预设/自定义、模式往返、动态渲染与导出、未排班时的表格、
-                                分组只排单周/双周）
+                                分组只排单周/双周）、学号列表入场动画（只播一次 + 逐条错峰 + 就地更新，
+                                §L25b，见 §4.13）
 run-all.sh              入口
 ```
 
 原理：`harness.js` 用正则从 `templates/index.html` 中**抽取最长的内联 `<script>`**，
 在 `vm` 沙箱里直接运行页面真实代码。所以**测试对象永远是最新代码，不需要构建或导出**。
+
+**`harness.js` 的 DOM 桩带一个极简 HTML 解析器**（`parseFragment` / `nodeMatches` /
+`mkNodeStub`）：元素 `innerHTML` 是普通字符串，但 `querySelector` / `querySelectorAll` /
+`textContent` / `className` / `getAttribute` / `setAttribute` 都能真正工作 ——
+页面里「重写 innerHTML 再 querySelector 就地改其中某个元素」的写法（如
+`renderStudentList()` + `updateStudentListItem()`）因此可测。此前桩一律返回 `null`，
+这类「不整列重渲染」的代码路径完全测不到。支持的选择器只有 `.class`、`tag`、
+`[attr="v"]` 及其组合（**不支持**后代 / 子代组合器、`>`、`:nth-child` 等），
+够页面用即可。解析结果按 innerHTML 字符串缓存（`fragmentCache`）：**不缓存时
+解析要吃掉整套自测约 45% 的 CPU，会把 §5.1 守着的「约 1 秒跑完」拖慢到 2.3 秒**，
+改动这里请照 §5.1 复测耗时。
 
 用法：
 
@@ -573,12 +695,22 @@ eq(g("deriveConflictPeriods('10:00','12:05')"), [3, 4], '早班冲突节次');
 > （`curl -s localhost:8765/ | grep 关键字`）以及浏览器是否回源，
 > 不要直接假设是前端代码问题。
 
-### 6.2 换行符跨文件不一致
+### 6.2 换行符与 BOM
 
-工作区里 `templates/index.html`、`README.md`、`AGENT.md` 是 **LF 且无 BOM**，而 `app.py`、
-`requirements.txt` 是 **CRLF**（历史原因）。仓库根有 `.gitattributes`（`* text=auto`）
-做规范化，因此**改动时保持各文件原有风格即可，不要整文件转换**，
-否则会产生数千行的「伪 diff」，把真实改动淹没。
+`.gitattributes` 是 `* text=auto`，**索引里所有文本文件都是 LF**，所以「哪种文件该是什么风格」
+只看工作区实际字节即可，别按记忆写死。截至最近一次核对，工作区实况是：
+
+| 文件 | 工作区 | BOM |
+| --- | --- | --- |
+| `templates/index.html` | LF | **有 BOM** |
+| `README.md`、`AGENT.md`、`app.py`、`requirements.txt`、`.selftest/*` | LF | 无 |
+| `api.md`、`task.md` | **CRLF** | 无 |
+
+> 历史上 `app.py` / `requirements.txt` 曾是 CRLF，现已是 LF（`start.bat` 甚至只有一个
+> 无换行的单行命令）。**改文档前请现跑一次下面的探针**，不要照抄旧结论。
+
+仓库根有 `.gitattributes`（`* text=auto`）做规范化，因此**改动时保持各文件原有风格即可，
+不要整文件转换**，否则会产生数千行的「伪 diff」，把真实改动淹没。
 
 用 `write` / `edit` 工具整文件重写时要注意：它们可能顺带丢掉 UTF-8 BOM、或统一换行符。
 `templates/index.html` **原本带 BOM**（应输出 `BOM=True`），`README.md` / `AGENT.md` **本来就没有 BOM**
@@ -586,7 +718,7 @@ eq(g("deriveConflictPeriods('10:00','12:05')"), [3, 4], '早班冲突节次');
 ```bash
 python3 -c "
 import pathlib
-for f in ['templates/index.html','README.md','app.py','requirements.txt']:
+for f in ['templates/index.html','README.md','AGENT.md','app.py','requirements.txt','api.md','task.md']:
     d = pathlib.Path(f).read_bytes()
     crlf = d.count(b'\r\n'); lf = d.count(b'\n') - crlf
     print(f'{f:24s} CRLF={crlf:5d} LF={lf:5d} BOM={d[:3] == b\"\xef\xbb\xbf\"}')
@@ -608,18 +740,22 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
 > 注意补 BOM 后要**再跑一次前端语法检查**：抽取脚本读文件时应用 `encoding='utf-8-sig'`，
 > 否则 BOM 会被当成脚本第一个字符，`node --check` 可能报奇怪的语法错误。
 
-### 6.3 `.gitignore` 忽略了自己，且与 `.selftest` 状态矛盾
+### 6.3 `.gitignore` 忽略了自己
 
 `.gitignore` 第 2 行是 `.gitignore`（即它忽略自身），所以**它本身未被 git 跟踪，
-对它的修改不会出现在 `git status` 里**，容易被忽略掉。
+对它的修改不会出现在 `git status` 里**（实测 `git ls-files .gitignore` 为空，`git status --ignored`
+才把它列出来），容易被忽略掉。
 
-同时第 8 行的 `.selftest` 是**误导性的**：`.selftest/` 下 4 个文件已被 git 跟踪，
-而**已被跟踪的文件不受 `.gitignore` 影响**。所以该行目前不起作用；
-若想让自测套件真正被忽略，需要先 `git rm --cached`。
+**曾经**第 8 行是 `.selftest`，与「`.selftest/` 下文件已被跟踪」的事实矛盾（已被跟踪的文件
+不受 `.gitignore` 影响，所以那行当时并不起作用）。**该行现已删除**，当前第 8 行是 `文档暂存`，
+`.gitignore` 里**已无任何 `.selftest` 规则**，`git check-ignore .selftest/xxx` 不再命中：
 
-> **新增测试文件时必须 `git add -f`**：因为第 8 行仍在，新建的 `.selftest/test-*.js`
-> 会被静默忽略（`git status` 里根本不出现）。一旦 `run-all.sh` 引用了它，
-> 别人克隆下来的仓库就会因缺文件而跑不过自测。加完用 `git ls-files .selftest/` 复核。
+```bash
+git check-ignore -v .selftest/test-new.js   # 无输出 = 不会被忽略
+```
+
+> 新增测试文件时仍建议顺手 `git ls-files .selftest/` 复核一下确实进了版本库
+> （.gitignore 本身不进版本库，改错了不会体现在 diff 里，容易反复踩）。
 
 ### 6.4 前端依赖一个 CDN
 
@@ -755,20 +891,46 @@ for f in ['templates/index.html','README.md','app.py','requirements.txt']:
 }
 ```
 
-### 7.3 localStorage 键
+### 7.3 浏览器存储：**一个都不用**（用户要求）
 
-| 键 | 内容 |
+**本页面不向 `localStorage` / `sessionStorage` / `cookie` / `IndexedDB` 写入任何数据，
+启动时也不从它们读取任何数据。** 刷新或重开页面即回到内置默认状态。
+
+历史上有过 7 个 localStorage 键（模板、忽略课程、上限数值 / 开关、连续排班、锁定、主题），
+现已全部移除；下表保留仅作对照，**不要在实现里重新引入**：
+
+| 曾经的键 | 现在 |
 | --- | --- |
-| `shift_duty_template_v1` | 当前值班模板（`TEMPLATE_STORAGE_KEY`） |
-| `shift_ignored_courses` | 各学生被忽略的课程 ID |
-| `shift_max_per_week` | 每人每周最多班次的**数值**（1~99；`0`/负数/非法值一律回落默认值 3） |
-| `shift_max_enabled` | 「限制每人每周班次」**开关**（`'1'`=勾选、套用上面的数值；`'0'`/无=不限制；**默认 `'0'`**，见 §4.8） |
-| `shift_continuous` | 「连续排班」开关（`1`=连班偏好，`0`/无=分散偏好，见 §4.10） |
-| `shift_locks` | 已锁定的排班位置（见 §4.9） |
-| `theme` | `auto` / `light` / `dark` |
+| `shift_duty_template_v1` | `persistTemplate()` 空实现；`loadTemplate()` 一律 `makeDefaultTemplate()` |
+| `shift_ignored_courses` | `saveIgnoredCourses()` 空实现；`loadIgnoredCourses()` 置空表 |
+| `shift_max_per_week` / `shift_max_enabled` | `persistMaxShifts()` 空实现；`loadMaxShifts()` 回落 `3` / `false` |
+| `shift_continuous` | `persistContinuousScheduling()` 空实现；`loadContinuousScheduling()` 回落 `false` |
+| `shift_locks` | `persistLocks()` 空实现；`loadLocks()` 置空锁定 |
+| `theme` | `applyTheme()` 只改内存变量 `currentTheme`；`getTheme()` 读该变量 |
 
-> 注意：**排班数据本身不进 localStorage**（只在内存中，靠导出 JSON 保存）。
-> 因此 `shift_locks` 存档在刷新页面后可能指向尚未恢复的排班，`pruneLocks()` 已按此做了保护（§4.9）。
+四条约束（改代码前务必理解）：
+
+1. **`load*/persist*` 这些函数名刻意保留**，只是退化成「读默认值」/「空实现」。
+   策略集中在这几处，调用点不必散落改动，将来若要恢复持久化也只改这几处。
+   但**绝不能在它们内部重新加 `setItem` / `getItem`**。
+2. **「不持久化」≠「不记忆」。** 主题必须记在内存变量 `currentTheme` 里，
+   不能让 `getTheme()` 直接 `return 'auto'`：`refreshThemeMenuUi()` 靠它决定「个性化」菜单
+   哪个项打勾，恒返回 `'auto'` 会让用户刚点「深夜模式」对勾就跳回「跟随系统」。
+   同理两个排班开关在本次会话内照常生效，只是刷新后回默认。
+3. **局部缓存的 `persist*` 调用点不必删除**（它们现在是空操作）。排班数据本来就不进浏览器存储。
+4. **HTTP 缓存头是另一回事**，见 §6.1：`app.py` 的 `end_headers()` 仍发
+   `Cache-Control: no-cache, must-revalidate`。**不要以为「浏览器不保存任何信息」就等于
+   可以把那些响应头删掉** —— 那是防「代码更新了但页面没变」的，与 localStorage 无关。
+
+> 留存的唯一途径是**显式导出文件**：「文件」菜单 →「导出数据」（JSON，含模板 / 排班 / 锁定）、
+> 「导出值班模板…」（模板 JSON）、「导出值班表 / 空课表」（Excel）。
+> 因此 `state.template` 每次打开都是默认模板，`state.locks` 每次都是空 —— 与导入导出往返逻辑无关
+> （`handleImportFile()` 仍会正常读入文件里的 template / locks）。
+
+> 测试守卫：`.selftest/test-integration.js` §46 会**扫描整份源码**，出现
+> `localStorage.setItem` / `getItem`、`document.cookie =`、`indexedDB.open` 等即判失败
+> （先剥掉注释再扫，所以注释里提到这些词是允许的），并逐项调用所有 `persist*/load*`
+> 断言 localStorage 始终为空、状态一律回默认。**已用注入 bug 的方式确认该断言真的会红。**
 
 ---
 

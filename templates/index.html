@@ -43,6 +43,11 @@
   --radius-lg: 16px;
   --ring: 0 0 0 3px rgba(37,99,235,.18);
   --transition: 0.15s ease;
+  --transition-fast: 0.1s ease;
+  --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
   --cell-bg: #FFFFFF;
   --cell-wd: #F8FAFC;
   --cell-we: #FFF7ED;
@@ -151,9 +156,15 @@ body {
   height: 100vh; overflow: hidden;
   font-size: 14px; line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  transition: background-color .2s ease, color .2s ease;
+  transition: background-color .3s var(--ease-out-expo), color .3s var(--ease-out-expo);
   /* 两段式：顶部菜单栏固定高度，主体（.app-container）占满剩余空间 */
   display: flex; flex-direction: column;
+  animation: pageIn 0.5s var(--ease-out-expo);
+}
+
+@keyframes pageIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ── Layout ─────────────────────────────── */
@@ -276,44 +287,101 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 .btn {
   padding: 9px 16px; border: none; border-radius: var(--radius-sm);
   font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: all var(--transition);
+  transition: all var(--transition-smooth);
   display: inline-flex; align-items: center; gap: 6px;
   white-space: nowrap;
   outline: none;
   position: relative;
   letter-spacing: .2px;
+  overflow: hidden;
 }
-.btn:active { transform: scale(.97); }
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  transform: translate(-50%, -50%);
+  transition: width .6s ease, height .6s ease;
+}
+.btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+.btn:active { transform: scale(.96); }
 .btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
 .btn:focus-visible { box-shadow: var(--ring); }
 
-.btn-primary { background: var(--primary-grad); color: #fff; box-shadow: 0 1px 2px rgba(37,99,235,.30); }
-.btn-primary:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37,99,235,.32); }
+.btn-primary { 
+  background: var(--primary-grad); 
+  color: #fff; 
+  box-shadow: 0 1px 2px rgba(37,99,235,.30);
+  transition: all var(--transition-smooth), box-shadow .3s ease;
+}
+.btn-primary:hover:not(:disabled) { 
+  filter: brightness(1.07); 
+  transform: translateY(-2px) scale(1.02); 
+  box-shadow: 0 8px 20px rgba(37,99,235,.35);
+}
 
-.btn-success { background: var(--success-grad); color: #fff; box-shadow: 0 1px 2px rgba(5,150,105,.30); }
-.btn-success:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(5,150,105,.32); }
+.btn-success { 
+  background: var(--success-grad); 
+  color: #fff; 
+  box-shadow: 0 1px 2px rgba(5,150,105,.30);
+  transition: all var(--transition-smooth), box-shadow .3s ease;
+}
+.btn-success:hover:not(:disabled) { 
+  filter: brightness(1.07); 
+  transform: translateY(-2px) scale(1.02); 
+  box-shadow: 0 8px 20px rgba(5,150,105,.35);
+}
 
-.btn-warning { background: var(--warning-grad); color: #fff; box-shadow: 0 1px 2px rgba(217,119,6,.30); }
-.btn-warning:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(217,119,6,.32); }
+.btn-warning { 
+  background: var(--warning-grad); 
+  color: #fff; 
+  box-shadow: 0 1px 2px rgba(217,119,6,.30);
+  transition: all var(--transition-smooth), box-shadow .3s ease;
+}
+.btn-warning:hover:not(:disabled) { 
+  filter: brightness(1.07); 
+  transform: translateY(-2px) scale(1.02); 
+  box-shadow: 0 8px 20px rgba(217,119,6,.35);
+}
 
-.btn-danger { background: var(--danger-grad); color: #fff; box-shadow: 0 1px 2px rgba(220,38,38,.30); }
-.btn-danger:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(220,38,38,.32); }
+.btn-danger { 
+  background: var(--danger-grad); 
+  color: #fff; 
+  box-shadow: 0 1px 2px rgba(220,38,38,.30);
+  transition: all var(--transition-smooth), box-shadow .3s ease;
+}
+.btn-danger:hover:not(:disabled) { 
+  filter: brightness(1.07); 
+  transform: translateY(-2px) scale(1.02); 
+  box-shadow: 0 8px 20px rgba(220,38,38,.35);
+}
 
 .btn-outline {
   background: var(--card); color: var(--text-secondary);
   border: 1.5px solid var(--border);
   box-shadow: var(--shadow-sm);
+  transition: all var(--transition-smooth);
 }
 .btn-outline:hover:not(:disabled) {
-  background: var(--bg); border-color: var(--primary); color: var(--primary);
-  transform: translateY(-1px);
+  background: var(--primary-light); 
+  border-color: var(--primary); 
+  color: var(--primary);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(37,99,235,.2);
 }
 
 .btn-sm { padding: 5px 10px; font-size: 12px; }
 
 /* ── Student List ───────────────────────── */
 .student-list {
-  flex: 1; overflow-y: auto; min-height: 60px;
+  flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 60px;
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   background: var(--card);
   box-shadow: inset 0 1px 2px rgba(15,23,42,.03);
@@ -322,15 +390,27 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
   display: flex; align-items: center;
   padding: 5px 10px; border-bottom: 1px solid var(--border);
   font-size: 12px; cursor: grab; user-select: none;
-  transition: background var(--transition), padding-left var(--transition);
+  transition: all var(--transition-smooth);
   position: relative;
+  opacity: 0;
+  animation: slideInFromLeft 0.3s var(--ease-out-expo) forwards;
 }
-.student-item:active { cursor: grabbing; }
+.student-item:nth-child(1) { animation-delay: 0.05s; }
+.student-item:nth-child(2) { animation-delay: 0.1s; }
+.student-item:nth-child(3) { animation-delay: 0.15s; }
+.student-item:nth-child(4) { animation-delay: 0.2s; }
+.student-item:nth-child(5) { animation-delay: 0.25s; }
+.student-item:active { cursor: grabbing; transform: scale(0.98); }
 .student-item:last-child { border-bottom: none; }
-.student-item:hover { background: var(--primary-light); padding-left: 13px; }
-.student-item:hover::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: var(--primary); border-radius: 0 2px 2px 0;
+.student-item:hover { 
+  background: var(--primary-light); 
+  padding-left: 15px;
+  box-shadow: inset 3px 0 0 0 var(--primary);
+}
+
+@keyframes slideInFromLeft {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 .student-item .sid { font-family: 'SF Mono',monospace; }
 .student-item .name { font-weight: 600; margin-left: 8px; }
@@ -391,14 +471,14 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
   position: relative; flex-shrink: 0;
   width: 38px; height: 22px; border-radius: 11px;
   background: var(--border);
-  transition: background var(--transition), box-shadow var(--transition);
+  transition: background var(--transition-smooth), box-shadow var(--transition-smooth);
   box-shadow: inset 0 1px 3px rgba(15,23,42,.14);
 }
 .opt-switch::after {
   content: ''; position: absolute; top: 2px; left: 2px;
   width: 18px; height: 18px; border-radius: 50%;
   background: #fff; box-shadow: 0 1px 3px rgba(15,23,42,.3);
-  transition: transform .18s cubic-bezier(.4,0,.2,1);
+  transition: transform .25s var(--ease-out-back);
 }
 .opt-row input[type="checkbox"]:checked + .opt-switch {
   background: var(--primary-grad);
@@ -412,12 +492,32 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 
 .progress-bar {
   display: none; height: 4px; background: var(--border);
-  border-radius: 2px; overflow: hidden;
+  border-radius: 2px; overflow: hidden; position: relative;
 }
 .progress-bar.active { display: block; }
 .progress-bar .fill {
-  height: 100%; background: var(--primary);
-  border-radius: 2px; transition: width .3s ease; width: 0%;
+  height: 100%; 
+  background: var(--primary-grad);
+  border-radius: 2px; 
+  transition: width .3s var(--ease-out-expo); 
+  width: 0%;
+  position: relative;
+  overflow: hidden;
+}
+.progress-bar .fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255,255,255,.3) 50%, 
+    transparent 100%);
+  animation: progressShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes progressShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
 }
 
 /* ── Right Panel ────────────────────────── */
@@ -514,11 +614,24 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 
 .schedule-grid .shift-cell {
   background: var(--cell-bg); min-height: 56px; padding: 3px 4px;
-  transition: background var(--transition), box-shadow var(--transition);
+  transition: all var(--transition-smooth);
   display: flex; flex-direction: column; gap: 2px;
   justify-content: flex-start;
 }
-.schedule-grid .shift-cell:hover { box-shadow: inset 0 0 0 2px rgba(37,99,235,.22); }
+/* hover 只做描边与底色，不加 transform 缩放：
+   格子是网格的一部分，放大后会与相邻格子/边框互相压叠，观感上是「浮起来」的抖动 */
+.schedule-grid .shift-cell:hover { 
+  box-shadow: inset 0 0 0 2px rgba(37,99,235,.3);
+  background: linear-gradient(135deg, var(--cell-bg) 0%, var(--primary-light) 100%);
+}
+/* 未归入本分组的占位格（.shift-cell.void）不参与排班，也没有任何 hover 反馈：
+   它不可放置、不可点击，跟着亮起会被误认为「这一格能排班」。
+   单独写一条比 :hover 优先级更高的规则来抵消，避免改动上面那条的权重
+   （加了 :not(.void) 会让它的权重超过下面的 .grp-N 底色规则，顺带改变正常格子的观感）。 */
+.schedule-grid .shift-cell.void:hover {
+  box-shadow: none;
+  background: var(--bg);
+}
 .schedule-grid .shift-cell.weekday-cell { background: var(--cell-wd); }
 .schedule-grid .shift-cell.weekend-cell { background: var(--cell-we); }
 /* 动态分组配色：grp-0、grp-1 …… 按分组在 layout 中的序号取色（超出 6 组时循环） */
@@ -561,15 +674,36 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 .schedule-grid .shift-cell.drag-over {
   background: #DBEAFE !important;
   outline: 2px dashed var(--primary); outline-offset: -2px;
+  animation: cellPulse 0.8s ease-in-out infinite;
 }
+
+@keyframes cellPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
 .schedule-grid .shift-cell.drop-available {
   background: #DCFCE7 !important;
   outline: 2px solid #22C55E; outline-offset: -2px;
-  transition: all var(--transition);
+  transition: all var(--transition-smooth);
+  animation: dropAvailable 0.6s ease-in-out infinite;
 }
+
+@keyframes dropAvailable {
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(34,197,94,.3); }
+  50% { box-shadow: inset 0 0 0 4px rgba(34,197,94,.5); }
+}
+
 .schedule-grid .shift-cell.drop-conflict {
   background: #FEE2E2 !important;
   outline: 2px dashed var(--danger); outline-offset: -2px;
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 /* overflow & conflict — unified red warning */
 .schedule-grid .shift-cell.warn {
@@ -609,13 +743,30 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
   display: flex; align-items: center; padding: 4px 8px;
   border-radius: 999px; font-size: 12px; font-weight: 600;
   cursor: grab; user-select: none;
-  transition: all var(--transition); white-space: nowrap;
+  transition: all var(--transition-smooth); white-space: nowrap;
   background: var(--primary-grad); color: #fff;
   box-shadow: 0 1px 3px rgba(37,99,235,.35);
 }
-.student-tag:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(37,99,235,.38); }
-.student-tag:active { cursor: grabbing; }
-.student-tag.dragging { opacity: .4; }
+.student-tag:hover { 
+  transform: translateY(-2px) scale(1.03); 
+  box-shadow: 0 6px 16px rgba(37,99,235,.42);
+  filter: brightness(1.05);
+}
+.student-tag:active { 
+  cursor: grabbing; 
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+.student-tag.dragging { 
+  opacity: .5; 
+  transform: rotate(3deg) scale(1.05);
+  animation: dragPulse 0.6s ease-in-out infinite;
+}
+
+@keyframes dragPulse {
+  0%, 100% { box-shadow: 0 4px 12px rgba(37,99,235,.4); }
+  50% { box-shadow: 0 8px 24px rgba(37,99,235,.6); }
+}
 .student-tag .remove-btn {
   margin-left: auto; cursor: pointer; font-size: 13px;
   opacity: .6; transition: opacity var(--transition);
@@ -643,10 +794,13 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 .student-tag.highlight-linked {
   outline: 3px solid var(--primary);
   outline-offset: 2px;
-  border-radius: 4px;
+  /* 这里不能写死 border-radius：会把 .student-tag 的胶囊圆角（999px）覆盖成 4px，
+     表现为「hover 高亮后圆角突然变小」。outline 会自动跟随元素自身圆角。 */
   z-index: 5;
   position: relative;
 }
+/* 左侧学号列表项自身没有圆角，高亮时单独给一点即可 */
+.student-item.highlight-linked { border-radius: 4px; }
 .shift-cell.highlight-linked {
   background: #DBEAFE !important;
   box-shadow: inset 0 0 0 2px var(--primary);
@@ -660,13 +814,32 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
   position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
   padding: 11px 24px; border-radius: 999px; color: #fff;
   font-size: 13px; font-weight: 600; z-index: 10000;
-  opacity: 0; transition: opacity .3s, transform .3s;
+  opacity: 0; 
+  transition: opacity .3s var(--ease-out-expo), transform .3s var(--ease-out-expo);
   pointer-events: none;
   max-width: 80vw; text-align: center;
   box-shadow: var(--shadow-lg);
   letter-spacing: .3px;
 }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+.toast.show { 
+  opacity: 1; 
+  transform: translateX(-50%) translateY(-8px);
+  animation: toastBounce 0.5s var(--ease-out-back);
+}
+
+@keyframes toastBounce {
+  0% { 
+    opacity: 0; 
+    transform: translateX(-50%) translateY(20px) scale(0.8); 
+  }
+  60% { 
+    transform: translateX(-50%) translateY(-10px) scale(1.05); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateX(-50%) translateY(-8px) scale(1); 
+  }
+}
 .toast.success { background: var(--success-grad); }
 .toast.error { background: var(--danger-grad); }
 .toast.info { background: var(--primary-grad); }
@@ -676,11 +849,14 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
   display: none; position: fixed; inset: 0;
   background: var(--modal-overlay); z-index: 9998;
   align-items: center; justify-content: center;
-  backdrop-filter: blur(3px);
-  animation: overlayIn .18s ease;
+  backdrop-filter: blur(4px);
+  animation: overlayIn .25s var(--ease-out-expo);
 }
 .modal-overlay.show { display: flex; }
-@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes overlayIn { 
+  from { opacity: 0; backdrop-filter: blur(0px); } 
+  to { opacity: 1; backdrop-filter: blur(4px); } 
+}
 
 /*
  * 确认弹窗必须盖在所有普通弹窗之上。
@@ -698,10 +874,10 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
   display: flex; flex-direction: column;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border);
-  animation: modalIn .2s ease;
+  animation: modalIn .35s var(--ease-out-back);
 }
 @keyframes modalIn {
-  from { opacity: 0; transform: scale(.96) translateY(8px); }
+  from { opacity: 0; transform: scale(.92) translateY(30px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
@@ -716,9 +892,14 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
   width: 34px; height: 34px; border: none; background: none;
   font-size: 22px; cursor: pointer; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  color: var(--text-muted); transition: all var(--transition);
+  color: var(--text-muted); 
+  transition: all var(--transition-smooth);
 }
-.modal-header .close-btn:hover { background: var(--danger-light); color: var(--danger); transform: rotate(90deg); }
+.modal-header .close-btn:hover { 
+  background: var(--danger-light); 
+  color: var(--danger); 
+  transform: rotate(90deg) scale(1.1); 
+}
 
 .modal-body { flex: 1; overflow: auto; padding: 20px; }
 .modal-footer {
@@ -3900,7 +4081,7 @@ function markAvailableCells(sid) {
   if (!container) return;
   container.querySelectorAll('.shift-cell').forEach(cell => {
     const key = cell.dataset.key;
-    if (!key) return;
+    if (!key) return;   // 占位格（.shift-cell.void）没有 data-key，天然跳过
     const info = resolveShift(key);
     if (!info) return;
     const { dayIdx, shift } = info;

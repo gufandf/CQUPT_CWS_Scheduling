@@ -129,6 +129,7 @@ API 端点：
 | `tplSetMode()` / `tplAddGroup()` / `tplToggleDay()` / `tplExplodeToDays()` | 分组模式与结构编辑 |
 | `validateDraft()` / `templateWarnings()` / `saveTemplateEditor()` | 保存前校验（阻断）/ 提示（不阻断）/ 应用模板 |
 | `exportDutySchedule()` / `exportFreeSchedule()` / `exportData()` | 导出 |
+| `buildPersonSheet()` | 「人员表」工作表（按人聚合班次，随值班表导出），见 §4.11 |
 | `handleImportFile()` / `handleTemplateFileImport()` | 导入 |
 
 ---
@@ -365,6 +366,42 @@ API 端点：
 测试见 `.selftest/test-integration.js` §41（27 项，含两种模式反复重排后锁定位置不变、
 均衡搜索跳过锁定、拖拽/移除被拦截、导入导出往返、剪枝与清理）。
 
+### 4.11 导出值班表附带「人员表」工作表（只在值班表里，空课表不加）
+
+用户要求「方便表中值班人员快速查看自己在何时有几班」，所以 `exportDutySchedule()` 在
+单周 / 双周两个表之后追加第三个工作表 **`人员表`**（`buildPersonSheet()`）。
+`exportFreeSchedule()` **故意不加**——空课表是「谁有空」的清单，没有班次归属。
+
+表内两段（同一工作表）：
+
+| 段 | 表头 | 说明 |
+| --- | --- | --- |
+| 概览 | 姓名 / 学号 / 单周班次 / 双周班次 / 合计 | 每人一行，**含 0 班的人**；按合计降序、同学号升序 |
+| 明细 | 姓名 / 学号 / 周别 / 星期 / 班次名称 / 时间段 / 分组 | 按「所在周（单周→双周）→ 星期 → 班次开始时间」排序 |
+
+口径与实现约束（改代码时守住）：
+
+1. **按人聚合，不按模板**：遍历 `state.assignments[wt]`，用 `parseShiftKey` / `generateShiftKey`
+   与 `getShiftsForDay()`（**必须走 §4.6 的访问器**，分组是动态的）把键还原成班次；
+   模板里已不存在的**陈旧键直接跳过**，绝不能让 `shift` 为 `undefined` 时读字段报错。
+2. **概览的班次数直接数明细行**（`p.detail.filter(e => e.weekType === wt).length`），
+   保证两段永远对得上。注意这与侧栏的 `weeklyLoadOf()` **在陈旧键上会有差异**：
+   后者数的是 `assignments` 里的键，前者只数模板里真实存在的班次。正常数据（经过
+   `pruneInvalidAssignments()`）两者一致，测试 §44 对两种口径都做了断言。
+3. **「每周」的班次在单周、双周各计一次**——这是 `assignments` 自身的形状决定的：
+   `weeks:'all'` 的班次只在**单周花名册**里存人，双周并不复制一份。所以
+   「乙只排了每周班」→ 单周 1 + 双周 0 = 合计 1。**不要为了「看起来对称」把它改成 2**，
+   那会和侧栏的负载口令打架。明细行的「周别」列写的是**班次自身**的 `weeks`
+   （每周 / 单周 / 双周），不是它被排进的那一周。
+4. 未在 `state.students` 名单里、却被排进槽位的人也要出现（`名称` 用 `getStudentName()` 兜底）；
+   名单里没有被排班的人保留 0 班行，避免「查不到自己」。
+5. 合并单元格（`!merges`）只用在两段的标题行与空表提示行上，**不要**影响 `buildSheetRows()`
+   产出的单双周表结构（那两张表的结构是既有约定，见 §4.6.1）。
+
+测试见 `.selftest/test-integration.js` §44（30 项）：三工作表顺序、概览计数与 `weeklyLoadOf` /
+`totalLoadOf` 对照、陈旧键按 0 班计、明细排序与字段完整性、清空排班后名单仍在、
+无数据时的提示行、以及空课表不加人员表。
+
 ---
 
 ## 5. 测试
@@ -374,9 +411,9 @@ API 端点：
 ```
 harness.js              最小 DOM / localStorage / XLSX 桩
 test-model.js           81 项：模板模型、键解析、冲突推导、持久化
-test-integration.js    249 项：排班、剪枝、渲染、导出、导入往返、两种排班模式、均衡性、
+test-integration.js    286 项：排班、剪枝、渲染、导出、导入往返、两种排班模式、均衡性、
                                 排班锁定（§41，锁「位置」而非「人」）、弹窗层叠断言（§42，见 §6.7）、
-                                连续 / 分散排班偏好（§43，见 §4.10）
+                                连续 / 分散排班偏好（§43，见 §4.10）、人员表（§44，见 §4.11）
 test-layout.js         171 项：排班日分组（预设/自定义、模式往返、动态渲染与导出、未排班时的表格、
                                 分组只排单周/双周）
 run-all.sh              入口

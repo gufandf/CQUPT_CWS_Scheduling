@@ -1593,7 +1593,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
           <strong>勾选</strong>＝尽量把班次连成片（同一天<b>首尾相接</b>的班次尽量给同一个人，相邻几天也尽量连着排）；
           <strong>不勾选</strong>（默认）＝反过来尽量分散，避免连班、也避免连着几天都排同一个人。
           这项只是「尽量」的偏好：算法只做<b>不改变任何人班次数</b>的等价交换，因此在满足它的同时
-          不会破坏「尽量让每人班次数相近」这条均衡性（开关状态只在本次会话内有效，刷新后回到默认）。</p>
+          不会破坏「尽量让每人班次数相近」这条均衡性。</p>
         <p><strong>5. 排班锁定</strong>：点学生标签上的<strong>锁图标</strong>可锁住
           <strong>「该同学 + 该班次」这个位置</strong>——锁定后无论怎么重新排班都不会改变它。
           锁定的标签显示为琥珀色、不能拖动也不能移除（先解锁再操作）；
@@ -1604,19 +1604,18 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
           <strong>排班日分组</strong>支持两种模式：「工作日 / 周末」为预设两组；「一周 7 天自由组合」可自定义分组数量、
           名称与每组包含的星期（例如周一周二一组、周三到周日一组），每组各自一套班次。
           <strong>允许整个分组只排单周或只排双周</strong>（例如工作日组只排单周），保存不会被拦截，只给提示。<br>
-          <strong>模板不会自动保存</strong>，刷新或关闭页面就会回到默认模板；改完请用顶部「文件」菜单 →
-          <strong>导出值班模板…</strong>存成文件，下次用<strong>「导入模板…」</strong>载入，也可分享给他人。
+          模板改完点<strong>「保存并应用」</strong>立即生效；如需留存或分享，用顶部「文件」菜单 →
+          <strong>导出值班模板…</strong>存成文件，下次用<strong>「导入模板…」</strong>载入。
           注意从「导入模板…」载入的是草稿，<b>不会自动打开编辑器</b>，请再点「编辑值班模板…」确认后按「保存并应用」。</p>
         <p><strong>8. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON（含值班模板与锁定），
           全部集中在顶部<b>「文件」菜单</b>。<strong>「导出值班表」得到的 Excel 还附带第三个工作表「人员表」</strong>，
           把「按班次看人」翻转成「按人看班次」（姓名 / 学号 / 单周班次 / 双周班次 / 合计 + 逐条明细），
           方便每位值班同学快速查看自己在何时有几班；没有排到班的同学也会保留一行并显示 0。
           「导出空课表」不含人员表。</p>
-        <p style="color:var(--danger);">
-          <strong>⚠ 重要：本工具不在浏览器里保存任何数据，刷新页面一切归零。</strong>
-          学号、课表、排班、锁定、模板、主题与各开关都只存在内存中，
-          请养成<strong>排完班立刻用「文件」菜单 →「导出数据」保存 JSON</strong>的习惯，
-          下次打开再用「导入数据…」恢复（模板另可用「导出值班模板…」单独留存）。<br>
+        <p>
+          <strong>数据保存</strong>：本工具不在浏览器里保存数据，<strong>刷新或关闭页面后需要重新导入</strong>。
+          请用顶部「文件」菜单 →<strong>「导出数据」</strong>保存 JSON（含学号、模板、排班与锁定），
+          下次打开用「导入数据…」恢复；只导模板可用「导出值班模板…」。<br>
           <strong>抓课表需要校园网或 VPN</strong>，并且必须通过 <code>python3 app.py</code> 打开本页面
           （直接双击 <code>index.html</code> 无法抓取课表）；抓取失败的同学会标记为错误，可用左侧「刷新课表」重试。
         </p>
@@ -1688,7 +1687,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
             </tr>
             <tr>
               <td style="padding:6px 0;color:var(--text-muted);">数据存储</td>
-              <td style="padding:6px 0;">全部数据只在内存中，页面不向浏览器存储写入任何内容；需留存请用「文件」菜单导出 JSON / 模板文件</td>
+              <td style="padding:6px 0;">数据保存在内存中，需用「文件」菜单导出 JSON / 模板文件留存</td>
             </tr>
             <tr>
               <td style="padding:6px 0;color:var(--text-muted);">构建时间</td>
@@ -1797,7 +1796,6 @@ function weekdayWeekendLayout() {
  * 那会重新引入浏览器存储。API 代理（app.py）的响应头是另一套东西（HTTP 缓存），
  * 不受此处影响。
  */
-// 模板不再有浏览器存储键（原 TEMPLATE_STORAGE_KEY 已随「浏览器不保存任何信息」一并删除，见 §7.3）
 const WEEK_LABELS = { all: '每周', odd: '单周', even: '双周' };
 /** 单双周的固定展示顺序（人员表明细排序用） */
 const WEEK_ORDER = ['odd', 'even'];
@@ -2179,21 +2177,13 @@ function shiftAppliesToWeek(shift, weekType) {
   return shift.weeks === 'all' || shift.weeks === weekType;
 }
 
-/*
- * 模板一律用内置默认值：不再从浏览器存储读取。
- * 用户要求「浏览器 cache 不保存任何信息」，模板的持久化随之取掉，
- * 详见文件上方（原 TEMPLATE_STORAGE_KEY 声明处）的「浏览器不保存任何信息」总说明。
- */
+// 一律用内置默认模板（不用浏览器存储，见上方总说明）
 function loadTemplate() {
   state.template = makeDefaultTemplate();
 }
 
-/*
- * 空实现：模板不再写入浏览器存储。
- * 刻意保留这个函数名（以及下面同类的 load / persist 函数）而不是把调用点全删掉：
- * 一来策略集中在这几个函数里，一眼能看出「什么都没存」；二来调用点不必散落改动，
- * 将来若要恢复持久化，只改这几处即可。
- */
+/* 空实现。这类 load / persist 函数刻意保留名字、只退化行为，
+   调用点不必散落改动，将来要恢复持久化也只改这几处。 */
 function persistTemplate() {}
 
 /** 模板摘要，用于提示 */
@@ -2239,7 +2229,6 @@ function groupDaysBadge(group) {
   return txt === (group && group.name) ? '' : txt;
 }
 
-// 忽略课程不再从浏览器存储恢复（用户要求，见文件上方的「浏览器不保存任何信息」说明）
 function loadIgnoredCourses() {
   state.ignoredCourses = {};
 }
@@ -2250,13 +2239,10 @@ function saveIgnoredCourses() {}
 //  暗色模式切换
 // ============================================================
 /*
- * 主题不再记忆：每次打开都从「跟随系统」起步（用户要求，见文件上方的
- * 「浏览器不保存任何信息」说明）。
- *
- * 注意主题必须记在**内存变量**里，不能让 getTheme() 直接 return 'auto'：
- * refreshThemeMenuUi() 是靠 getTheme() 决定「个性化」菜单里哪个打勾的，
- * 若恒返回 'auto'，用户刚点「深夜模式」对勾就会立刻跳回「跟随系统」。
- * 也就是说「不持久化」≠「不记忆」——本次会话内仍旧生效，只是刷新后就回默认。
+ * 主题只在内存里（见上方总说明）。注意必须记在**内存变量**中，
+ * 不能让 getTheme() 直接 return 'auto'：refreshThemeMenuUi() 靠它决定
+ * 「个性化」菜单哪个打勾，恒返回 'auto' 会让用户刚点「深夜模式」对勾就跳回
+ * 「跟随系统」。「不持久化」≠「不记忆」——会话内照常生效，刷新后回默认。
  */
 let currentTheme = 'auto';
 function getTheme() {
@@ -2270,8 +2256,7 @@ function applyTheme(theme) {
   } else {
     html.setAttribute('data-theme', currentTheme);
   }
-  // 不写入浏览器存储（原为 localStorage.setItem('theme', theme)）
-  // 切换主题的唯一入口是「个性化」菜单，改完把对勾同步过去
+  // 只改内存，不写浏览器存储；切换主题的唯一入口是「个性化」菜单，改完同步对勾
   refreshThemeMenuUi();
 }
 applyTheme(getTheme());
@@ -2973,8 +2958,6 @@ function pruneInvalidAssignments(tpl) {
 //   2. optimizeBalance 不得把已锁定的成员当作 heavy 换出。
 // 手工操作（拖拽 / × 移除）同样拦下并提示，否则用户会在不知情的情况下弄丢锁定。
 
-// 锁定不再有浏览器存储键（原 LOCKS_STORAGE_KEY 已随「浏览器不保存任何信息」一并删除，见 §7.3）
-
 /** 锁图标（内联 SVG，用 currentColor 跟随明暗主题；比 emoji 在各平台渲染更一致） */
 const LOCK_ICON_CLOSED = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 const LOCK_ICON_OPEN = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>';
@@ -3077,8 +3060,7 @@ function dropLocksOfStudent(sid) {
   }
 }
 
-// 锁定不再写入 / 读取浏览器存储（用户要求，见文件上方的「浏览器不保存任何信息」说明）。
-// 锁定仍随「导出数据 / 导入数据」往返，因此导出 JSON 依旧是留存的唯一办法。
+// 锁定只在内存中（见上方总说明），仍随「导出数据 / 导入数据」往返。
 function persistLocks() {}
 
 function loadLocks() {
@@ -3126,8 +3108,6 @@ function initAssignments() {
  * 用户已要求去掉单独的「均衡排班」按钮，只留一个「开始排班」，
  * 因此 `runSchedule` 不再有两套模式，上限完全由这个开关决定。
  */
-// 上限不再有浏览器存储键（原 MAX_SHIFTS_STORAGE_KEY / MAX_SHIFTS_ENABLED_STORAGE_KEY
-// 已随「浏览器不保存任何信息」一并删除，见 §7.3）
 const MAX_SHIFTS_DEFAULT = 3;
 
 /** 读取上限设置（非法值一律回落为默认值） */
@@ -3170,8 +3150,6 @@ function setMaxShiftsEnabled(enabled) {
   updateButtons();
 }
 
-// 上限的数值与开关不再写入 / 读取浏览器存储
-// （用户要求，见文件上方的「浏览器不保存任何信息」说明）。
 function persistMaxShifts() {}
 
 function loadMaxShifts() {
@@ -3231,8 +3209,6 @@ function isContinuousScheduling() {
   return state.continuousShifts === true;
 }
 
-// 「连续排班」开关不再写入 / 读取浏览器存储
-// （用户要求，见文件上方的「浏览器不保存任何信息」说明）。
 function persistContinuousScheduling() {}
 
 function loadContinuousScheduling() {

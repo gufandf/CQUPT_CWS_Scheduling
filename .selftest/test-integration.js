@@ -12,8 +12,10 @@ const mkCourse = (name, weekday, begin, period, weeks, ignored) => ({
 });
 
 // ── 后续 then 之间共享的 helper（在 §32 起赋值） ──
-let weeklyMaxOf, spreadOf, reRun;
+let weeklyMaxOf, spreadOf, reRun, reRunLegacyMode;
 const setMaxShifts = v => g(`setMaxShiftsPerWeek(${JSON.stringify(v)})`);
+// 「限制每人每周班次」开关：上限是否生效只看它，不再看 runSchedule 的参数（见 §32）
+const setMaxEnabled = on => g(`setMaxShiftsEnabled(${!!on})`);
 
 function setupStudents() {  const all = Array.from({ length: 16 }, (_, i) => w => true);
   const courses = {
@@ -123,7 +125,8 @@ Promise.resolve(run).then(() => {
   })()`);
   ok(spread.max - spread.min <= 1, `排班公平：每人班次数极差 ${spread.max - spread.min} ≤ 1`, spread);
 
-  // 11e. 「开始排班」（normal）**不套用**每人班次上限（用户确认的语义，见 AGENT.md §4.8）
+  // 11e. 未勾选「限制每人每周班次」开关时，**不套用**每人班次上限
+  //      （去掉「均衡排班」按钮后的新语义，见 AGENT.md §4.8）
   const weeklyLoads = g(`(() => {
     const out = [];
     for (const wt of ['odd','even']) {
@@ -136,9 +139,10 @@ Promise.resolve(run).then(() => {
     return out;
   })()`);
   ok(weeklyLoads.some(n => n > 0), `开始排班确实排了班（单周最多 ${weeklyLoads[0]}、双周最多 ${weeklyLoads[1]}）`);
-  g("state.maxShiftsPerWeek = 1");   // 若 normal 套用了上限，则每人每周最多只能 1 班
+  setMaxEnabled(false);
+  setMaxShifts(1);   // 开关未勾选 → 这个 1 不该起作用，否则每人每周最多只能 1 班
   g('initAssignments()');
-  return Promise.resolve(g('(async () => { await runSchedule("normal"); return true; })()'));
+  return Promise.resolve(g('(async () => { await runSchedule(); return true; })()'));
 }).then(() => {
   const capped1 = g(`(() => {
     const load = {};
@@ -147,10 +151,11 @@ Promise.resolve(run).then(() => {
     }
     return Math.max(0, ...Object.values(load));
   })()`);
-  ok(capped1 > 1, `开始排班忽略上限 1（实际仍出现每人每周 ${capped1} 班）`);
+  ok(capped1 > 1, `开关未勾选时忽略上限 1（实际仍出现每人每周 ${capped1} 班）`);
 
   section('12. 自定义模板：增减班次后重新排班');
-  g("state.maxShiftsPerWeek = 3");
+  setMaxShifts(3);
+  setMaxEnabled(false);
   g(`state.template = normalizeTemplate({ name:'两班制', groups:{
     weekday:[
       {id:'m',label:'上午',start:'08:00',end:'12:00',capacity:4},
@@ -597,62 +602,148 @@ Promise.resolve(run).then(() => {
     const s = loadStats(state.assignments, sids);
     return { odd: s.oddSpread, even: s.evenSpread, total: s.totalSpread };
   })()`);
-  reRun = mode => Promise.resolve(
+  reRun = () => Promise.resolve(
+    g('(async () => { await runSchedule(); return true; })()'));
+  // 故意用旧签名调用：runSchedule 现在没有参数，旧 mode 参数必须被完全忽略
+  reRunLegacyMode = mode => Promise.resolve(
     g(`(async () => { await runSchedule(${JSON.stringify(mode)}); return true; })()`));
 
-  // ── 上限参数的读取 / 归一化 ──
+  // ── 上限参数的读取 / 归一化 / 开关三态 ──
   section('32. 「每人每周最多班次」参数的语义');
+  // 先清掉可能残留的存档，验证「无存档」时的默认状态
+  g('localStorage.removeItem("shift_max_per_week"); localStorage.removeItem("shift_max_enabled");');
+  g('state.maxShiftsPerWeek = 99; state.maxShiftsEnabled = true;');   // 故意写成非默认，验证 loadMaxShifts 会覆盖
+  g('loadMaxShifts()');
+  eq(g('getMaxShiftsPerWeek()'), 3, '无存档时数值回落默认值 3');
+  eq(g('state.maxShiftsEnabled'), false, '无存档时「限制每人每周班次」开关默认不勾选（false）');
+
   g('state.maxShiftsPerWeek = 0');
   eq(g('getMaxShiftsPerWeek()'), 0, '0 被如实读回');
-  eq(g('maxShiftsLimit()'), null, '0 → maxShiftsLimit 为 Infinity（JSON 序列化后为 null）');
-  ok(g('maxShiftsLimit() === Infinity'), '0 确实映射为 Infinity（不限制）');
+  eq(g('maxShiftsLimit()'), null, '未勾选开关 → maxShiftsLimit 为 Infinity（JSON 序列化后为 null）');
+  ok(g('maxShiftsLimit() === Infinity'), '未勾选开关确实映射为 Infinity（不限制）');
   g('state.maxShiftsPerWeek = 2');
-  eq(g('maxShiftsLimit()'), 2, '非 0 → 如实作为上限');
+  eq(g('maxShiftsLimit()'), null, '未勾选开关时无论数值多少都不限制（Infinity）');
+  setMaxEnabled(true);
+  eq(g('maxShiftsLimit()'), 2, '勾选开关 → 数值 2 如实作为上限');
+  g('state.maxShiftsPerWeek = 0');
+  eq(g('maxShiftsLimit()'), null, '勾选开关但数值为 0 → 仍视为不限制（Infinity）');
+  ok(g('maxShiftsLimit() === Infinity'), '勾选开关 + 数值 0 确实映射为 Infinity');
+  setMaxEnabled(false);
+  eq(g('maxShiftsLimit()'), null, '再取消勾选 → 又回到不限制（Infinity）');
+  ok(g('maxShiftsLimit() === Infinity'), '取消勾选后上限立即失效');
+
   g('state.maxShiftsPerWeek = -5');
   eq(g('getMaxShiftsPerWeek()'), 3, '负数回落为默认值 3');
   g('state.maxShiftsPerWeek = "abc"');
   eq(g('getMaxShiftsPerWeek()'), 3, '非法值回落为默认值 3');
+
+  // setMaxShiftsPerWeek 的归一化：0 / 负数 / 非法值一律回落到 MAX_SHIFTS_DEFAULT(3)
+  // （数值框最小为 1，0 不再表示「不限制」；不限制改由开关表达）
+  setMaxShifts('0');
+  eq(g('state.maxShiftsPerWeek'), 3, "setMaxShiftsPerWeek('0') 回落为默认值 3（0 不再表示不限制）");
+  eq(g('MAX_SHIFTS_DEFAULT'), 3, 'MAX_SHIFTS_DEFAULT 仍为 3');
+  setMaxShifts('-5');
+  eq(g('state.maxShiftsPerWeek'), 3, "setMaxShiftsPerWeek('-5') 回落为默认值 3");
+  setMaxShifts('abc');
+  eq(g('state.maxShiftsPerWeek'), 3, "setMaxShiftsPerWeek('abc') 回落为默认值 3");
   setMaxShifts('7');
   eq(g('state.maxShiftsPerWeek'), 7, 'setMaxShiftsPerWeek 写入 state');
   eq(localStorage.getItem('shift_max_per_week'), '7', '上限持久化到 localStorage');
+  setMaxShifts('200');
+  eq(g('state.maxShiftsPerWeek'), 99, "setMaxShiftsPerWeek('200') 被上限 99 钳制");
+  eq(g('getMaxShiftsPerWeek()'), 99, 'getMaxShiftsPerWeek 同样以 99 封顶');
+
+  // 开关本身的持久化：'1' / '0'，且重新 load 能读回
+  setMaxEnabled(true);
+  eq(g('state.maxShiftsEnabled'), true, 'setMaxShiftsEnabled(true) 写入 state');
+  eq(localStorage.getItem('shift_max_enabled'), '1', "勾选后 localStorage['shift_max_enabled'] === '1'");
+  setMaxEnabled(false);
+  eq(localStorage.getItem('shift_max_enabled'), '0', "取消勾选后 localStorage['shift_max_enabled'] === '0'");
+  setMaxEnabled(true);
+  g('state.maxShiftsEnabled = false; loadMaxShifts();');
+  eq(g('state.maxShiftsEnabled'), true, 'loadMaxShifts 从 localStorage 读回勾选状态');
+  setMaxShifts('7');
   g('state.maxShiftsPerWeek = 3');
   g('loadMaxShifts()');
-  eq(g('state.maxShiftsPerWeek'), 7, 'loadMaxShifts 从 localStorage 读回');
-  g('localStorage.removeItem("shift_max_per_week"); loadMaxShifts();');
-  eq(g('state.maxShiftsPerWeek'), 3, '无存档时回落默认值 3');
+  eq(g('state.maxShiftsPerWeek'), 7, 'loadMaxShifts 从 localStorage 读回数值');
+  g('localStorage.removeItem("shift_max_per_week"); localStorage.removeItem("shift_max_enabled"); loadMaxShifts();');
+  eq(g('state.maxShiftsPerWeek'), 3, '无存档时数值回落默认值 3（再确认一次）');
+  eq(g('state.maxShiftsEnabled'), false, '无存档时开关回落为不勾选（再确认一次）');
 
-  // ── 均衡排班：严格遵守上限 ──
-  section('33. 均衡排班：强制遵守每人每周上限');
+  // syncMaxShiftsInput：数值框禁用态 / 开关勾选态 / 说明文案三处必须跟着开关走
+  setMaxShifts(2);
+  setMaxEnabled(false);
+  eq(el('maxShiftsInput').disabled, true, '未勾选时数值框禁用（disabled === true）');
+  eq(el('maxShiftsToggle').checked, false, '未勾选时开关控件未选中');
+  ok(!String(el('maxShiftsHint').textContent).includes('已限制'), '未勾选时说明文案不含「已限制」');
+  setMaxEnabled(true);
+  eq(el('maxShiftsInput').disabled, false, '勾选后数值框可用（disabled === false）');
+  eq(el('maxShiftsToggle').checked, true, '勾选后开关控件选中');
+  ok(String(el('maxShiftsHint').textContent).includes('已限制'),
+     `勾选后说明文案含「已限制」（实际：${el('maxShiftsHint').textContent}）`);
+  ok(String(el('maxShiftsHint').textContent).includes('2'), '勾选后说明文案含当前数值 2');
+  g('syncMaxShiftsInput()');
+  eq(el('maxShiftsInput').value, '2', 'syncMaxShiftsInput 把归一化后的数值写进输入框');
+  setMaxEnabled(false);
+
+  // ── 上限只看开关：runSchedule 的旧 mode 参数必须被忽略 ──
+  section('32b. runSchedule() 忽略旧的 mode 参数（上限只看开关）');
   setupStudents();
   g('state.template = makeDefaultTemplate()');
-  g('state.maxShiftsPerWeek = 2');
   g('initAssignments()');
-  return reRun('balanced');
+  setMaxShifts(1);      // 数值写成 1，但开关未勾选
+  setMaxEnabled(false);
+  return reRunLegacyMode('balanced');   // 旧调用点会传 'balanced'，新代码必须忽略它
 }).then(() => {
-  eq(weeklyMaxOf('odd'), 2, '均衡排班：单周每人最多 2 班');
-  eq(weeklyMaxOf('even'), 2, '均衡排班：双周每人最多 2 班');
+  ok(weeklyMaxOf('odd') > 1 || g('countEmptySlots(state.assignments)') === 0,
+     '未勾选开关时 runSchedule("balanced") 不套用上限 1（mode 参数已失效）');
+
+  // 反向确认：旧参数 'normal' 也换不来「不限制」，限制与否只认开关
+  g('initAssignments()');
+  setMaxShifts(1);
+  setMaxEnabled(true);
+  return reRunLegacyMode('normal');
+}).then(() => {
+  eq(weeklyMaxOf('odd'), 1, '勾选开关时 runSchedule("normal") 同样套用上限 1（mode 参数不影响开关语义）');
+
+  // ── 勾选开关后才强制遵守上限 ──
+  section('33. 勾选开关后强制遵守每人每周上限');
+  setupStudents();
+  g('state.template = makeDefaultTemplate()');
+  setMaxShifts(2);
+  setMaxEnabled(true);
+  g('initAssignments()');
+  return reRun();
+}).then(() => {
+  eq(weeklyMaxOf('odd'), 2, '勾选开关 + 上限 2：单周每人最多 2 班');
+  eq(weeklyMaxOf('even'), 2, '勾选开关 + 上限 2：双周每人最多 2 班');
   ok(g('countEmptySlots(state.assignments)') > 0,
      '上限过小时确实会有班次排不满（而非偷偷超限）');
 
   // 上限 1 也能守住
   g('initAssignments()');
-  g('state.maxShiftsPerWeek = 1');
-  return reRun('balanced');
+  setMaxShifts(1);
+  setMaxEnabled(true);
+  return reRun();
 }).then(() => {
   eq(weeklyMaxOf('odd'), 1, '上限 1：单周每人最多 1 班');
   eq(weeklyMaxOf('even'), 1, '上限 1：双周每人最多 1 班');
 
-  // ── 上限 = 0：均衡排班不限制，但仍然均衡 ──
-  section('34. 上限 = 0：不限制，两种模式都仍尽量均衡');
+  // ── 上限 = 0（勾选状态）：0 仍表示「不限制」，且仍然均衡 ──
+  // 注意：数值框现在会把 0 归一化成默认值 3（见 §32），所以 0 只可能来自导入的数据文件；
+  // 但 maxShiftsLimit() 对 0 的「不限制」语义必须保住，这里直接写 state 来锁住它。
+  section('34. 勾选开关但上限 = 0：不限制，仍尽量均衡');
   g('initAssignments()');
   g('state.maxShiftsPerWeek = 0');
-  return reRun('balanced');
+  setMaxEnabled(true);
+  return reRun();
 }).then(() => {
+  ok(g('maxShiftsLimit() === Infinity'), '勾选开关 + 上限 0 → 仍然不限制（Infinity）');
   ok(weeklyMaxOf('odd') > 1, '上限 0 时不再限制每人每周 1 班');
   eq(g('countEmptySlots(state.assignments)'), 0, '上限 0 时所有班次都排满');
   const sp0 = spreadOf();
   ok(sp0.odd <= 1 && sp0.even <= 1 && sp0.total <= 1,
-     `上限 0 的均衡排班仍均衡（单周极差 ${sp0.odd}、双周 ${sp0.even}、合计 ${sp0.total}）`, sp0);
+     `上限 0 的排班仍均衡（单周极差 ${sp0.odd}、双周 ${sp0.even}、合计 ${sp0.total}）`, sp0);
 
   // ── 均衡排班必须遵守课程冲突与容量（不能为了均衡违规） ──
   const violations = g(`(() => {
@@ -671,35 +762,38 @@ Promise.resolve(run).then(() => {
     }
     return bad;
   })()`);
-  eq(violations, { conflict: 0, overCap: 0 }, '均衡排班没有违反课程冲突或班次容量');
+  eq(violations, { conflict: 0, overCap: 0 }, '勾选开关的排班没有违反课程冲突或班次容量');
 
-  // ── 开始排班也均衡（这是用户明确要求「两种模式都要均衡」） ──
-  section('35. 开始排班同样保证每人班次相差不大');
+  // ── 不勾选开关时同样均衡（用户明确要求：不限制 ≠ 放弃均衡） ──
+  section('35. 不勾选开关时同样保证每人班次相差不大');
   g('initAssignments()');
-  g('state.maxShiftsPerWeek = 3');
-  return reRun('normal');
+  setMaxShifts(3);
+  setMaxEnabled(false);
+  return reRun();
 }).then(() => {
   const spN = spreadOf();
   ok(spN.odd <= 1 && spN.even <= 1 && spN.total <= 1,
-     `开始排班：单周 ${spN.odd}、双周 ${spN.even}、合计 ${spN.total} 极差均 ≤ 1`, spN);
+     `不勾选开关：单周 ${spN.odd}、双周 ${spN.even}、合计 ${spN.total} 极差均 ≤ 1`, spN);
 
-  // 与均衡排班在同一模板下对比：均衡模式的合计极差不会更差
+  // 与勾选开关的结果对比：取消勾选后的合计极差不会更差
   const normalTotal = spN.total;
   g('initAssignments()');
-  return reRun('balanced').then(() => ({ normalTotal }));
+  setMaxEnabled(true);
+  return reRun().then(() => ({ normalTotal }));
 }).then(({ normalTotal }) => {
   const spB = spreadOf();
   ok(spB.total <= Math.max(1, normalTotal),
-     `均衡排班合计极差 ${spB.total} 不劣于开始排班 ${normalTotal}`);
+     `勾选开关的合计极差 ${spB.total} 不劣于不勾选时 ${normalTotal}`);
 
-  // ── 硬约束：上限很小时，均衡排班不超限；开始排班不套用上限 ──
-  section('36. 两种模式对上限的差异（用户确认的语义）');
+  // ── 硬约束：勾选且上限很小时不超限；不勾选时不套用上限 ──
+  section('36. 开关对上限的差异（用户确认的语义）');
   g('initAssignments()');
-  g('state.maxShiftsPerWeek = 1');
-  return reRun('normal');
+  setMaxShifts(1);
+  setMaxEnabled(false);
+  return reRun();
 }).then(() => {
   ok(weeklyMaxOf('odd') > 1 || g('countEmptySlots(state.assignments)') === 0,
-     '开始排班不套用上限 1（仍会给人排第 2 班）');
+     '不勾选开关时不套用上限 1（仍会给人排第 2 班）');
 
   section('37. balanceCost / 单元工具的边界');
   g('state.assignments = { odd: {}, even: {} }');
@@ -760,11 +854,12 @@ Promise.resolve(run).then(() => {
   }
   g(`state.students = ${JSON.stringify(many)}`);
   g('state.template = makeDefaultTemplate()');
-  g('state.maxShiftsPerWeek = 3');
+  setMaxShifts(3);
+  setMaxEnabled(true);
   g('initAssignments()');
   const t0 = Date.now();
   return Promise.resolve(g(`(async () => {
-    await runSchedule('balanced');
+    await runSchedule();
     return Date.now();
   })()`)).then(t1 => ({ t1, ms: t1 - t0 }));
 }).then(({ ms }) => {
@@ -807,9 +902,10 @@ Promise.resolve(run).then(() => {
   }
   g(`state.students = ${JSON.stringify(small)}`);
   g('state.template = makeDefaultTemplate()');
-  g('state.maxShiftsPerWeek = 2');   // 12 人 × 2 班 = 24 个名额，远少于单周 74 个需求
+  setMaxShifts(2);   // 12 人 × 2 班 = 24 个名额，远少于单周 74 个需求
+  setMaxEnabled(true);
   g('initAssignments()');
-  return Promise.resolve(g(`(async () => { await runSchedule('balanced'); return true; })()`));
+  return Promise.resolve(g(`(async () => { await runSchedule(); return true; })()`));
 }).then(() => {
   const dist = g(`(() => {
     const per = { weekday: 0, weekend: 0 };
@@ -840,7 +936,7 @@ Promise.resolve(run).then(() => {
      '名额紧张时仍完全均衡（12 人各 2 班，极差 0）');
 
   // ── 41. 排班锁定：锁住「该同学 + 该班次」这个位置 ──
-  // 语义是「位置」而非「人」：锁定后重新排班（两种模式）该位置原样保留，
+  // 语义是「位置」而非「人」：锁定后重新排班（开关勾选 / 不勾选各跑）该位置原样保留，
   // 但该同学在其它班次、以及其它同学进入这个班次，仍由算法自由安排。
   section('41. 排班锁定：重新排班不改变锁定位置');
   const lockStudents = [];
@@ -850,9 +946,11 @@ Promise.resolve(run).then(() => {
   }
   g(`state.students = ${JSON.stringify(lockStudents)}`);
   g('state.template = makeDefaultTemplate(); state.locks = { odd:{}, even:{} };');
-  g('state.currentWeek = "odd"; state.currentView = "duty"; state.maxShiftsPerWeek = 3;');
+  g('state.currentWeek = "odd"; state.currentView = "duty";');
+  setMaxShifts(3);
+  setMaxEnabled(false);
   g('initAssignments()');
-  return Promise.resolve(g(`(async () => { await runSchedule('normal'); return true; })()`));
+  return Promise.resolve(g(`(async () => { await runSchedule(); return true; })()`));
 }).then(() => {
   const KEY = 'odd_d0_wd0';
   const before = JSON.parse(g(`JSON.stringify(state.assignments.odd['${KEY}'])`));
@@ -872,18 +970,22 @@ Promise.resolve(run).then(() => {
   ok(lockHtml.includes('student-tag locked'), '已锁定的标签带上 locked 样式类');
   ok(lockHtml.includes('data-locked="1"'), '已锁定的标签标记 data-locked="1"');
 
-  // 连续跑两种排班模式：锁定位置必须始终不变
+  // 开关勾选 / 取消勾选各跑两次：锁定位置必须始终不变
   return Promise.resolve(g(`(async () => {
-    await runSchedule('normal');
-    await runSchedule('balanced');
-    await runSchedule('normal');
-    await runSchedule('balanced');
+    setMaxShiftsEnabled(false);
+    await runSchedule();
+    setMaxShiftsEnabled(true);
+    await runSchedule();
+    setMaxShiftsEnabled(false);
+    await runSchedule();
+    setMaxShiftsEnabled(true);
+    await runSchedule();
     return true;
   })()`)).then(() => lockedSid);
 }).then((lockedSid) => {
   const KEY = 'odd_d0_wd0';
   const after = JSON.parse(g(`JSON.stringify(state.assignments.odd['${KEY}'])`));
-  eq(after[0], lockedSid, '两种模式各跑两次后，锁定的人仍在该班次（未被换出）');
+  eq(after[0], lockedSid, '开关勾选 / 取消各跑两次后，锁定的人仍在该班次（未被换出）');
 
   // 锁定不应冻结整张表：其它槽位照常排班
   const filled = g(`(() => {
@@ -1158,15 +1260,19 @@ Promise.resolve(run).then(() => {
                         courses: [], rawCourses: [], nowWeek: 8 });
   }
   g(`state.students = ${JSON.stringify(prefStudents)}`);
-  g('state.template = makeDefaultTemplate(); state.locks = {odd:{},even:{}}; state.maxShiftsPerWeek = 3;');
+  g('state.template = makeDefaultTemplate(); state.locks = {odd:{},even:{}};');
+  // 这一组要看的是「连续 / 分散」偏好，因此显式勾选开关并把上限设为 3
+  // （20 人 × 单周 38 个槽位，每人约 2 班，上限 3 不会干扰连续偏好，但能锁住硬约束）
+  setMaxShifts(3);
+  setMaxEnabled(true);
   g('setContinuousScheduling(false)');
   g('initAssignments()');
-  return Promise.resolve(g(`(async () => { await runSchedule('balanced'); return totalContinuityScore(); })()`))
+  return Promise.resolve(g(`(async () => { await runSchedule(); return totalContinuityScore(); })()`))
     .then(spreadEndScore => ({ spreadEndScore }));
 }).then(({ spreadEndScore }) => {
   g('setContinuousScheduling(true)');
   g('initAssignments()');
-  return Promise.resolve(g(`(async () => { await runSchedule('balanced'); return totalContinuityScore(); })()`))
+  return Promise.resolve(g(`(async () => { await runSchedule(); return totalContinuityScore(); })()`))
     .then(clusterEndScore => ({ spreadEndScore, clusterEndScore }));
 }).then(({ spreadEndScore, clusterEndScore }) => {
   ok(clusterEndScore > spreadEndScore,
@@ -1325,6 +1431,229 @@ Promise.resolve(run).then(() => {
   writeFiles.length = 0;
   g('exportFreeSchedule()');
   eq(writeFiles[0].wb.SheetNames, ['单周空课表', '双周空课表'], '空课表仍只有单双周两个工作表（不加人员表）');
+
+  // ── 45. 顶部菜单栏：文件 / 个性化 / 关于（二级菜单） ──
+  // 用户要求把导入 / 导出类入口收进顶部「文件」二级菜单，切换主题收进「个性化」，
+  // 使用指南收进「关于」，并在「关于」下新增「软件信息」。
+  // node 里没有布局引擎，这里做「入口存在 + 逻辑接线 + 层叠规则」的静态与行为断言；
+  // 下拉面板能否真的点到，靠浏览器验证（与 §6.7 同类问题）。
+  section('45. 顶部菜单栏：文件 / 个性化 / 关于');
+
+  const menuHtml = rawHtml();
+  ['menuFile', 'menuPersonal', 'menuAbout'].forEach(id => {
+    ok(menuHtml.includes(`id="${id}"`), `存在一级菜单 ${id}`);
+  });
+  ok(menuHtml.includes('class="top-menubar"'), '顶部存在 .top-menubar 菜单栏');
+
+  // 「文件」二级菜单里的迁移项
+  // 注意：「导入学号」接的是 openSidImport（打开弹窗），不再直接接 loadStudents；
+  //       另外新增了「编辑值班模板…」「重置排班…」两项。
+  ['openSidImport', 'importData', 'exportDutySchedule', 'exportFreeSchedule',
+   'exportData', 'exportTemplateFile', 'openTemplateEditor', 'resetSchedule'].forEach(fn => {
+    ok(menuHtml.includes(`menuRun(${fn})`), `「文件」菜单接到 ${fn}`);
+  });
+  ok(!menuHtml.includes('menuRun(loadStudents)'),
+     '「文件」菜单不再直接接 loadStudents（改为先打开学号弹窗）');
+  ok(/menuRun\(function\(\)\{ document\.getElementById\('tplFileInput'\)\.click\(\); \}\)/.test(menuHtml),
+     '「文件」菜单的「导入模板…」接到隐藏的 tplFileInput');
+  ok(menuHtml.includes('id="menuExportDuty"') && menuHtml.includes('id="menuExportFree"'),
+     '「文件」菜单保留导出值班表 / 空课表的禁用态控件 id');
+
+  // 原位置的按钮已被移除（用户选择「完全移到菜单」）：
+  // 现在 onclick="loadStudents()" 只剩两处 —— 学号弹窗里的「导入」按钮 + 隐藏兼容控件。
+  eq((menuHtml.match(/onclick="loadStudents\(\)"/g) || []).length, 2,
+     '「导入学号」只剩弹窗内的「导入」按钮 + 隐藏兼容控件（左侧可见按钮已移除）');
+  ok(menuHtml.includes('id="btnMenuImportStudents"'),
+     '隐藏兼容控件 #btnMenuImportStudents 仍保留（老脚本可继续调用 loadStudents）');
+  ok(!/class="btn[^"]*" id="btnExportDuty"/.test(menuHtml),
+     '左侧不再有可见的「导出值班表」按钮（只剩 display:none 的兼容控件）');
+  ok(!/class="btn[^"]*" id="btnExportFree"/.test(menuHtml),
+     '左侧不再有可见的「导出空课表」按钮（只剩 display:none 的兼容控件）');
+  ok(!/class="btn btn-outline btn-sm" onclick="exportData\(\)"/.test(menuHtml),
+     '左侧面板不再有「导出数据」按钮');
+  ok(!/class="btn btn-outline btn-sm" onclick="importData\(\)"/.test(menuHtml),
+     '左侧面板不再有「导入数据」按钮');
+  ok(!/onclick="openGuide\(\)">使用指南/.test(menuHtml),
+     '表头不再有「使用指南」按钮（已收进「关于」菜单）');
+  ok(menuHtml.includes('id="btnExportDuty" style="display:none"')
+     && menuHtml.includes('id="btnExportFree" style="display:none"'),
+     '导出值班表 / 空课表的隐藏兼容控件仍在（老脚本与 §L23 仍可读其 disabled）');
+
+  // ── 本轮改动：删掉的旧入口 / 新增的控件（静态断言） ──
+  // 1. 左侧 .panel-header 整块已删除；表头 .header-actions 整块已删除
+  ok(!menuHtml.includes('class="panel-header"'),
+     '源码里不存在 class="panel-header"（左侧标题栏已删除）');
+  ok(!menuHtml.includes('class="header-actions"'),
+     '源码里不存在 class="header-actions"（表头「值班模板 / 重置排班」整块已删除）');
+  // 2. 「均衡排班」按钮已删除：runSchedule 不再有模式参数，上限只看开关
+  ok(!menuHtml.includes('id="btnBalance"'),
+     '源码里不存在 id="btnBalance"（「均衡排班」按钮已删除）');
+  // 3. 上限入口改成开关 + 数值框，并接到 setMaxShiftsEnabled
+  ok(menuHtml.includes('id="maxShiftsToggle"'), '源码里存在 id="maxShiftsToggle"（上限开关）');
+  ok(menuHtml.includes('setMaxShiftsEnabled(this.checked)'),
+     '开关的勾选事件接到 setMaxShiftsEnabled(this.checked)');
+  ok(menuHtml.includes('id="maxShiftsHint"'), '源码里存在 id="maxShiftsHint"（说明文案）');
+  ok(!menuHtml.includes('class="limit-row"'),
+     '源码里不存在 class="limit-row"（旧的「每人每周最多班次」行已换成 opt-row 开关）');
+  // 4. 学号录入搬进弹窗
+  ok(menuHtml.includes('id="sidImportModal"'), '源码里存在 id="sidImportModal"（学号录入弹窗）');
+  ok(g('typeof openSidImport') === 'function' && g('typeof closeSidImport') === 'function',
+     'openSidImport / closeSidImport 均已定义');
+
+  // 4b. 两处引导性注释文案已被删除（用户要求）：
+  //     · 「个性化」菜单里的「『连续排班』等排班偏好仍在左侧面板设置。」
+  //     · 左侧面板里的「在顶部『文件』菜单里点导入学号…录入学号（…也都在那里）。」
+  //     删掉指引不等于删掉功能：下面同时断言开关与菜单项仍然可用。
+  ok(!menuHtml.includes('排班偏好仍在左侧面板设置'),
+     '源码里已删除「个性化」菜单的「排班偏好仍在左侧面板设置」注释');
+  ok(!menuHtml.includes('编辑值班模板也都在那里'),
+     '源码里已删除左侧面板的「导入学号…（…也都在那里）」注释');
+  ok(menuHtml.includes('id="maxShiftsToggle"') && menuHtml.includes('id="continuousToggle"'),
+     '删掉指引文案后，左侧两个开关（上限 / 连续排班）仍然存在');
+  ok(menuHtml.includes('menuRun(openSidImport)'),
+     '删掉指引文案后，「文件」菜单的「导入学号…」入口仍然存在');
+
+  // 5. 主题快捷按钮**已被删除**（用户要求）：
+  //    切换主题现在只有「个性化」菜单一个入口，菜单栏右侧不再有 #themeToggle，
+  //    连带它的 .theme-btn 样式与 toggleTheme()/updateThemeIcon() 也一并不存在。
+  ok(!menuHtml.includes('id="themeToggle"'),
+     '源码里不存在 id="themeToggle"（菜单栏右侧的主题快捷按钮已删除）');
+  ok(!menuHtml.includes('class="theme-btn"'),
+     '源码里不存在 class="theme-btn"（连带样式一并删除）');
+  ok(!/\.theme-btn\s*\{/.test(menuHtml),
+     'CSS 里也没有 .theme-btn 规则残留（注释里提到它不算，这里查的是规则本身）');
+  ok(g('typeof toggleTheme') === 'undefined',
+     'toggleTheme() 已删除（不再有循环切换的快捷入口）');
+  ok(g('typeof updateThemeIcon') === 'undefined',
+     'updateThemeIcon() 已删除（它只服务于那个按钮）');
+  // 但「个性化」菜单的三个主题项必须还在（切换主题的唯一入口）
+  ok(menuHtml.includes('id="menuThemeDark"') && menuHtml.includes('id="menuThemeLight"')
+     && menuHtml.includes('id="menuThemeAuto"'),
+     '「个性化」菜单的三个主题项仍在（现在是切换主题的唯一入口）');
+  ok(g("typeof applyTheme") === 'function',
+     'applyTheme() 仍存在（菜单项与初始化都靠它）');
+
+  // 6. 模板弹窗防误触（重点）：源码里刻意没有 click-outside 监听，
+  //    但关闭入口（× / 取消 / Esc）仍然存在，不能因为「防误触」把关闭能力也删了。
+  ok(!menuHtml.includes("document.getElementById('templateModal').addEventListener"),
+     '源码里没有 #templateModal 的 click-outside 监听（点遮罩不会误关模板弹窗）');
+  ok(menuHtml.includes('onclick="closeTemplateEditor()"'),
+     '模板弹窗仍保留 × / 取消 的关闭入口');
+  ok(g('typeof closeTemplateEditor') === 'function', 'closeTemplateEditor 函数仍存在');
+  g('openTemplateEditor()');
+  ok(el('templateModal').classList.contains('show'), 'openTemplateEditor 打开模板弹窗');
+  g('closeTemplateEditor()');
+  ok(!el('templateModal').classList.contains('show'), 'closeTemplateEditor 仍能关闭模板弹窗（× / 取消 可用）');
+  // 对比项：学号弹窗**有** click-outside（两者行为刻意不同）
+  ok(menuHtml.includes("document.getElementById('sidImportModal').addEventListener"),
+     '对照：#sidImportModal 仍然保留 click-outside 关闭监听');
+
+  // ── 学号导入弹窗的行为（loadStudents 读弹窗里的 #sidInput） ──
+  g('state.students = []');
+  g('openSidImport()');
+  ok(el('sidImportModal').classList.contains('show'), 'openSidImport 给弹窗加上 show 类');
+  g('closeSidImport()');
+  ok(!el('sidImportModal').classList.contains('show'), 'closeSidImport 移除 show 类');
+
+  // 校验失败（非法学号）→ 弹窗**不关**，方便用户直接改
+  g('openSidImport()');
+  el('sidInput').value = 'abc\n12345';
+  g('loadStudents()');
+  eq(g('state.students.length'), 0, '非法学号不会导入任何学生');
+  ok(el('sidImportModal').classList.contains('show'),
+     '校验失败时弹窗保持打开（不关窗，用户可直接修改）');
+  // 空输入同样不关窗
+  el('sidInput').value = '   ';
+  g('loadStudents()');
+  ok(el('sidImportModal').classList.contains('show'), '空输入时弹窗同样保持打开');
+
+  // 成功导入：去重 + 非 10 位过滤 + 关窗 + 清空输入框
+  el('sidInput').value = '2025210001\n2025210001\n123\n2025210002\n 2025210003 ';
+  g('loadStudents()');
+  eq(g('state.students.map(s => s.sid)'), ['2025210001', '2025210002', '2025210003'],
+     'loadStudents 去重并过滤非 10 位学号（含首尾空白）');
+  ok(!el('sidImportModal').classList.contains('show'), '导入成功后自动关闭弹窗');
+  eq(el('sidInput').value, '', '导入成功后清空输入框');
+  // 已存在的学号不会重复添加
+  g('openSidImport()');
+  el('sidInput').value = '2025210001';
+  g('loadStudents()');
+  eq(g('state.students.length'), 3, '重复导入已存在的学号不会重复添加');
+  g('state.students = []');
+
+  // 「个性化」二级菜单：深夜模式 + 主题对勾
+  ok(menuHtml.includes('id="menuThemeDark"') && menuHtml.includes('menuThemeDarkCheck'),
+     '「个性化」菜单含「深夜模式」及其对勾位');
+  g("applyTheme('dark')");
+  eq(g("getTheme()"), 'dark', 'applyTheme("dark") 生效');
+  eq(el('menuThemeDarkCheck').textContent, '✓', '切到深夜模式后菜单里打勾');
+  eq(el('menuThemeLightCheck').textContent, '', '未选中的日间模式不打勾');
+  g("applyTheme('light')");
+  eq(el('menuThemeLightCheck').textContent, '✓', '切到日间模式后对勾跟着移动');
+  eq(el('menuThemeDarkCheck').textContent, '', '切到日间后深夜模式的对勾被清掉');
+  g("applyTheme('auto')");
+  eq(el('menuThemeAutoCheck').textContent, '✓', '跟随系统时对勾落在「跟随系统」');
+  // 主题快捷按钮已删除后，对勾的同步不能依赖它（applyTheme 必须自己刷新菜单）
+  ok(g("(function(){ applyTheme('dark'); return getTheme() === 'dark'; })()"),
+     'applyTheme 直接刷新菜单对勾，不依赖已删除的 updateThemeIcon');
+  eq(el('menuThemeDarkCheck').textContent, '✓', '删除快捷按钮后对勾仍能正确同步');
+  g("applyTheme('auto')");
+
+  // 「关于」二级菜单：使用指南 + 软件信息
+  ok(/id="menuAbout"[\s\S]*?menuRun\(openGuide\)[\s\S]*?menuRun\(openAbout\)/.test(menuHtml),
+     '「关于」菜单含「使用指南」与「软件信息」两项');
+  ok(menuHtml.includes('id="aboutModal"'), '存在软件信息弹窗 #aboutModal');
+  ok(menuHtml.includes('id="aboutVersion"') && menuHtml.includes('id="aboutBuild"')
+     && menuHtml.includes('id="aboutOrigin"'),
+     '软件信息弹窗含版本 / 构建时间 / 本地地址字段');
+
+  // 打开软件信息会填好动态字段
+  g('openAbout()');
+  ok(String(el('aboutVersion').textContent).startsWith('v'), '软件信息显示版本号');
+  eq(el('aboutBuild').textContent, g('APP_BUILD_DATE'), '软件信息显示构建时间');
+  ok(String(el('aboutOrigin').textContent).length > 0, '软件信息显示本地地址（无 location 时回落默认值）');
+  ok(el('aboutModal').classList.contains('show'), 'openAbout 打开弹窗');
+  g('closeAbout()');
+  ok(!el('aboutModal').classList.contains('show'), 'closeAbout 关闭弹窗');
+
+  // 下拉面板的展开 / 收起：展开是互斥的，menuRun 先收起再执行动作
+  g('closeAllMenus()');
+  eq(g('openMenuId'), null, '初始状态没有展开的菜单');
+  g("setMenuOpen('menuFile', true)");
+  eq(g('openMenuId'), 'menuFile', '展开「文件」菜单');
+  ok(el('menuFile').classList.contains('open'), '「文件」菜单加上 open 类');
+  g("setMenuOpen('menuAbout', true)");
+  ok(!el('menuFile').classList.contains('open'), '展开另一个菜单时前一个自动收起（互斥）');
+  eq(g('openMenuId'), 'menuAbout', '当前展开的是「关于」');
+  let ranMenuAction = false;
+  g('window.__menuProbe = function(){ window.__menuRan = true; }');
+  g('menuRun(window.__menuProbe)');
+  eq(g('window.__menuRan'), true, 'menuRun 执行了传入的动作');
+  eq(g('openMenuId'), null, 'menuRun 执行动作前先收起了菜单（避免下拉面板浮在弹窗上）');
+
+  // ←→ 键在一级菜单间切换；Esc 收起
+  g("setMenuOpen('menuFile', true)");
+  g("onMenuBarKeydown({ key:'ArrowRight', preventDefault(){} })");
+  eq(g('openMenuId'), 'menuPersonal', '→ 切到下一个一级菜单');
+  g("onMenuBarKeydown({ key:'ArrowLeft', preventDefault(){} })");
+  eq(g('openMenuId'), 'menuFile', '← 切回上一个一级菜单');
+  g("onMenuBarKeydown({ key:'Escape' })");
+  eq(g('openMenuId'), null, 'Esc 收起菜单');
+
+  // 层叠：菜单栏必须高于左/右面板，否则下拉项被盖住点不到
+  const menuZ = /\.top-menubar\s*\{[^}]*z-index\s*:\s*(\d+)/.exec(menuHtml);
+  const leftZ = /\.left-panel\s*\{[^}]*z-index\s*:\s*(\d+)/.exec(menuHtml);
+  ok(menuZ && leftZ && Number(menuZ[1]) > Number(leftZ[1]),
+     '菜单栏 z-index 高于左侧面板（下拉项不被面板盖住）',
+     { menubar: menuZ && menuZ[1], leftPanel: leftZ && leftZ[1] });
+  ok(/\.menu-panel\s*\{[^}]*z-index\s*:\s*(\d+)/.test(menuHtml), '下拉面板自身也声明了 z-index');
+  ok(menuHtml.indexOf('id="aboutModal"') > menuHtml.indexOf('id="confirmModal"'),
+     '软件信息弹窗排在确认框之后（不改变 §6.7 的层叠前提）');
+
+  // 菜单改了入口，提示文案必须跟着指路，否则用户找不到「导入学号」
+  g('state.students = []; state.currentView = "duty"; refreshView();');
+  ok(String(el('scheduleNotice').textContent).includes('「文件」菜单'),
+     '未导入学号时的提示条指向顶部「文件」菜单');
 
   summary();
 }).catch(e => {

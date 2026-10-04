@@ -152,10 +152,77 @@ body {
   font-size: 14px; line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   transition: background-color .2s ease, color .2s ease;
+  /* 两段式：顶部菜单栏固定高度，主体（.app-container）占满剩余空间 */
+  display: flex; flex-direction: column;
 }
 
 /* ── Layout ─────────────────────────────── */
-.app-container { display:flex; height:100vh; }
+.app-container { display:flex; flex:1; min-height:0; }
+
+/* ── Top Menu Bar ───────────────────────── */
+/* 顶部一级菜单：文件 / 个性化 / 关于，各自的二级菜单向下展开。
+   注意 z-index 必须高于 .left-panel(z-index:10) 与 .right-header(z-index:5)，
+   否则下拉面板会被面板盖住、点不到（与 §6.7 的弹窗层叠是同一类问题）。 */
+.top-menubar {
+  flex-shrink: 0;
+  height: 40px;
+  display: flex; align-items: stretch;
+  padding: 0 10px;
+  background: var(--primary-grad);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+  position: relative; z-index: 100;
+}
+.menu-brand {
+  display: flex; align-items: center;
+  padding-right: 16px; margin-right: 6px;
+  font-size: 14px; font-weight: 700; letter-spacing: .5px;
+  white-space: nowrap;
+  border-right: 1px solid rgba(255,255,255,.22);
+}
+.menu { position: relative; display: flex; }
+.menu-btn {
+  border: none; background: transparent; color: #fff;
+  padding: 0 14px; height: 100%;
+  font-family: inherit; font-size: 13px; font-weight: 600; letter-spacing: .5px;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: background var(--transition); white-space: nowrap;
+}
+.menu-btn:hover, .menu.open .menu-btn { background: rgba(255,255,255,.18); }
+.menu-caret { font-size: 9px; opacity: .75; }
+.menu-panel {
+  display: none;
+  position: absolute; top: 100%; left: 0; min-width: 176px;
+  padding: 6px;
+  background: var(--card);
+  border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  box-shadow: var(--shadow-md);
+  z-index: 101;
+}
+.menu.open .menu-panel { display: block; }
+.menu-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 8px 12px; border: none; border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-secondary);
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  text-align: left; cursor: pointer; white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+.menu-item:hover:not(:disabled) { background: var(--primary-light); color: var(--primary); }
+.menu-item:disabled { opacity: .45; cursor: not-allowed; }
+.menu-check { margin-left: auto; color: var(--primary); font-weight: 700; }
+.menu-sep { height: 1px; margin: 5px 6px; background: var(--border); }
+.menu-note {
+  padding: 6px 12px; font-size: 11px; line-height: 1.6;
+  color: var(--text-muted); white-space: normal;
+}
+.menu-note strong { color: var(--text-secondary); }
+/* 「关于 → 软件信息」里的等宽文本（路径、版本号等） */
+.menu-note code { font-family: 'SF Mono', Consolas, monospace; font-size: 11px; }
+
+/* .theme-btn 已随菜单栏右侧的主题快捷按钮一起删除（用户要求）。
+   切换主题现在只有「个性化」菜单这一个入口：深夜模式 / 日间模式 / 跟随系统。 */
 
 /* ── Left Panel ─────────────────────────── */
 .left-panel {
@@ -166,36 +233,17 @@ body {
   box-shadow: var(--shadow-md);
   z-index: 10;
 }
-.panel-header {
-  padding: 16px 20px;
-  background: var(--primary-grad);
-  color: #fff; font-size: 16px; font-weight: 700;
-  letter-spacing: .5px;
-  display: flex; align-items: center; gap: 8px;
-  position: relative; overflow: hidden;
+/* 左侧面板已无 .panel-header（用户要求删除）：面板顶部直接是 .panel-body，
+   排班标题由顶部菜单栏的 .menu-brand 承担，弹窗里的标题改用 .panel-title。 */
+.panel-title {
+  font-size: 12px; font-weight: 700; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 7px;
+  margin-bottom: 8px;
 }
-/* 顶栏右上角的一团柔光，避免大面积纯色渐变显得平 */
-.panel-header::after {
-  content: ''; position: absolute; right: -40px; top: -60px;
-  width: 160px; height: 160px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 70%);
-  pointer-events: none;
+.panel-title::before {
+  content: ''; width: 3px; height: 12px; border-radius: 2px;
+  background: var(--primary-grad); flex-shrink: 0;
 }
-.theme-btn {
-  margin-left: auto; min-width: 52px; height: 30px; border-radius: 15px;
-  border: 1.5px solid rgba(255,255,255,.35); background: rgba(255,255,255,.10);
-  color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; display: flex;
-  align-items: center; justify-content: center; line-height: 1; padding: 0 12px;
-  transition: all .2s ease; flex-shrink: 0; white-space: nowrap;
-  font-family: inherit; letter-spacing: .5px;
-  backdrop-filter: blur(4px);
-  position: relative; z-index: 1;
-}
-.theme-btn:hover {
-  background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.55);
-  transform: translateY(-1px);
-}
-.theme-btn:active { transform: scale(.96); }
 .panel-body { flex:1; overflow:hidden; padding:12px; display:flex; flex-direction:column; gap:10px; }
 
 .section-title {
@@ -313,7 +361,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 }
 
 /* ── 排班设置卡片（每人每周上限 / 连续排班开关） ── */
-.limit-row, .opt-row {
+.opt-row {
   display: flex; align-items: center; gap: 8px;
   padding: 9px 11px;
   background: var(--card); border: 1px solid var(--border);
@@ -321,24 +369,18 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
   box-shadow: var(--shadow-sm);
   transition: border-color var(--transition), box-shadow var(--transition);
 }
-.limit-row { margin-top: 10px; }
-.limit-row:hover, .opt-row:hover { border-color: var(--text-muted); }
-.limit-row label {
-  font-size: 12px; font-weight: 600; color: var(--text-secondary);
-  flex-shrink: 0;
-}
-.limit-row input {
-  width: 56px; height: 28px; padding: 0 8px; flex-shrink: 0;
+.opt-row:hover { border-color: var(--text-muted); }
+/* 「限制每人每周班次」右侧的数值输入（与开关同一个 .opt-row 里） */
+.opt-row input[type="number"] {
+  width: 56px; height: 28px; padding: 0 8px; flex-shrink: 0; margin-left: auto;
   font-size: 13px; font-weight: 700; font-family: inherit;
   text-align: center; color: var(--text); background: var(--bg);
   border: 1.5px solid var(--border); border-radius: 5px; outline: none;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
-.limit-row input:focus { border-color: var(--primary); box-shadow: var(--ring); }
-.limit-hint {
-  font-size: 10px; color: var(--text-muted); line-height: 1.35;
-  margin-left: auto; text-align: right;
-}
+.opt-row input[type="number"]:focus { border-color: var(--primary); box-shadow: var(--ring); }
+/* 未勾选「限制每人每周班次」时数值框变灰不可编辑，视觉上表明上限未生效 */
+.opt-row input[type="number"]:disabled { opacity: .45; cursor: not-allowed; }
 
 /* 连续排班开关：真正的 checkbox 藏在后面，外观由 .opt-switch 承担 */
 .opt-row { cursor: pointer; user-select: none; }
@@ -433,7 +475,8 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 }
 .week-toggle button:hover:not(.active) { background: var(--bg); border-color: var(--text-muted); }
 
-.header-actions { display:flex; gap:8px; margin-left:auto; }
+/* .header-actions 已随「值班模板 / 重置排班」两个按钮一起删除
+   （两者都搬进了「文件」菜单，见 §4.12），表头右侧不再有按钮组。 */
 
 /* ── Schedule ───────────────────────────── */
 .schedule-wrapper { flex:1; overflow:auto; padding:16px 20px; }
@@ -1071,20 +1114,79 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
 </head>
 <body>
 
+<!-- ===== 顶部菜单栏 ===== -->
+<!-- 一级菜单：文件 / 个性化 / 关于；二级菜单为下拉面板。
+     键盘可用：Esc 关闭；打开后 ←→ 切换一级菜单（见 closeAllMenus / onMenuBarKeydown）。 -->
+<div class="top-menubar" id="topMenubar" onkeydown="onMenuBarKeydown(event)">
+
+  <div class="menu-brand">学生打印社排班系统</div>
+
+  <!-- ── 文件 ── -->
+  <div class="menu" id="menuFile">
+    <button class="menu-btn" type="button" aria-haspopup="true" aria-expanded="false"
+            onclick="toggleMenu('menuFile', event)">文件<span class="menu-caret">▾</span></button>
+    <div class="menu-panel" role="menu">
+      <button class="menu-item" role="menuitem" onclick="menuRun(openSidImport)">导入学号…</button>
+      <button class="menu-item" role="menuitem" onclick="menuRun(importData)">导入数据…</button>
+      <button class="menu-item" role="menuitem"
+              onclick="menuRun(function(){ document.getElementById('tplFileInput').click(); })">导入模板…</button>
+      <div class="menu-sep"></div>
+      <button class="menu-item" role="menuitem" id="menuExportDuty"
+              onclick="menuRun(exportDutySchedule)" disabled>导出值班表</button>
+      <button class="menu-item" role="menuitem" id="menuExportFree"
+              onclick="menuRun(exportFreeSchedule)" disabled>导出空课表</button>
+      <div class="menu-sep"></div>
+      <button class="menu-item" role="menuitem" onclick="menuRun(exportData)">导出数据</button>
+      <button class="menu-item" role="menuitem" onclick="menuRun(exportTemplateFile)">导出值班模板</button>
+      <div class="menu-sep"></div>
+      <button class="menu-item" role="menuitem" onclick="menuRun(openTemplateEditor)">编辑值班模板…</button>
+      <div class="menu-sep"></div>
+      <button class="menu-item" role="menuitem" onclick="menuRun(resetSchedule)">重置排班…</button>
+      <button class="menu-item" role="menuitem" onclick="menuRun(clearAll)">清空学号与排班…</button>
+    </div>
+  </div>
+
+  <!-- ── 个性化 ── -->
+  <div class="menu" id="menuPersonal">
+    <button class="menu-btn" type="button" aria-haspopup="true" aria-expanded="false"
+            onclick="toggleMenu('menuPersonal', event)">个性化<span class="menu-caret">▾</span></button>
+    <div class="menu-panel" role="menu">
+      <button class="menu-item" role="menuitemradio" id="menuThemeDark"
+              onclick="menuRun(function(){ applyTheme('dark'); })">
+        深夜模式<span class="menu-check" id="menuThemeDarkCheck"></span>
+      </button>
+      <button class="menu-item" role="menuitemradio" id="menuThemeLight"
+              onclick="menuRun(function(){ applyTheme('light'); })">
+        日间模式<span class="menu-check" id="menuThemeLightCheck"></span>
+      </button>
+      <button class="menu-item" role="menuitemradio" id="menuThemeAuto"
+              onclick="menuRun(function(){ applyTheme('auto'); })">
+        跟随系统<span class="menu-check" id="menuThemeAutoCheck"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 关于 ── -->
+  <div class="menu" id="menuAbout">
+    <button class="menu-btn" type="button" aria-haspopup="true" aria-expanded="false"
+            onclick="toggleMenu('menuAbout', event)">关于<span class="menu-caret">▾</span></button>
+    <div class="menu-panel" role="menu">
+      <button class="menu-item" role="menuitem" onclick="menuRun(openGuide)">使用指南</button>
+      <button class="menu-item" role="menuitem" onclick="menuRun(openAbout)">软件信息</button>
+    </div>
+  </div>
+
+</div>
+
 <!-- ===== 主容器 ===== -->
 <div class="app-container">
 
   <!-- ===== 左侧面板 ===== -->
+  <!-- 注意：这里已经没有 .panel-header 了（用户要求删除），
+       所以面板顶部直接是 .panel-body。
+       排班标题由顶部菜单栏的 .menu-brand 承担，切换主题只在「个性化」菜单里。 -->
   <div class="left-panel">
-    <div class="panel-header">学生打印社排班系统<button class="theme-btn" onclick="toggleTheme()" title="切换主题" id="themeToggle">自动</button></div>
     <div class="panel-body">
-      <div class="section-title">学号录入</div>
-      <textarea id="sidInput" placeholder="每行一个学号，例如：&#10;2025220039&#10;2025213062"></textarea>
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="loadStudents()">导入学号</button>
-        <button class="btn btn-outline" onclick="clearAll()">清空</button>
-      </div>
-
       <div class="section-title">学号列表</div>
       <div id="studentList" class="student-list"></div>
       <div id="studentCount" class="student-count">共 0 人</div>
@@ -1093,12 +1195,21 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
         <div class="fill" id="progressFill"></div>
       </div>
 
-      <div class="limit-row">
-        <label for="maxShiftsInput" title="仅「均衡排班」生效；0 表示不限制">每人每周最多班次</label>
-        <input type="number" id="maxShiftsInput" min="0" max="99" step="1" value="3"
-               onchange="setMaxShiftsPerWeek(this.value)" oninput="setMaxShiftsPerWeek(this.value)">
-        <span class="limit-hint">0 = 不限制<br>仅「均衡排班」生效</span>
-      </div>
+      <!-- 「每人每周最多班次」改成开关（与「连续排班」同款），勾选后才套用上限 -->
+      <label class="opt-row" for="maxShiftsToggle"
+             title="勾选：每人每周的班次数不超过右侧设定值（单周、双周各自单独计数）；不勾选：不限每人班次">
+        <input type="checkbox" id="maxShiftsToggle" onchange="setMaxShiftsEnabled(this.checked)">
+        <span class="opt-switch" aria-hidden="true"></span>
+        <span class="opt-text">
+          <strong>限制每人每周班次</strong>
+          <small id="maxShiftsHint">不勾选：不限每人班次</small>
+        </span>
+        <input type="number" id="maxShiftsInput" min="1" max="99" step="1" value="3"
+               title="每人每周最多班次（1~99）"
+               onclick="event.stopPropagation()"
+               oninput="setMaxShiftsPerWeek(this.value)"
+               onchange="setMaxShiftsPerWeek(this.value, {normalize:true})">
+      </label>
 
       <label class="opt-row" for="continuousToggle"
              title="勾选：尽量把同一人的班次连在一起（同一天连班、相邻几天都来）；不勾选：尽量分散到不同时段与日期">
@@ -1111,33 +1222,21 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
       </label>
 
       <div class="btn-group" style="flex-direction:column;gap:6px;margin-top:auto;">
-        <button class="btn btn-success" id="btnSchedule" onclick="runSchedule('normal')" disabled style="width:100%;justify-content:center;padding:12px;">
+        <button class="btn btn-success" id="btnSchedule" onclick="runSchedule()" disabled style="width:100%;justify-content:center;padding:12px;">
           开始排班
         </button>
-        <button class="btn btn-primary" id="btnBalance" onclick="runSchedule('balanced')" disabled style="width:100%;justify-content:center;padding:12px;"
-                title="自动排班并强制遵守「每人每周最多班次」，尽量让每人班次数相等">
-          均衡排班
+        <button class="btn btn-outline" onclick="refreshCourses()" id="btnRefreshCourses" disabled style="width:100%;justify-content:center;">
+          刷新课表
         </button>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-primary" id="btnExportDuty" onclick="exportDutySchedule()" disabled style="flex:1;justify-content:center;">
-            导出值班表
-          </button>
-          <button class="btn btn-warning" id="btnExportFree" onclick="exportFreeSchedule()" disabled style="flex:1;justify-content:center;">
-            导出空课表
-          </button>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:4px;">
-          <button class="btn btn-outline btn-sm" onclick="refreshCourses()" id="btnRefreshCourses" disabled style="flex:1;justify-content:center;">
-            刷新课表
-          </button>
-          <button class="btn btn-outline btn-sm" onclick="exportData()" style="flex:1;justify-content:center;">
-            导出数据
-          </button>
-          <button class="btn btn-outline btn-sm" onclick="importData()" style="flex:1;justify-content:center;">
-            导入数据
-          </button>
-          <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(event)">
-        </div>
+        <!-- 导入 / 导出类入口都搬到了顶部「文件」菜单。下面这些隐藏按钮只为保留既有 id，
+             让老脚本与自测仍能触发同一动作，别删、也别显示出来。 -->
+        <button type="button" id="btnExportDuty" style="display:none" onclick="exportDutySchedule()" disabled>导出值班表</button>
+        <button type="button" id="btnExportFree" style="display:none" onclick="exportFreeSchedule()" disabled>导出空课表</button>
+        <button type="button" id="btnMenuImportStudents" style="display:none" onclick="loadStudents()">导入学号</button>
+        <button type="button" id="btnMenuExportData" style="display:none" onclick="exportData()">导出数据</button>
+        <button type="button" id="btnMenuImportData" style="display:none" onclick="importData()">导入数据</button>
+        <button type="button" id="btnMenuExportTemplate" style="display:none" onclick="exportTemplateFile()">导出值班模板</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(event)">
       </div>
     </div>
   </div>
@@ -1153,11 +1252,6 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
       <div class="week-toggle" id="weekToggle">
         <button class="active" data-week="odd" onclick="switchWeek('odd')">单周</button>
         <button data-week="even" onclick="switchWeek('even')">双周</button>
-      </div>
-      <div class="header-actions">
-        <button class="btn btn-primary btn-sm" onclick="openTemplateEditor()">值班模板</button>
-        <button class="btn btn-outline btn-sm" onclick="openGuide()">使用指南</button>
-        <button class="btn btn-outline btn-sm" onclick="resetSchedule()">重置排班</button>
       </div>
     </div>
 
@@ -1210,7 +1304,7 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeCourseModal()">关闭</button>
-      <button class="btn btn-primary" onclick="closeCourseModal();runSchedule('normal')">重新排班</button>
+      <button class="btn btn-primary" onclick="closeCourseModal();runSchedule()">重新排班</button>
     </div>
   </div>
 </div>
@@ -1232,6 +1326,30 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
   </div>
 </div>
 
+<!-- ===== 导入学号弹窗（「文件」菜单 → 导入学号…） ===== -->
+<div class="modal-overlay" id="sidImportModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3>导入学号</h3>
+      <button class="close-btn" onclick="closeSidImport()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="panel-title">学号录入</div>
+      <textarea id="sidInput" placeholder="每行一个学号，例如：&#10;2025220039&#10;2025213062"
+                style="height:150px;"></textarea>
+      <div class="menu-note" style="padding:0;">
+        只接受 <strong>10 位纯数字</strong>学号，每行一个；重复学号会自动去重。<br>
+        导入后会自动从教务系统获取课表（需要校园网或 VPN）。<br>
+        已有的排班不会被清空，新学号会追加到学号列表里。
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeSidImport()">取消</button>
+      <button class="btn btn-primary" onclick="loadStudents()">导入</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== 使用指南弹窗 ===== -->
 <div class="modal-overlay" id="guideModal">
   <div class="modal" style="max-width:600px;">
@@ -1241,11 +1359,12 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
     </div>
     <div class="modal-body" id="guideContent">
       <div style="line-height:1.8;color:var(--text-secondary);">
-        <p><strong>1. 导入学号</strong>：在左侧输入框中输入10位学号（每行一个），点击「导入学号」。</p>
-        <p><strong>2. 开始排班 / 均衡排班</strong>：两种都是自动获取课表并智能分配值班，都会尽量让每人班次数相近。
-          <strong>「开始排班」不限制每人班次</strong>，谁空谁上、负载均衡；
-          <strong>「均衡排班」会强制遵守「每人每周最多班次」</strong>（0 表示不限制），
-          并额外做一换一交换优化，尽量让每人单双周合计也彼此相等。课表冲突与班次人数上限两种模式都会遵守。</p>
+        <p><strong>1. 导入学号</strong>：点顶部<b>「文件」菜单 → 导入学号…</b>，在弹出的窗口里粘贴 10 位学号（每行一个）后点「导入」。
+          导入 / 导出数据、导入 / 导出值班模板、编辑值班模板、重置排班、导出值班表 / 空课表，也都在这个「文件」菜单里。</p>
+        <p><strong>2. 开始排班</strong>：自动获取课表并智能分配值班，<strong>无论是否限制班次，都会尽量让每人的班次数相近</strong>。
+          <strong>要不要限制每人每周班次数，由左侧「限制每人每周班次」开关决定</strong>：
+          不勾选＝谁空谁上、不限班次；勾选＝每人每周不超过右侧填写的数值（单周、双周各自单独计数）。
+          课表冲突与班次人数上限始终都会遵守。</p>
         <p><strong>3. 查看/调整</strong>：右侧表格<strong>始终显示当前值班模板的时段</strong>（未排班时人数显示为 0/N），
           可<strong>拖拽</strong>学生标签到其他班次调整，也可以直接把左侧的同学拖进格子手动排班。</p>
         <p><strong>4. 连续排班</strong>：左侧的「连续排班」开关决定同一人的班次怎么摆放。
@@ -1254,26 +1373,100 @@ textarea#sidInput::placeholder { color: var(--text-muted); opacity: .9; }
           这项只是「尽量」的偏好：算法只做<b>不改变任何人班次数</b>的等价交换，因此在满足它的同时
           不会破坏上面两种模式的均衡性（开关状态会记在浏览器里）。</p>
         <p><strong>5. 排班锁定</strong>：点学生标签上的<strong>锁图标</strong>可锁住
-          <strong>「该同学 + 该班次」这个位置</strong>——锁定后无论「开始排班」还是「均衡排班」都不会改变它。
+          <strong>「该同学 + 该班次」这个位置</strong>——锁定后无论怎么重新排班都不会改变它。
           锁定的标签显示为琥珀色、不能拖动也不能移除（先解锁再操作）；
           该同学在<strong>其它</strong>班次仍可被正常安排。锁定会随「导出/导入数据」一起保存。</p>
         <p><strong>6. 课表管理</strong>：点击学生姓名查看课表，可<strong>忽略</strong>特定课程后重新排班。</p>
-        <p><strong>7. 值班模板</strong>：点击右上角「值班模板」可自定义每个班次的<strong>值班时间、值班人数、单双周</strong>，
+        <p><strong>7. 值班模板</strong>：顶部<b>「文件」菜单 → 编辑值班模板…</b>可自定义每个班次的<strong>值班时间、值班人数、单双周</strong>，
           自由<strong>添加/删除/排序</strong>班次，并单独设置与该时段<strong>冲突的课程节次</strong>。<br>
           <strong>排班日分组</strong>支持两种模式：「工作日 / 周末」为预设两组；「一周 7 天自由组合」可自定义分组数量、
           名称与每组包含的星期（例如周一周二一组、周三到周日一组），每组各自一套班次。
-          模板会自动保存在浏览器中，也可导出为文件分享给他人。</p>
-        <p><strong>8. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON（含值班模板与锁定）。</p>
+          模板会自动保存在浏览器中，也可导出为文件分享给他人（顶部「文件」菜单 → 导出/导入值班模板）。</p>
+        <p><strong>8. 导出</strong>：支持导出值班表/空课表为 Excel，导出/导入排班数据为 JSON（含值班模板与锁定），
+          全部集中在顶部<b>「文件」菜单</b>。</p>
         <!-- <hr style="border-color:var(--border);margin:12px 0;"> -->
         <p style="font-size:12px;color:var(--text-muted);">
           <strong>提示</strong>：含"实训""实习""课程设计"等关键词的课程会被自动忽略。<br>
           点击课表弹窗中的「刷新」可单独更新某同学的课表。<br>
-          左上角按钮可切换暗色/亮色主题。
+          切换主题请用顶部<b>「个性化」菜单</b>（深夜模式 / 日间模式 / 跟随系统）。<br>
+          软件版本与开发者信息见顶部<b>「关于」菜单 → 软件信息</b>。
         </p>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="closeGuide()">我明白了！</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 软件信息弹窗（「关于」菜单） ===== -->
+<div class="modal-overlay" id="aboutModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3>软件信息</h3>
+      <button class="close-btn" onclick="closeAbout()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="line-height:1.9;color:var(--text-secondary);">
+        <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-grad);color:#fff;
+                      display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;">排</div>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--text);">学生打印社排班系统</div>
+            <div style="font-size:12px;color:var(--text-muted);">值班表 / 空课表自动排班工具</div>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tbody>
+            <tr>
+              <td style="padding:6px 0;width:104px;color:var(--text-muted);">软件版本</td>
+              <td style="padding:6px 0;"><strong id="aboutVersion">-</strong>（数据文件格式 version 3）</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">开发者</td>
+              <td style="padding:6px 0;">重庆邮电大学勤工助学中心学生打印社</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">项目主页</td>
+              <td style="padding:6px 0;">
+                <a href="https://github.com/gufandf/CQUPT_CWS_Scheduling" target="_blank" rel="noopener"
+                   style="color:var(--primary);text-decoration:none;">github.com/gufandf/CQUPT_CWS_Scheduling</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">运行环境</td>
+              <td style="padding:6px 0;">Python 3（后端，<code>app.py</code>）+ 浏览器原生 JS（前端，单文件）</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">本地地址</td>
+              <td style="padding:6px 0;"><code id="aboutOrigin">-</code></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">课表数据源</td>
+              <td style="padding:6px 0;">红岩网校 API（主）、教务在线（备）——需要校园网或 VPN</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">第三方依赖</td>
+              <td style="padding:6px 0;">SheetJS <code>xlsx.full.min.js</code>（CDN 加载，用于导出 Excel，离线不可用）</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">数据存储</td>
+              <td style="padding:6px 0;">排班数据只在内存中，需自行导出 JSON 保存；模板 / 锁定 / 偏好存在浏览器 localStorage</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;color:var(--text-muted);">构建时间</td>
+              <td style="padding:6px 0;" id="aboutBuild">-</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:12px;">
+          打开本弹窗的时间：<span id="aboutOpened"></span>
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeAbout();openGuide()">查看使用指南</button>
+      <button class="btn btn-primary" onclick="closeAbout()">关闭</button>
     </div>
   </div>
 </div>
@@ -1326,7 +1519,7 @@ const CONFIG = {
   weekdays: [0, 1, 2, 3, 4],  // 周一到周五的索引
   weekendDays: [5, 6],          // 周六周日的索引
   // 注意：每人每周班次上限不再是写死的常量，改由 state.maxShiftsPerWeek 配置
-  //（0=不限制；仅「均衡排班」生效），默认值见 MAX_SHIFTS_DEFAULT。
+  //（是否生效看 state.maxShiftsEnabled 开关），默认值见 MAX_SHIFTS_DEFAULT。
   // 忽略的课程名称关键词（整周实训/实习类课程不计入冲突）
   ignoreCourseKeywords: ['实训', '实习','实践', '课程设计', '毕业设计']
 };
@@ -1665,10 +1858,11 @@ const state = {
   isScheduling: false,
   studentNames: {},       // 学号 -> 姓名映射（缓存）
   ignoredCourses: {},     // { sid: Set of course_num } 被忽略的课程
-  maxShiftsPerWeek: 3,    // 每人每周最多班次（0=不限制）；仅「均衡排班」生效
+  maxShiftsPerWeek: 3,    // 每人每周最多班次数值（见 §4.8）
+  maxShiftsEnabled: false, // 「限制每人每周班次」开关；false=不限制（默认）
   continuousShifts: false, // 连续排班偏好：true=尽量连班，false=尽量分散（见 §4.10）
   // 锁定的排班：{ odd: { [shiftKey]: [sid, ...] }, even: {...} }
-  // 锁住的是「该同学 + 该班次」这个位置，重新排班（开始排班 / 均衡排班）不会改变它
+  // 锁住的是「该同学 + 该班次」这个位置，重新排班（runSchedule）不会改变它
   locks: { odd: {}, even: {} },
   currentCourseModalSid: null  // 当前打开课表弹窗的学生学号
 };
@@ -1829,29 +2023,112 @@ function applyTheme(theme) {
     html.setAttribute('data-theme', theme);
   }
   localStorage.setItem('theme', theme);
-  updateThemeIcon();
-}
-function toggleTheme() {
-  const current = getTheme();
-  if (current === 'auto') {
-    applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark');
-  } else if (current === 'dark') {
-    applyTheme('light');
-  } else {
-    applyTheme('auto');
-  }
-}
-function updateThemeIcon() {
-  const icon = document.getElementById('themeToggle');
-  if (!icon) return;
-  const theme = getTheme();
-  icon.textContent = theme === 'dark' ? '暗色' : theme === 'light' ? '亮色' : '自动';
-  icon.title = theme === 'dark' ? '暗色主题' : theme === 'light' ? '亮色主题' : '跟随系统';
+  // 切换主题的唯一入口是「个性化」菜单，改完把对勾同步过去
+  refreshThemeMenuUi();
 }
 applyTheme(getTheme());
+// 跟随系统时，系统深浅色变化要让「个性化」菜单的对勾保持正确
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-  if (getTheme() === 'auto') updateThemeIcon();
+  if (getTheme() === 'auto') refreshThemeMenuUi();
 });
+
+// ============================================================
+//  顶部菜单栏（文件 / 个性化 / 关于）
+// ============================================================
+const MENU_IDS = ['menuFile', 'menuPersonal', 'menuAbout'];
+
+/** 当前展开的一级菜单 id（null = 全部收起） */
+let openMenuId = null;
+
+function setMenuOpen(id, open) {
+  MENU_IDS.forEach(mid => {
+    const el = document.getElementById(mid);
+    if (!el) return;
+    const on = open && mid === id;
+    el.classList.toggle('open', on);
+    const btn = el.querySelector ? el.querySelector('.menu-btn') : null;
+    if (btn && btn.setAttribute) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+  });
+  openMenuId = open ? id : null;
+}
+
+function closeAllMenus() { setMenuOpen(null, false); }
+
+/** 点一级菜单：已展开则收起，否则展开（同时收起其它菜单） */
+function toggleMenu(id, event) {
+  if (event && event.stopPropagation) event.stopPropagation();
+  if (openMenuId === id) closeAllMenus();
+  else setMenuOpen(id, true);
+}
+
+/**
+ * 执行二级菜单项：先收起菜单，再执行命令。
+ * 收起必须发生在动作之前 —— 否则打开弹窗后下拉面板会浮在弹窗之上。
+ */
+function menuRun(fn) {
+  closeAllMenus();
+  if (typeof fn === 'function') fn();
+}
+
+/** 同步「个性化」菜单里当前主题的对勾 */
+function refreshThemeMenuUi() {
+  const map = {
+    menuThemeDark: 'menuThemeDarkCheck',
+    menuThemeLight: 'menuThemeLightCheck',
+    menuThemeAuto: 'menuThemeAutoCheck'
+  };
+  const theme = getTheme();
+  const cur = theme === 'dark' ? 'menuThemeDark' : theme === 'light' ? 'menuThemeLight' : 'menuThemeAuto';
+  Object.keys(map).forEach(id => {
+    const tick = document.getElementById(map[id]);
+    if (tick) tick.textContent = (id === cur) ? '✓' : '';
+  });
+}
+
+/** 菜单栏键盘导航：Esc 收起，←→ 在一级菜单间切换 */
+function onMenuBarKeydown(e) {
+  if (!openMenuId) return;
+  if (e.key === 'Escape') { closeAllMenus(); return; }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    const i = MENU_IDS.indexOf(openMenuId);
+    const step = e.key === 'ArrowRight' ? 1 : MENU_IDS.length - 1;
+    setMenuOpen(MENU_IDS[(i + step) % MENU_IDS.length], true);
+    e.preventDefault();
+  }
+}
+
+// 点空白处 / 点菜单外的任意位置都收起菜单
+document.addEventListener('click', (e) => {
+  if (!openMenuId) return;
+  const bar = document.getElementById('topMenubar');
+  if (bar && bar.contains && bar.contains(e.target)) return;
+  closeAllMenus();
+});
+
+// ============================================================
+//  软件信息（「关于」菜单）
+// ============================================================
+/** 软件版本号；与导出数据的 version 字段无关 */
+const APP_VERSION = '1.4.0';
+const APP_BUILD_DATE = '2026-10-04';
+
+function openAbout() {
+  const v = document.getElementById('aboutVersion');
+  if (v) v.textContent = 'v' + APP_VERSION;
+  const b = document.getElementById('aboutBuild');
+  if (b) b.textContent = APP_BUILD_DATE;
+  const o = document.getElementById('aboutOrigin');
+  if (o) {
+    o.textContent = (window.location && window.location.origin) ? window.location.origin : 'http://localhost:8765';
+  }
+  const t = document.getElementById('aboutOpened');
+  if (t) t.textContent = new Date().toLocaleString('zh-CN');
+  document.getElementById('aboutModal').classList.add('show');
+}
+
+function closeAbout() {
+  document.getElementById('aboutModal').classList.remove('show');
+}
 
 // ============================================================
 //  工具函数
@@ -1902,8 +2179,27 @@ function timeToMinutes(t) { return parseTime(t); }
 // ============================================================
 //  学生管理
 // ============================================================
+// ============================================================
+//  导入学号弹窗（「文件」菜单 → 导入学号…）
+// ============================================================
+/**
+ * 学号录入框已从左侧面板搬进这个弹窗（用户要求），
+ * 因此左侧面板不再常驻 textarea，录入入口统一走「文件」菜单。
+ */
+function openSidImport() {
+  document.getElementById('sidImportModal').classList.add('show');
+  const input = document.getElementById('sidInput');
+  if (input && input.focus) input.focus();
+}
+
+function closeSidImport() {
+  document.getElementById('sidImportModal').classList.remove('show');
+}
+
 function loadStudents() {
-  const text = document.getElementById('sidInput').value.trim();
+  const input = document.getElementById('sidInput');
+  const text = input.value.trim();
+  // 校验失败时**不关弹窗**，让用户直接改；成功才关。
   if (!text) { showToast('请先输入学号', 'error'); return; }
 
   const sids = [...new Set(text.split('\n').map(s => s.trim()).filter(s => s && /^\d{10}$/.test(s)))];
@@ -1922,7 +2218,8 @@ function loadStudents() {
   updateButtons();
   refreshView();   // 未排班也先显示当前模板的时段表格
   showToast(`成功导入 ${sids.length} 个学号`);
-  document.getElementById('sidInput').value = '';
+  input.value = '';
+  closeSidImport();
 }
 
 function clearAll() {
@@ -2037,10 +2334,18 @@ function updateButtons() {
 
   const disabled = !hasStudents || state.isScheduling;
   document.getElementById('btnSchedule').disabled = disabled;
-  document.getElementById('btnBalance').disabled = disabled;
   document.getElementById('btnExportDuty').disabled = !hasAssignments;
   document.getElementById('btnExportFree').disabled = !hasSchedule;
   document.getElementById('btnRefreshCourses').disabled = disabled;
+
+  // 「限制每人每周班次」的数值框跟着开关一起启用 / 禁用（不勾选时上限不生效）
+  syncMaxShiftsInput();
+
+  // 顶部「文件」菜单里的同名入口跟着一起禁用（导出值班表 / 导出空课表）
+  const menuDuty = document.getElementById('menuExportDuty');
+  if (menuDuty) menuDuty.disabled = !hasAssignments;
+  const menuFree = document.getElementById('menuExportFree');
+  if (menuFree) menuFree.disabled = !hasSchedule;
 }
 
 // ============================================================
@@ -2331,7 +2636,7 @@ function pruneInvalidAssignments(tpl) {
 //  排班锁定
 // ============================================================
 // 锁定的粒度是「该同学 + 该班次」这个**位置**（用户确认的语义），不是「锁人」：
-//   · 重新排班（开始排班 / 均衡排班）时，这个 tag 原地保留，不换人也不换位；
+//   · 重新排班时，这个 tag 原地保留，不换人也不换位；
 //   · 该同学在**其它**班次仍可被正常安排，其它同学也照样能进这个班次。
 // 因此所有判断都必须同时看 sid 与 key，不能简化成「这个人被锁了」。
 //
@@ -2494,11 +2799,16 @@ function initAssignments() {
  * 每人每周最多班次上限。0 = 不限制。
  *
  * 语义（用户确认，见 AGENT.md §4.8）：
- *   - 该上限**只对「均衡排班」生效**，「开始排班」不套用它；
+ *   - 上限由左侧「限制每人每周班次」开关控制（`state.maxShiftsEnabled`）：
+ *     勾选才套用数值，不勾选一律不限制（等价于旧版「开始排班」）；
  *   - 口径是「每周」：单周、双周各自单独计数；
- *   - 两种模式都尽量让每人的班次数相差不大（极差越小越好）。
+ *   - 无论是否套用上限，都尽量让每人的班次数相差不大（极差越小越好）。
+ *
+ * 用户已要求去掉单独的「均衡排班」按钮，只留一个「开始排班」，
+ * 因此 `runSchedule` 不再有两套模式，上限完全由这个开关决定。
  */
 const MAX_SHIFTS_STORAGE_KEY = 'shift_max_per_week';
+const MAX_SHIFTS_ENABLED_STORAGE_KEY = 'shift_max_enabled';
 const MAX_SHIFTS_DEFAULT = 3;
 
 /** 读取上限设置（非法值一律回落为默认值） */
@@ -2509,21 +2819,42 @@ function getMaxShiftsPerWeek() {
   return Math.min(n, 99);
 }
 
-/** 0 表示不限制 → 返回 Infinity，便于直接比较 */
+/**
+ * 排班时真正生效的上限：
+ *   · 开关未勾选 → Infinity（不限制，等价于旧版「开始排班」）；
+ *   · 开关勾选   → 数值；数值为 0 也视为不限制。
+ */
 function maxShiftsLimit() {
+  if (!state.maxShiftsEnabled) return Infinity;
   const n = getMaxShiftsPerWeek();
   return n === 0 ? Infinity : n;
 }
 
-function setMaxShiftsPerWeek(value) {
+function setMaxShiftsPerWeek(value, options) {
+  const opts = options || {};
   const n = parseInt(value, 10);
-  state.maxShiftsPerWeek = (isNaN(n) || n < 0) ? 0 : Math.min(n, 99);
+  // 数值框最小为 1：0 / 负数 / 非法值都回落到默认值。
+  // 注意这里**不**把归一化结果立刻写回输入框：`oninput` 会在用户每敲一个键时触发，
+  // 若此刻回写，用户想把 3 改成 12 时刚删空就会被改回「3」，根本没法输入。
+  // 因此输入过程中只更新说明文案，等 `onchange`（失焦 / 回车）再回写归一化后的值。
+  state.maxShiftsPerWeek = (isNaN(n) || n <= 0) ? MAX_SHIFTS_DEFAULT : Math.min(n, 99);
   persistMaxShifts();
+  if (opts.normalize) syncMaxShiftsInput();
+  else refreshMaxShiftsHint();
+}
+
+/** 「限制每人每周班次」开关 */
+function setMaxShiftsEnabled(enabled) {
+  state.maxShiftsEnabled = !!enabled;
+  persistMaxShifts();
+  syncMaxShiftsInput();
+  updateButtons();
 }
 
 function persistMaxShifts() {
   try {
     localStorage.setItem(MAX_SHIFTS_STORAGE_KEY, String(state.maxShiftsPerWeek));
+    localStorage.setItem(MAX_SHIFTS_ENABLED_STORAGE_KEY, state.maxShiftsEnabled ? '1' : '0');
   } catch (e) {}
 }
 
@@ -2532,16 +2863,45 @@ function loadMaxShifts() {
     const saved = localStorage.getItem(MAX_SHIFTS_STORAGE_KEY);
     if (saved !== null) {
       const n = parseInt(saved, 10);
-      if (!isNaN(n) && n >= 0) { state.maxShiftsPerWeek = Math.min(n, 99); return; }
+      if (!isNaN(n) && n > 0) state.maxShiftsPerWeek = Math.min(n, 99);
+      else state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
+    } else {
+      state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
     }
-  } catch (e) {}
-  state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
+  } catch (e) {
+    state.maxShiftsPerWeek = MAX_SHIFTS_DEFAULT;
+  }
+  // 开关默认「不勾选」：与旧版「开始排班不套用上限」的默认行为保持一致，
+  // 老用户升级后不会因为多出一个开关而被静默限制班次。
+  try {
+    state.maxShiftsEnabled = localStorage.getItem(MAX_SHIFTS_ENABLED_STORAGE_KEY) === '1';
+  } catch (e) {
+    state.maxShiftsEnabled = false;
+  }
 }
 
-/** 把输入框的值同步进 state（用于导入数据等外部改动 state 后刷新界面） */
+/**
+ * 把上限的数值与开关状态同步进界面
+ * （用于初始化、勾选开关、以及导入数据等外部改动 state 之后）。
+ */
 function syncMaxShiftsInput() {
   const el = document.getElementById('maxShiftsInput');
-  if (el) el.value = String(getMaxShiftsPerWeek());
+  if (el) {
+    el.value = String(getMaxShiftsPerWeek());
+    el.disabled = !state.maxShiftsEnabled;
+  }
+  const toggle = document.getElementById('maxShiftsToggle');
+  if (toggle) toggle.checked = !!state.maxShiftsEnabled;
+  refreshMaxShiftsHint();
+}
+
+/** 只刷新说明文案（不碰输入框的值），供 oninput 过程中的实时反馈使用 */
+function refreshMaxShiftsHint() {
+  const hint = document.getElementById('maxShiftsHint');
+  if (!hint) return;
+  hint.textContent = state.maxShiftsEnabled
+    ? `已限制：每人每周最多 ${getMaxShiftsPerWeek()} 班`
+    : '不勾选：不限每人班次';
 }
 
 // ============================================================
@@ -3089,14 +3449,20 @@ function countEmptySlots(assignments) {
 }
 
 /**
- * 排班主入口。
- * mode = 'normal'   「开始排班」：不套用每人班次上限，尽量均衡
- * mode = 'balanced' 「均衡排班」：强制遵守每人每周上限，并多轮交换追求每人班次相等
- * 两种模式都保证：课程不冲突、不超班次容量、尽量让每人班次数相近。
+ * 排班主入口（由左侧「开始排班」按钮触发）。
+ *
+ * 用户已要求去掉单独的「均衡排班」按钮：每人每周上限改为左侧的一个开关
+ * （`state.maxShiftsEnabled` + `state.maxShiftsPerWeek`，见 §4.8），
+ * 因此这里**不再有模式参数** —— 上限是否生效完全由开关决定。
+ *
+ * 无论开关如何，都保证：课程不冲突、不超班次容量、尽量让每人班次数相近，
+ * 并遵守「连续 / 分散排班」偏好（见 §4.10）。
+ *
+ * 历史遗留：旧调用点会传 `'normal'` / `'balanced'`，该参数已被忽略 ——
+ * 传与不传行为完全一致，上限只看开关状态。
  */
-async function runSchedule(mode) {
+async function runSchedule() {
   if (state.isScheduling) return;
-  const balanced = mode === 'balanced';
 
   // 先获取所有课表
   const pendingStudents = state.students.filter(s => s.status === 'pending' || s.status === 'error');
@@ -3113,13 +3479,14 @@ async function runSchedule(mode) {
 
   state.isScheduling = true;
   updateButtons();
-  showToast(balanced ? '正在均衡排班...' : '正在排班...', 'info');
 
   initAssignments();
 
   const sids = readyStudents.map(s => s.sid);
-  const cap = balanced ? maxShiftsLimit() : Infinity;
+  const cap = maxShiftsLimit();
   const capLabel = getMaxShiftsPerWeek();
+  const capOn = cap !== Infinity;
+  showToast(capOn ? `正在排班（每人每周最多 ${capLabel} 班）...` : '正在排班...', 'info');
 
   // ── 第一轮：每周贪心填充（负载最低者优先） ──
   for (const weekType of ['odd', 'even']) {
@@ -3129,7 +3496,7 @@ async function runSchedule(mode) {
   // ── 第二轮：局部搜索均衡 ──
   // 贪心只看当下最低负载，收尾时仍可能留下极差 2~3。这里做「一换一」的单点替换，
   // 以「单周极差 + 双周极差 + 合计极差」为代价反复下降，直到无法再改进。
-  // 两种模式都跑；均衡模式额外受每人每周上限约束。
+  // 勾选了上限开关时，替换额外受每人每周上限约束。
   optimizeBalance(state.assignments, state.students, sids, cap);
 
   // ── 第三轮：连续 / 分散偏好 ──
@@ -3152,8 +3519,8 @@ async function runSchedule(mode) {
     showToast(`排班完成，但无法完全均衡（${range}）`, 'error');
   } else if (emptySlots > 0) {
     showToast(`排班完成（${range}），但有 ${emptySlots} 个班次没有可排的同学，请检查模板人数或课表`, 'error');
-  } else if (balanced && capLabel > 0) {
-    showToast(`均衡排班完成（${range}），已遵守每人每周最多 ${capLabel} 班，已尽量${prefTxt}排班`, 'success');
+  } else if (capOn && capLabel > 0) {
+    showToast(`排班完成（${range}），已遵守每人每周最多 ${capLabel} 班，已尽量${prefTxt}排班`, 'success');
   } else {
     const capTxt = stats.oddMax <= 0 && stats.evenMax <= 0 ? '' : `，${range}`;
     showToast(`排班完成${capTxt}，已尽量${prefTxt}排班`, 'success');
@@ -3288,7 +3655,7 @@ function ensureAssignmentSlots() {
  */
 function scheduleNoticeText() {
   if (state.students.length === 0) {
-    return '尚未导入学号：先在左侧粘贴 10 位学号并点击「导入学号」，再点「开始排班」自动分配。' +
+    return '尚未导入学号：先到顶部「文件」菜单点「导入学号…」，在弹窗里粘贴 10 位学号并导入，再点「开始排班」自动分配。' +
            '下方是当前值班模板的时段，也可以直接把同学拖进格子手动排班。';
   }
   if (state.currentView === 'free') {
@@ -5126,6 +5493,11 @@ function renderShiftCard(group, s, idx, total) {
 // ============================================================
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    // 顶部菜单下拉先收起（它不属于弹窗层级）
+    if (typeof openMenuId !== 'undefined' && openMenuId) {
+      closeAllMenus();
+      return;
+    }
     // 确认框永远在最上层，Esc 必须先关它 —— 否则会先关掉底下的模板窗口，
     // 让用户误以为「删了班次又整窗消失」。
     if (document.getElementById('confirmModal').classList.contains('show')) {
@@ -5140,16 +5512,29 @@ document.addEventListener('keydown', (e) => {
       closeCourseModal();
       return;
     }
+    if (document.getElementById('aboutModal').classList.contains('show')) {
+      closeAbout();
+      return;
+    }
     if (document.getElementById('guideModal').classList.contains('show')) {
       closeGuide();
       return;
     }
+    if (document.getElementById('sidImportModal').classList.contains('show')) {
+      closeSidImport();
+      return;
+    }
     closeModal();
   }
-  // Ctrl+Enter 触发排班（Shift 同时按下 → 均衡排班）
+  // Ctrl+Enter 触发排班（上限是否生效由左侧「限制每人每周班次」开关决定）
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-    if (state.students.length > 0) runSchedule(e.shiftKey ? 'balanced' : 'normal');
+    if (state.students.length > 0) runSchedule();
   }
+});
+
+// 关闭软件信息弹窗（点击外部）
+document.getElementById('aboutModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeAbout();
 });
 
 // 关闭弹窗点击外部
@@ -5163,21 +5548,22 @@ document.getElementById('exportModal').addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
   loadIgnoredCourses();
   loadTemplate();
-  loadMaxShifts();          // 每人每周班次上限（仅均衡排班生效）
+  loadMaxShifts();          // 每人每周班次上限的数值 + 开关（见 §4.8）
   loadContinuousScheduling(); // 连续排班偏好（勾选=连班，不勾选=分散）
   loadLocks();              // 已锁定的排班位置
-  syncMaxShiftsInput();
+  syncMaxShiftsInput();     // 数值框 + 开关 + 说明文案
   syncContinuousInput();
   renderStudentList();
   updateButtons();
   refreshView();   // 首次进入即显示当前值班模板的时段表格（此时还没有排班）
-  showToast('欢迎使用学生排班系统！请在左侧导入学号', 'info');
+  showToast('欢迎使用学生排班系统！请在顶部「文件」菜单导入学号', 'info');
 });
 
-// 关闭值班模板弹窗（点击外部）
-document.getElementById('templateModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) closeTemplateEditor();
-});
+// 值班模板弹窗**故意不监听「点击外部关闭」**（用户要求防误触）：
+// 模板里的改动只写在草稿 state.tplDraft 上，误点一下遮罩就整窗消失会让用户白改一场。
+// 关闭入口只有三个：右上角 ×、底部「取消」、以及 Esc（Esc 同样会丢弃草稿，
+// 但它是明确的键盘意图，不像点空白那样容易误触）。
+// 换言之：这里**不要**加 `if (e.target === e.currentTarget) closeTemplateEditor();`。
 
 // 关闭课表弹窗（点击外部）
 document.getElementById('courseModal').addEventListener('click', (e) => {
@@ -5192,6 +5578,11 @@ document.getElementById('guideModal').addEventListener('click', (e) => {
 // 关闭确认弹窗（点击外部）
 document.getElementById('confirmModal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeConfirm();
+});
+
+// 关闭导入学号弹窗（点击外部）
+document.getElementById('sidImportModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeSidImport();
 });
 </script>
 </body>
